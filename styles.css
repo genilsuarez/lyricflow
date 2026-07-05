@@ -1029,7 +1029,7 @@ body {
   position: fixed;
   transform: translate(-50%, -100%);
   background: rgba(26, 23, 20, 0.96);
-  border: 1px solid rgba(212, 118, 78, 0.22);
+  border: 1px solid rgba(237, 232, 224, 0.12);
   border-radius: 10px;
   padding: 7px 12px;
   display: flex;
@@ -1039,7 +1039,7 @@ body {
   z-index: 9999;
   pointer-events: none;
   animation: wtReveal 0.18s var(--ease-out) both;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 118, 78, 0.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .word-tooltip::after {
@@ -1069,14 +1069,14 @@ body {
   font-family: var(--lp-font-display);
   font-size: 0.85rem;
   font-weight: 400;
-  color: var(--text-primary);
+  color: #EDE8E0;
 }
 
 .wt-trans {
   font-family: var(--lp-font-display);
   font-size: 0.75rem;
   font-weight: 300;
-  color: var(--accent-text);
+  color: #E8A080;
   font-style: italic;
 }
 
@@ -2099,16 +2099,16 @@ body {
   left: 50%;
   transform: translateX(-50%) translateY(3px);
   background: rgba(26, 23, 20, 0.96);
-  color: var(--text-primary);
+  color: #EDE8E0;
   font-family: var(--lp-font-body);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   white-space: nowrap;
-  padding: 4px 9px;
+  padding: 5px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(212, 118, 78, 0.18);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(237, 232, 224, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   opacity: 0;
   z-index: 100;
@@ -2125,8 +2125,8 @@ body {
   width: 5px;
   height: 5px;
   background: rgba(26, 23, 20, 0.96);
-  border-right: 1px solid rgba(212, 118, 78, 0.18);
-  border-bottom: 1px solid rgba(212, 118, 78, 0.18);
+  border-right: 1px solid rgba(237, 232, 224, 0.12);
+  border-bottom: 1px solid rgba(237, 232, 224, 0.12);
   pointer-events: none;
   opacity: 0;
   z-index: 101;
