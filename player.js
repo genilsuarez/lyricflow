@@ -220,7 +220,7 @@ function loadSong(song) {
       <div class="ctrl-group ctrl-group--study">
         <button class="toggle-listening-btn" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
         <button class="toggle-blanks-btn" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
-        <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">Aa</button>
+        <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
         ${song.culture ? '<button class="toggle-culture-btn" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>' : ''}
       </div>
     </div>
