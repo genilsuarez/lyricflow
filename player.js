@@ -214,7 +214,6 @@ function loadSong(song) {
       <div class="ctrl-group ctrl-group--display">
         <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
         <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
-        <button class="toggle-lines-btn" id="toggleLinesBtn" aria-label="Números de línea" data-tooltip="Números de línea">#</button>
       </div>
       <span class="ctrl-divider" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--study">
@@ -287,7 +286,6 @@ function bindPlayerEvents(song) {
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
-  document.getElementById('toggleLinesBtn').addEventListener('click', toggleLineNumbers, { signal });
   document.getElementById('toggleVocabBtn').addEventListener('click', toggleVocabMode, { signal });
   document.getElementById('toggleBlanksBtn').addEventListener('click', toggleBlanksMode, { signal });
   document.getElementById('toggleListeningBtn').addEventListener('click', toggleListeningMode, { signal });
@@ -1187,8 +1185,8 @@ function toggleSelectMode() {
 
 function toggleLineNumbers() {
   showLineNumbers = !showLineNumbers;
-  document.getElementById('toggleLinesBtn').classList.toggle('active', showLineNumbers);
-  document.getElementById('subContainer').classList.toggle('show-line-numbers', showLineNumbers);
+  const container = document.getElementById('subContainer');
+  if (container) container.classList.toggle('show-line-numbers', showLineNumbers);
 }
 
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
@@ -1713,7 +1711,7 @@ function onKeydown(e) {
   }
 
   if (e.code === 'Space' || e.code === 'KeyK') { e.preventDefault(); togglePlay(); }
-  if (e.code === 'KeyI') toggleLineNumbers();
+  if (e.code === 'KeyN') toggleLineNumbers();
   if (e.code === 'KeyT') toggleTranslation();
   if (e.code === 'KeyS') cycleSpeed();
   if (e.code === 'KeyL') onLoopClick();
