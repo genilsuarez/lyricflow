@@ -861,8 +861,9 @@ body {
 .sub-line .original {
   font-family: var(--lp-font-display);
   font-size: 1rem;
-  font-weight: 300;
-  color: var(--lp-ink-soft);
+  font-weight: 400;
+  color: var(--lp-ink);
+  opacity: 0.55;
   line-height: 1.6;
   transition: all 0.4s var(--ease-out);
   font-optical-sizing: auto;
@@ -872,7 +873,7 @@ body {
 
 /* Past */
 .sub-line.past .original {
-  color: var(--lp-muted);
+  opacity: 0.3;
   font-size: 0.95rem;
 }
 
@@ -903,9 +904,10 @@ body {
 
 .sub-line.active .original {
   font-size: 1.12rem;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--lp-ink);
-  text-shadow: 0 0 24px var(--lp-accent-glow);
+  opacity: 1;
+  text-shadow: none;
 }
 
 .sub-line:not(.active):not(.past):hover {
