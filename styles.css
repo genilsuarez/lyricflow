@@ -10,9 +10,9 @@
 
 :root {
   /* ─── Surface & Paper (cinematic dark) ─── */
-  --lp-bg: #111827;
-  --lp-bg-paper: #1f2937;
-  --lp-surface: rgba(17, 24, 39, 0.92);
+  --lp-bg: #0F0D0B;
+  --lp-bg-paper: #1A1714;
+  --lp-surface: rgba(15, 13, 11, 0.92);
   --lp-surface-raised: rgba(255, 255, 255, 0.07);
   --lp-surface-sunken: rgba(255, 255, 255, 0.04);
 
