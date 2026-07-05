@@ -143,8 +143,16 @@ async function showPicker(skipAutoLoad = false) {
 
   app.innerHTML = `
     <div class="song-picker">
-      <h2>LyricFlow</h2>
-      <p>Learn languages through music</p>
+      <div class="picker-header">
+        <div class="picker-brand">
+          <h2>LyricFlow</h2>
+          <p>Learn languages through music</p>
+        </div>
+        <div class="picker-actions">
+          <a class="picker-btn" id="portalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Back to Portal" title="Back to Portal">🏠</a>
+          <button class="picker-btn" id="themeToggle" aria-label="Toggle theme">🌙</button>
+        </div>
+      </div>
       <div class="song-list" id="songList"></div>
     </div>
   `;
@@ -167,11 +175,16 @@ async function showPicker(skipAutoLoad = false) {
     list.appendChild(item);
   });
 
+  // Theme toggle + portal link (inside picker)
+  setupPickerActions();
+
   // Auto-load last played song ONLY if this is a same-session return
   // (not a fresh tab, not from DeskFlow, not first visit)
+  // If navigated from DeskFlow (portal), always show picker
   const prefs = loadPrefs();
   const isSessionActive = sessionStorage.getItem('lyricflow_active');
-  if (!skipAutoLoad && prefs.lastSong && isSessionActive) {
+  const fromPortal = document.referrer.includes('deskflow') || document.referrer.includes('localhost:3000');
+  if (!skipAutoLoad && prefs.lastSong && isSessionActive && !fromPortal) {
     const lastSong = songs.find(s => s.folder === prefs.lastSong);
     if (lastSong) loadSong(lastSong);
   }
@@ -210,6 +223,7 @@ function loadSong(song) {
         <div class="song-title">${song.title}</div>
         <div class="song-artist">${song.artist}</div>
       </div>
+      <button class="picker-btn" id="playerThemeToggle" aria-label="Toggle theme">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</button>
     </div>
 
     <div class="mode-toolbar">
@@ -286,6 +300,12 @@ function bindPlayerEvents(song) {
   playerCleanup = () => controller.abort();
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
+  document.getElementById('playerThemeToggle').addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('lf-theme', isDark ? '' : 'dark');
+    document.getElementById('playerThemeToggle').textContent = isDark ? '🌙' : '☀️';
+  }, { signal });
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
@@ -1747,6 +1767,31 @@ document.addEventListener('visibilitychange', () => {
     orbs.forEach(el => el.classList.remove('paused'));
   }
 });
+
+// ─── Picker Actions (theme + portal) ────────────────────────────────────────────
+
+function setupPickerActions() {
+  const themeBtn = document.getElementById('themeToggle');
+  const portalLink = document.getElementById('portalLink');
+
+  function updateThemeIcon() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeBtn.textContent = isDark ? '☀️' : '🌙';
+  }
+  updateThemeIcon();
+
+  themeBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('lf-theme', isDark ? '' : 'dark');
+    updateThemeIcon();
+  });
+
+  // Local dev: rewrite portal link
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    portalLink.href = 'http://localhost:3000/';
+  }
+}
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
 
