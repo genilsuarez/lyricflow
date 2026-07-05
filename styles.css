@@ -1239,9 +1239,9 @@ body {
   padding: 9px 12px;
   font-family: var(--lp-font-body);
   font-size: 0.84rem;
-  color: var(--text-primary);
-  background: var(--bg-sunken);
-  border: 1px solid var(--card-border);
+  color: var(--lp-ink);
+  background: var(--lp-surface-raised);
+  border: 1.5px solid var(--lp-border-strong);
   border-radius: var(--r-md);
   outline: none;
   transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
@@ -1275,8 +1275,8 @@ body {
 .vocab-chip {
   font-family: var(--lp-font-display);
   font-size: 0.9rem;
-  font-weight: 300;
-  color: rgba(241, 245, 249, 0.55);
+  font-weight: 400;
+  color: var(--lp-ink-soft);
   background: transparent;
   border: none;
   padding: 5px 12px;
@@ -1292,12 +1292,12 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 14px;
-  border: 1px solid var(--lp-border-subtle);
+  border: 1px solid var(--lp-border-strong);
   transition: all 0.2s var(--ease-out);
 }
 
-.vocab-chip:hover { color: var(--text-primary); background: rgba(212, 118, 78, 0.05); }
-.vocab-chip:hover::before { border-color: rgba(212, 118, 78, 0.2); }
+.vocab-chip:hover { color: var(--lp-ink); background: var(--lp-accent-soft); }
+.vocab-chip:hover::before { border-color: var(--lp-accent); }
 
 .vocab-chip.selected {
   color: var(--accent-text);
