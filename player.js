@@ -167,9 +167,11 @@ async function showPicker(skipAutoLoad = false) {
     list.appendChild(item);
   });
 
-  // Auto-load last played song if available (only on fresh init)
+  // Auto-load last played song ONLY if this is a same-session return
+  // (not a fresh tab, not from DeskFlow, not first visit)
   const prefs = loadPrefs();
-  if (!skipAutoLoad && prefs.lastSong) {
+  const isSessionActive = sessionStorage.getItem('lyricflow_active');
+  if (!skipAutoLoad && prefs.lastSong && isSessionActive) {
     const lastSong = songs.find(s => s.folder === prefs.lastSong);
     if (lastSong) loadSong(lastSong);
   }
@@ -273,8 +275,9 @@ function loadSong(song) {
   if (audio) audio.volume = savedVolume;
   updateVolumeIcon(savedVolume);
 
-  // Persist last song
+  // Persist last song & mark session as active
   savePrefs({ lastSong: song.folder });
+  sessionStorage.setItem('lyricflow_active', '1');
 }
 
 function bindPlayerEvents(song) {
