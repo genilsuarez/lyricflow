@@ -965,24 +965,26 @@ body {
   position: fixed;
   top: 16px;
   right: 16px;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1.5px solid var(--lp-border-strong);
-  background: var(--lp-surface-raised);
+  background: var(--lp-bg-paper);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.85rem;
-  z-index: 100;
+  font-size: 0.9rem;
+  z-index: 9999;
   transition: border-color 0.2s, transform 0.2s, background 0.2s;
   box-shadow: var(--lp-shadow-sm);
+  line-height: 1;
 }
 
 .theme-toggle:hover {
   border-color: var(--lp-accent);
   transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(212, 118, 78, 0.15);
 }
 
 /* ─── Footer ────────────────────────────────────────────────────────────────── */
