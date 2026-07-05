@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Rebuild song catalog",
+      "trigger": "PostFileCreate",
+      "description": "Regenerates songs/catalog.js when a new file is added inside songs/",
+      "matcher": "songs/",
+      "action": {
+        "type": "command",
+        "command": "node scripts/build-catalog.js"
+      }
+    }
+  ]
+}

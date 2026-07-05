@@ -1,0 +1,4 @@
+#!/bin/bash
+# Run QA scripts with Playwright global modules
+# Usage: ./scripts/qa <name>  (e.g., ./scripts/qa tooltips)
+NODE_PATH=$(npm root -g) node "$(dirname "$0")/qa-${1}.js" "${@:2}"
