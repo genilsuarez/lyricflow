@@ -10,11 +10,30 @@
   <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
   <div class="orb orb-1" aria-hidden="true"></div>
   <div class="orb orb-2" aria-hidden="true"></div>
   <div class="orb orb-3" aria-hidden="true"></div>
   <div class="grain" aria-hidden="true"></div>
   <div class="player-wrapper" id="app"></div>
   <script type="module" src="player.js"></script>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('lf-theme');
+      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      const btn = document.getElementById('themeToggle');
+      function update() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        btn.textContent = isDark ? '☀️' : '🌙';
+      }
+      update();
+      btn.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+        localStorage.setItem('lf-theme', isDark ? '' : 'dark');
+        update();
+      });
+    })();
+  </script>
 </body>
 </html>
