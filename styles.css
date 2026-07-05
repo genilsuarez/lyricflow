@@ -862,7 +862,7 @@ body {
   font-family: var(--lp-font-display);
   font-size: 1rem;
   font-weight: 300;
-  color: var(--lp-muted);
+  color: var(--lp-ink-soft);
   line-height: 1.6;
   transition: all 0.4s var(--ease-out);
   font-optical-sizing: auto;
@@ -872,7 +872,7 @@ body {
 
 /* Past */
 .sub-line.past .original {
-  color: var(--lp-ink-faint);
+  color: var(--lp-muted);
   font-size: 0.95rem;
 }
 
