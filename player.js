@@ -212,7 +212,7 @@ function loadSong(song) {
 
     <div class="mode-toolbar">
       <div class="ctrl-group ctrl-group--display">
-        <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">◐</button>
+        <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">译</button>
         <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
         <button class="toggle-lines-btn" id="toggleLinesBtn" aria-label="Números de línea" data-tooltip="Números de línea">#</button>
       </div>
