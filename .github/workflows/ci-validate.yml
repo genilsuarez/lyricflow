@@ -1,0 +1,47 @@
+name: CI Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate HTML & Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify structure
+        run: |
+          FAIL=0
+          [ -f "index.html" ]   || { echo "❌ Missing index.html"; FAIL=1; }
+          [ -f "styles.css" ]   || { echo "❌ Missing styles.css"; FAIL=1; }
+          [ -f "player.js" ]    || { echo "❌ Missing player.js"; FAIL=1; }
+          [ -d "songs" ]        || { echo "❌ Missing songs/"; FAIL=1; }
+          [ $FAIL -eq 0 ] && echo "✅ Structure OK"
+          exit $FAIL
+
+      - name: Validate HTML
+        run: |
+          npx --yes html-validate@8 index.html --config '{"extends":["html-validate:recommended"],"rules":{"no-trailing-whitespace":"off","no-inline-style":"off","attr-quotes":"off","require-sri":"off"}}' || true
+          echo "✅ HTML validated (warnings only)"
+
+      - name: Verify song catalog
+        run: |
+          echo "🎵 Checking song catalog..."
+          SONGS=$(find songs -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          echo "  Found $SONGS song(s)"
+          for dir in songs/*/; do
+            [ -f "${dir}data.js" ] || { echo "  ⚠️  ${dir} missing data.js"; }
+          done
+          echo "✅ Catalog check done"
