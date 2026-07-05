@@ -1394,7 +1394,7 @@ body {
   font-size: 0.88rem;
   font-weight: 300;
   font-style: italic;
-  color: rgba(241, 245, 249, 0.78);
+  color: var(--lp-ink-soft);
   line-height: 1.5;
 }
 
@@ -1913,8 +1913,8 @@ body {
 .culture-section-text {
   font-family: var(--lp-font-display);
   font-size: 0.88rem;
-  font-weight: 300;
-  color: rgba(241, 245, 249, 0.75);
+  font-weight: 400;
+  color: var(--lp-ink-soft);
   line-height: 1.7;
 }
 
@@ -1928,8 +1928,8 @@ body {
 .culture-facts li {
   font-family: var(--lp-font-display);
   font-size: 0.85rem;
-  font-weight: 300;
-  color: rgba(241, 245, 249, 0.72);
+  font-weight: 400;
+  color: var(--lp-ink-soft);
   line-height: 1.6;
   padding-left: 18px;
   position: relative;
