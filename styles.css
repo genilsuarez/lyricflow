@@ -1041,8 +1041,8 @@ body {
 }
 
 .picker-btn {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1.5px solid var(--lp-border-strong);
   background: var(--lp-bg-paper);
@@ -1050,7 +1050,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   transition: border-color 0.2s, transform 0.2s, background 0.2s;
   box-shadow: var(--lp-shadow-sm);
   line-height: 1;
@@ -2290,6 +2290,14 @@ body {
   .loop-btn.setting { animation: none; }
   .listening-input.lc-active { animation: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+
+/* Theme smooth transition */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
 /* Pause background animations when tab is hidden */
