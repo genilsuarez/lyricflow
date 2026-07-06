@@ -301,10 +301,16 @@ function bindPlayerEvents(song) {
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
   document.getElementById('playerThemeToggle').addEventListener('click', () => {
+    document.documentElement.classList.add('theme-transitioning');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
-    localStorage.setItem('lf-theme', isDark ? '' : 'dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
+    localStorage.setItem('lp-theme', newTheme);
+    if (location.search.includes('theme=')) {
+      const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
+    }
     document.getElementById('playerThemeToggle').textContent = isDark ? '🌙' : '☀️';
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
   }, { signal });
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
@@ -1781,15 +1787,30 @@ function setupPickerActions() {
   updateThemeIcon();
 
   themeBtn.addEventListener('click', () => {
+    document.documentElement.classList.add('theme-transitioning');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
-    localStorage.setItem('lf-theme', isDark ? '' : 'dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
+    localStorage.setItem('lp-theme', newTheme);
+    if (location.search.includes('theme=')) {
+      const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
+    }
     updateThemeIcon();
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
   });
 
-  // Local dev: rewrite portal link
+  // Local dev: rewrite portal link and propagate theme
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     portalLink.href = 'http://localhost:3000/';
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href*="localhost:"]');
+      if (a) {
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const url = new URL(a.href);
+        url.searchParams.set('theme', theme);
+        a.href = url.toString();
+      }
+    });
   }
 }
 
