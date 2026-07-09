@@ -132,7 +132,15 @@ async function showPicker(skipAutoLoad = false) {
   );
   const songs = results
     .filter(r => r.status === 'fulfilled')
-    .map(r => r.value);
+    .map(r => r.value)
+    .sort((a, b) => {
+      const order = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+      const la = order.indexOf((a.level || '').toLowerCase());
+      const lb = order.indexOf((b.level || '').toLowerCase());
+      const ia = la === -1 ? order.length : la;
+      const ib = lb === -1 ? order.length : lb;
+      return ia - ib || a.title.localeCompare(b.title);
+    });
 
   if (results.some(r => r.status === 'rejected')) {
     const failed = results
@@ -153,26 +161,51 @@ async function showPicker(skipAutoLoad = false) {
           <button class="picker-btn" id="themeToggle" aria-label="Toggle theme">🌙</button>
         </div>
       </div>
+      <div class="search-bar">
+        <input type="search" id="songSearch" placeholder="Search songs..." aria-label="Search songs" autocomplete="off">
+      </div>
       <div class="song-list" id="songList"></div>
     </div>
   `;
 
   const list = document.getElementById('songList');
-  songs.forEach((song, idx) => {
-    const item = document.createElement('div');
-    item.className = 'song-list-item';
-    item.style.animationDelay = `${0.15 + idx * 0.07}s`;
-    item.style.animation = 'fadeUp 0.45s var(--ease-out) both';
-    item.innerHTML = `
-      <span class="icon">${song.icon || '🎵'}</span>
-      <div class="info">
-        <div class="title">${song.title}</div>
-        <div class="artist">${song.artist}</div>
-      </div>
-      <span class="arrow">→</span>
-    `;
-    item.addEventListener('click', () => loadSong(song));
-    list.appendChild(item);
+
+  function renderSongs(filtered) {
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="no-results">No songs match your search.</div>';
+      return;
+    }
+    filtered.forEach((song, idx) => {
+      const item = document.createElement('div');
+      item.className = 'song-list-item';
+      item.style.animationDelay = `${0.05 + idx * 0.04}s`;
+      item.style.animation = 'fadeUp 0.45s var(--ease-out) both';
+      item.innerHTML = `
+        <span class="icon">${song.icon || '🎵'}</span>
+        <div class="info">
+          <div class="title">${song.title}</div>
+          <div class="artist">${song.artist}</div>
+          ${song.level ? `<div class="song-tags"><span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span></div>` : ''}
+        </div>
+      `;
+      item.addEventListener('click', () => loadSong(song));
+      list.appendChild(item);
+    });
+  }
+
+  renderSongs(songs);
+
+  const searchInput = document.getElementById('songSearch');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    if (!q) { renderSongs(songs); return; }
+    const filtered = songs.filter(s =>
+      s.title.toLowerCase().includes(q) ||
+      s.artist.toLowerCase().includes(q) ||
+      (s.level && s.level.toLowerCase().includes(q))
+    );
+    renderSongs(filtered);
   });
 
   // Theme toggle + portal link (inside picker)

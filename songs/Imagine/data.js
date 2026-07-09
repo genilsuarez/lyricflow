@@ -2,6 +2,7 @@ export default {
   title: 'Imagine',
   artist: 'John Lennon',
   icon: '☮️',
+  level: 'B1',
   file: 'imagine.mp3',
   offset: 0,
   culture: {

@@ -2,6 +2,7 @@ export default {
   title: 'Dernière Danse',
   artist: 'Indila',
   icon: '🎤',
+  level: 'FR',
   file: 'derniere-danse.mp3',
   // segundos a sumar a todos los start (ajuste global de sync)
   offset: 0,
