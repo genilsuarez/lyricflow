@@ -180,7 +180,7 @@ async function showPicker(skipAutoLoad = false) {
       const item = document.createElement('div');
       item.className = 'song-list-item';
       item.style.animationDelay = `${0.05 + idx * 0.04}s`;
-      item.style.animation = 'fadeUp 0.45s var(--ease-out) both';
+      item.style.animation = 'fadeUp 0.45s var(--lp-ease) both';
       item.innerHTML = `
         <span class="icon">${song.icon || '🎵'}</span>
         <div class="info">
@@ -250,13 +250,16 @@ function loadSong(song) {
 
   app.innerHTML = `
     <div class="song-header">
-      <button class="back-btn" id="backBtn" aria-label="Volver">←</button>
       <div class="artwork">${song.icon || '🎵'}</div>
       <div class="song-meta">
         <div class="song-title">${song.title}</div>
         <div class="song-artist">${song.artist}</div>
       </div>
-      <button class="picker-btn" id="playerThemeToggle" aria-label="Toggle theme">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</button>
+      <div class="song-header-actions">
+        <button class="picker-btn" id="backBtn" aria-label="Volver al picker" title="Volver">←</button>
+        <a class="picker-btn" id="playerPortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
+        <button class="picker-btn" id="playerThemeToggle" aria-label="Cambiar tema">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</button>
+      </div>
     </div>
 
     <div class="mode-toolbar">
@@ -333,6 +336,14 @@ function bindPlayerEvents(song) {
   playerCleanup = () => controller.abort();
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
+  // Local dev: el portal del player apunta a la DeskFlow local (mismo patrón que el picker)
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    const pPortal = document.getElementById('playerPortalLink');
+    if (pPortal) {
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      pPortal.href = 'http://localhost:3000/?theme=' + theme;
+    }
+  }
   document.getElementById('playerThemeToggle').addEventListener('click', () => {
     document.documentElement.classList.add('theme-transitioning');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
