@@ -20,13 +20,5 @@
   <div class="grain" aria-hidden="true"></div>
   <div class="player-wrapper" id="app"></div>
   <script type="module" src="player.js"></script>
-  <script>
-    // Apply saved theme immediately (before player.js loads)
-    (function() {
-      const saved = localStorage.getItem('lp-theme');
-      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-      // Local dev: portal link rewrite handled in player.js
-    })();
-  </script>
 </body>
 </html>
