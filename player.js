@@ -8,31 +8,8 @@ import songFolders from './songs/catalog.js';
 
 const app = document.getElementById('app');
 
-// State
-let audio = null;
-let isPlaying = false;
-let showTranslation = false;
-let selectMode = false;
-let showLineNumbers = false;
-let currentSubIndex = -1;
-let animationFrame = null;
-let isDragging = false;
-let currentSong = null;
-let vocabData = null;
-let vocabMode = false;
-
-// Speed control state
-let playbackRate = 1;
+// Speed control options
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25];
-
-// A-B loop state
-let loopA = null;
-let loopB = null;
-let loopActive = false;
-
-// Fill-in-the-blanks state
-let blanksMode = false;
-let blanksAnswers = {};
 
 // Difficulty levels — shared between blanks and listening
 // easy: 1 blank/line, only rich lines, min 4 chars
@@ -43,8 +20,6 @@ const DIFFICULTY = {
   normal: { maxBlanks: 2, richThreshold: 3, minWordLen: 2 },
   hard:   { maxBlanks: 3, richThreshold: 2, minWordLen: 1 },
 };
-let blanksDifficulty = 'normal';
-let listeningDifficulty = 'normal';
 
 // Shared stop words — never blanked in either mode
 const STOP_WORDS = new Set([
@@ -55,26 +30,54 @@ const STOP_WORDS = new Set([
   'dans', 'sur', 'pour', 'par', 'avec', 'tout', 'si', 'ô', 'oh',
 ]);
 
-// Listening challenge state
-let listeningMode = false;
-let listeningWaiting = false;
-let listeningCurrentBlank = null;
-let listeningTimerId = null;
-let listeningScore = { correct: 0, wrong: 0 };
-let listeningBlanksMap = {}; // lineIndex -> [{wordIdx, clean, original}]
-let listeningPauseAt = null;   // audio time (s) to pause and activate blank
-let listeningNextBlank = null; // blank element to activate when listeningPauseAt fires
-let listeningRepeatCount = 0;  // 0 = first play, 1 = already repeated → now pause
-let listeningLineStart = null; // start time of current listening line (for replay)
+// Single mutable state object — every module-level piece of player state
+// lives here so it can be read/written uniformly (and later map cleanly
+// onto React state when this file gets ported).
+const state = {
+  // Playback
+  audio: null,
+  isPlaying: false,
+  currentSubIndex: -1,
+  animationFrame: null,
+  isDragging: false,
+  currentSong: null,
+  playbackRate: 1,
 
-// Event listener cleanup (AbortController per player session)
-let playerCleanup = null;
+  // View toggles
+  showTranslation: false,
+  selectMode: false,
+  showLineNumbers: false,
+  vocabData: null,
+  vocabMode: false,
 
-// Cached DOM references (set after renderSubtitles)
-let cachedSubLines = [];
+  // A-B loop
+  loopA: null,
+  loopB: null,
+  loopActive: false,
 
-// Debounce scroll — avoid queueing multiple smooth scrolls
-let scrollRAF = null;
+  // Fill-in-the-blanks
+  blanksMode: false,
+  blanksAnswers: {},
+  blanksDifficulty: 'normal',
+  listeningDifficulty: 'normal',
+
+  // Listening challenge
+  listeningMode: false,
+  listeningWaiting: false,
+  listeningCurrentBlank: null,
+  listeningTimerId: null,
+  listeningScore: { correct: 0, wrong: 0 },
+  listeningBlanksMap: {}, // lineIndex -> [{wordIdx, clean, original}]
+  listeningPauseAt: null,   // audio time (s) to pause and activate blank
+  listeningNextBlank: null, // blank element to activate when listeningPauseAt fires
+  listeningRepeatCount: 0,  // 0 = first play, 1 = already repeated → now pause
+  listeningLineStart: null, // start time of current listening line (for replay)
+
+  // Misc
+  playerCleanup: null,   // Event listener cleanup (AbortController per player session)
+  cachedSubLines: [],    // Cached DOM references (set after renderSubtitles)
+  scrollRAF: null,       // Debounce scroll — avoid queueing multiple smooth scrolls
+};
 
 // ─── Persistence (localStorage) ────────────────────────────────────────────────
 
@@ -119,10 +122,10 @@ function seededRandom(seed) {
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
 async function showPicker(skipAutoLoad = false) {
-  playerCleanup?.();
-  playerCleanup = null;
-  currentSong = null;
-  if (audio) { audio.pause(); audio = null; }
+  state.playerCleanup?.();
+  state.playerCleanup = null;
+  state.currentSong = null;
+  if (state.audio) { state.audio.pause(); state.audio = null; }
 
   const results = await Promise.allSettled(
     songFolders.map(async (folder) => {
@@ -226,27 +229,27 @@ async function showPicker(skipAutoLoad = false) {
 // ─── Player View ───────────────────────────────────────────────────────────────
 
 function loadSong(song) {
-  playerCleanup?.();
-  playerCleanup = null;
-  currentSong = song;
-  showTranslation = false;
-  showLineNumbers = false;
-  vocabMode = false;
-  blanksMode = false;
-  blanksAnswers = {};
-  listeningMode = false;
-  listeningWaiting = false;
-  listeningCurrentBlank = null;
-  listeningScore = { correct: 0, wrong: 0 };
-  listeningBlanksMap = {};
-  listeningPauseAt = null;
-  listeningNextBlank = null;
+  state.playerCleanup?.();
+  state.playerCleanup = null;
+  state.currentSong = song;
+  state.showTranslation = false;
+  state.showLineNumbers = false;
+  state.vocabMode = false;
+  state.blanksMode = false;
+  state.blanksAnswers = {};
+  state.listeningMode = false;
+  state.listeningWaiting = false;
+  state.listeningCurrentBlank = null;
+  state.listeningScore = { correct: 0, wrong: 0 };
+  state.listeningBlanksMap = {};
+  state.listeningPauseAt = null;
+  state.listeningNextBlank = null;
   clearListeningTimer();
-  loopA = null;
-  loopB = null;
-  loopActive = false;
-  playbackRate = 1;
-  currentSubIndex = -1;
+  state.loopA = null;
+  state.loopB = null;
+  state.loopActive = false;
+  state.playbackRate = 1;
+  state.currentSubIndex = -1;
 
   app.innerHTML = `
     <div class="song-header">
@@ -316,13 +319,13 @@ function loadSong(song) {
     if (slider) slider.value = savedVolume;
   }
   if (prefs.speed !== undefined && SPEED_OPTIONS.includes(prefs.speed)) {
-    playbackRate = prefs.speed;
-    if (audio) audio.playbackRate = playbackRate;
+    state.playbackRate = prefs.speed;
+    if (state.audio) state.audio.playbackRate = state.playbackRate;
     const btn = document.getElementById('speedBtn');
-    if (btn) btn.textContent = playbackRate === 1 ? '1×' : `${playbackRate}×`;
-    btn?.classList.toggle('active', playbackRate !== 1);
+    if (btn) btn.textContent = state.playbackRate === 1 ? '1×' : `${state.playbackRate}×`;
+    btn?.classList.toggle('active', state.playbackRate !== 1);
   }
-  if (audio) audio.volume = savedVolume;
+  if (state.audio) state.audio.volume = savedVolume;
   updateVolumeIcon(savedVolume);
 
   // Persist last song & mark session as active
@@ -353,7 +356,7 @@ function toggleTheme(iconEl) {
 function bindPlayerEvents(song) {
   const controller = new AbortController();
   const { signal } = controller;
-  playerCleanup = () => controller.abort();
+  state.playerCleanup = () => controller.abort();
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
   // Local dev: el portal del player apunta a la DeskFlow local (mismo patrón que el picker)
@@ -397,11 +400,11 @@ function bindPlayerEvents(song) {
 
 function initAudio(song) {
   const mediaPath = `${song.folder}/${song.file}`;
-  audio = new Audio(mediaPath);
-  audio.preload = 'metadata';
-  audio.playbackRate = playbackRate;
+  state.audio = new Audio(mediaPath);
+  state.audio.preload = 'metadata';
+  state.audio.playbackRate = state.playbackRate;
 
-  audio.addEventListener('error', () => {
+  state.audio.addEventListener('error', () => {
     console.warn(`[Cancion] Audio failed to load: ${mediaPath}`);
     document.getElementById('durationTime').textContent = '—:——';
     // Show error message in subtitle container with retry
@@ -421,69 +424,69 @@ function initAudio(song) {
     }
   });
 
-  audio.addEventListener('loadedmetadata', () => {
-    document.getElementById('durationTime').textContent = formatTime(audio.duration);
+  state.audio.addEventListener('loadedmetadata', () => {
+    document.getElementById('durationTime').textContent = formatTime(state.audio.duration);
   });
 
-  audio.addEventListener('ended', () => {
+  state.audio.addEventListener('ended', () => {
     document.getElementById('playBtn').textContent = '▶';
-    isPlaying = false;
+    state.isPlaying = false;
     stopUpdateLoop();
     document.getElementById('progressFill').style.width = '100%';
-    cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
+    state.cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
     document.querySelector('.artwork')?.classList.remove('playing');
-    currentSubIndex = -1;
+    state.currentSubIndex = -1;
     showSongEnd();
   });
 
-  audio.addEventListener('timeupdate', () => {
-    if (!isDragging) updateProgress();
+  state.audio.addEventListener('timeupdate', () => {
+    if (!state.isDragging) updateProgress();
   });
 }
 
 function playAudio() {
-  if (!audio) return;
-  audio.play().catch(() => {});
+  if (!state.audio) return;
+  state.audio.play().catch(() => {});
   document.getElementById('playBtn').textContent = '⏸';
   document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
-  isPlaying = true;
+  state.isPlaying = true;
   startUpdateLoop();
   document.querySelector('.artwork')?.classList.add('playing');
 }
 
 function pauseAudio() {
-  if (!audio) return;
-  audio.pause();
+  if (!state.audio) return;
+  state.audio.pause();
   document.getElementById('playBtn').textContent = '▶';
   document.getElementById('playBtn').setAttribute('aria-label', 'Reproducir');
-  isPlaying = false;
+  state.isPlaying = false;
   stopUpdateLoop();
   document.querySelector('.artwork')?.classList.remove('playing');
 }
 
 function togglePlay() {
-  if (!audio) return;
+  if (!state.audio) return;
 
   // In listening mode: don't resume while waiting for blank input
-  if (listeningMode && listeningWaiting && audio.paused) {
-    if (listeningCurrentBlank) listeningCurrentBlank.focus();
+  if (state.listeningMode && state.listeningWaiting && state.audio.paused) {
+    if (state.listeningCurrentBlank) state.listeningCurrentBlank.focus();
     return;
   }
 
-  if (audio.paused) playAudio(); else pauseAudio();
+  if (state.audio.paused) playAudio(); else pauseAudio();
 }
 
 // ─── Speed Control ─────────────────────────────────────────────────────────────
 
 function cycleSpeed() {
-  const currentIdx = SPEED_OPTIONS.indexOf(playbackRate);
+  const currentIdx = SPEED_OPTIONS.indexOf(state.playbackRate);
   const nextIdx = (currentIdx + 1) % SPEED_OPTIONS.length;
-  playbackRate = SPEED_OPTIONS[nextIdx];
-  if (audio) audio.playbackRate = playbackRate;
+  state.playbackRate = SPEED_OPTIONS[nextIdx];
+  if (state.audio) state.audio.playbackRate = state.playbackRate;
   const btn = document.getElementById('speedBtn');
-  btn.textContent = playbackRate === 1 ? '1×' : `${playbackRate}×`;
-  btn.classList.toggle('active', playbackRate !== 1);
-  savePrefs({ speed: playbackRate });
+  btn.textContent = state.playbackRate === 1 ? '1×' : `${state.playbackRate}×`;
+  btn.classList.toggle('active', state.playbackRate !== 1);
+  savePrefs({ speed: state.playbackRate });
 }
 
 // ─── A-B Loop ──────────────────────────────────────────────────────────────────
@@ -492,37 +495,37 @@ function onLoopClick() {
   const btn = document.getElementById('loopBtn');
   const indicator = document.getElementById('loopIndicator');
 
-  if (loopA === null) {
+  if (state.loopA === null) {
     // Set point A
-    loopA = audio ? audio.currentTime : 0;
+    state.loopA = state.audio ? state.audio.currentTime : 0;
     btn.classList.add('setting');
     btn.textContent = 'A→';
-    indicator.textContent = `A: ${formatTime(loopA)}`;
-  } else if (loopB === null) {
+    indicator.textContent = `A: ${formatTime(state.loopA)}`;
+  } else if (state.loopB === null) {
     // Attempting to set B
-    const currentTime = audio ? audio.currentTime : 0;
-    if (currentTime <= loopA) {
+    const currentTime = state.audio ? state.audio.currentTime : 0;
+    if (currentTime <= state.loopA) {
       // Cancel: position is at or before A
-      loopA = null;
+      state.loopA = null;
       btn.classList.remove('setting');
       btn.textContent = '⟳';
       indicator.textContent = 'Cancelado';
-      setTimeout(() => { if (!loopActive) indicator.textContent = ''; }, 1500);
+      setTimeout(() => { if (!state.loopActive) indicator.textContent = ''; }, 1500);
       return;
     }
-    loopB = currentTime;
-    loopActive = true;
+    state.loopB = currentTime;
+    state.loopActive = true;
     btn.classList.remove('setting');
     btn.classList.add('active');
     btn.textContent = '⟳';
-    indicator.textContent = `${formatTime(loopA)} → ${formatTime(loopB)}`;
+    indicator.textContent = `${formatTime(state.loopA)} → ${formatTime(state.loopB)}`;
     updateLoopRegion();
-    if (audio) audio.currentTime = loopA;
+    if (state.audio) state.audio.currentTime = state.loopA;
   } else {
     // Clear loop
-    loopA = null;
-    loopB = null;
-    loopActive = false;
+    state.loopA = null;
+    state.loopB = null;
+    state.loopActive = false;
     btn.classList.remove('active', 'setting');
     btn.textContent = '⟳';
     indicator.textContent = '';
@@ -533,9 +536,9 @@ function onLoopClick() {
 function updateLoopRegion() {
   const region = document.getElementById('loopRegion');
   if (!region) return;
-  if (loopActive && loopA !== null && loopB !== null && audio && audio.duration) {
-    const leftPct = (loopA / audio.duration) * 100;
-    const widthPct = ((loopB - loopA) / audio.duration) * 100;
+  if (state.loopActive && state.loopA !== null && state.loopB !== null && state.audio && state.audio.duration) {
+    const leftPct = (state.loopA / state.audio.duration) * 100;
+    const widthPct = ((state.loopB - state.loopA) / state.audio.duration) * 100;
     region.style.left = `${leftPct}%`;
     region.style.width = `${widthPct}%`;
     region.style.display = 'block';
@@ -552,12 +555,12 @@ let loopDragStartA = 0;
 let loopDragStartB = 0;
 
 function onLoopRegionDown(e) {
-  if (!loopActive || !audio || !audio.duration) return;
+  if (!state.loopActive || !state.audio || !state.audio.duration) return;
   e.stopPropagation();
   loopDragging = true;
   loopDragStartX = e.clientX ?? e.touches[0].clientX;
-  loopDragStartA = loopA;
-  loopDragStartB = loopB;
+  loopDragStartA = state.loopA;
+  loopDragStartB = state.loopB;
 }
 
 function onLoopRegionMove(e) {
@@ -567,7 +570,7 @@ function onLoopRegionMove(e) {
   const bar = document.getElementById('progressBar');
   const barWidth = bar.getBoundingClientRect().width;
   const dx = clientX - loopDragStartX;
-  const dt = (dx / barWidth) * audio.duration;
+  const dt = (dx / barWidth) * state.audio.duration;
   const duration = loopDragStartB - loopDragStartA;
 
   let newA = loopDragStartA + dt;
@@ -575,14 +578,14 @@ function onLoopRegionMove(e) {
 
   // Clamp to bounds
   if (newA < 0) { newA = 0; newB = duration; }
-  if (newB > audio.duration) { newB = audio.duration; newA = newB - duration; }
+  if (newB > state.audio.duration) { newB = state.audio.duration; newA = newB - duration; }
 
-  loopA = newA;
-  loopB = newB;
+  state.loopA = newA;
+  state.loopB = newB;
   updateLoopRegion();
-  document.getElementById('loopIndicator').textContent = `${formatTime(loopA)} → ${formatTime(loopB)}`;
-  if (audio.currentTime < loopA || audio.currentTime > loopB) {
-    audio.currentTime = loopA;
+  document.getElementById('loopIndicator').textContent = `${formatTime(state.loopA)} → ${formatTime(state.loopB)}`;
+  if (state.audio.currentTime < state.loopA || state.audio.currentTime > state.loopB) {
+    state.audio.currentTime = state.loopA;
   }
 }
 
@@ -604,14 +607,14 @@ function bindLoopRegionDrag(signal) {
 // ─── Progress ──────────────────────────────────────────────────────────────────
 
 function updateProgress() {
-  if (!audio || isDragging) return;
-  const current = audio.currentTime;
-  const duration = audio.duration || 0;
+  if (!state.audio || state.isDragging) return;
+  const current = state.audio.currentTime;
+  const duration = state.audio.duration || 0;
 
   // A-B loop enforcement (in rAF for higher precision than timeupdate)
-  if (loopActive && loopA !== null && loopB !== null && current >= loopB) {
-    audio.currentTime = loopA;
-    return; // skip rest this frame, next frame will pick up from loopA
+  if (state.loopActive && state.loopA !== null && state.loopB !== null && current >= state.loopB) {
+    state.audio.currentTime = state.loopA;
+    return; // skip rest this frame, next frame will pick up from state.loopA
   }
 
   const percent = duration > 0 ? (current / duration) * 100 : 0;
@@ -627,69 +630,69 @@ function updateProgress() {
   }
 
   // Fire scheduled listening pause (after line finishes playing)
-  if (listeningMode && listeningPauseAt !== null && current >= listeningPauseAt) {
+  if (state.listeningMode && state.listeningPauseAt !== null && current >= state.listeningPauseAt) {
     // If already answered (user typed fast before line ended), skip pause
-    if (listeningCurrentBlank && !listeningCurrentBlank.classList.contains('lc-correct') && !listeningCurrentBlank.classList.contains('lc-wrong') && !listeningCurrentBlank.classList.contains('lc-timeout')) {
-      if (listeningRepeatCount === 0) {
+    if (state.listeningCurrentBlank && !state.listeningCurrentBlank.classList.contains('lc-correct') && !state.listeningCurrentBlank.classList.contains('lc-wrong') && !state.listeningCurrentBlank.classList.contains('lc-timeout')) {
+      if (state.listeningRepeatCount === 0) {
         // First play done — replay the line once more
-        listeningRepeatCount = 1;
-        audio.currentTime = listeningLineStart;
+        state.listeningRepeatCount = 1;
+        state.audio.currentTime = state.listeningLineStart;
         // Re-schedule pause at end of this same line
-        // listeningPauseAt stays the same value (recalculated from same endpoint)
+        // state.listeningPauseAt stays the same value (recalculated from same endpoint)
       } else {
         // Second play done — now pause and start timer
-        listeningPauseAt = null;
-        listeningNextBlank = null;
-        audio.pause();
+        state.listeningPauseAt = null;
+        state.listeningNextBlank = null;
+        state.audio.pause();
         document.getElementById('playBtn').textContent = '▶';
-        isPlaying = false;
+        state.isPlaying = false;
         // Ensure line stays visually active
-        const blankLine = listeningCurrentBlank.closest('.sub-line');
+        const blankLine = state.listeningCurrentBlank.closest('.sub-line');
         if (blankLine) {
-          cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
+          state.cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
           blankLine.classList.add('active');
         }
         // Focus & lc-active already set when line was highlighted; start timer now
-        listeningCurrentBlank.focus();
-        startListeningTimer(listeningCurrentBlank);
+        state.listeningCurrentBlank.focus();
+        startListeningTimer(state.listeningCurrentBlank);
       }
     } else {
-      listeningPauseAt = null;
-      listeningNextBlank = null;
+      state.listeningPauseAt = null;
+      state.listeningNextBlank = null;
     }
   }
 }
 
 function startUpdateLoop() {
-  if (animationFrame) cancelAnimationFrame(animationFrame);
+  if (state.animationFrame) cancelAnimationFrame(state.animationFrame);
   (function loop() {
-    if (audio && !audio.paused) updateProgress();
-    animationFrame = requestAnimationFrame(loop);
+    if (state.audio && !state.audio.paused) updateProgress();
+    state.animationFrame = requestAnimationFrame(loop);
   })();
 }
 
 function stopUpdateLoop() {
-  if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+  if (state.animationFrame) { cancelAnimationFrame(state.animationFrame); state.animationFrame = null; }
 }
 
 function seekTo(clientX) {
   const bar = document.getElementById('progressBar');
   const rect = bar.getBoundingClientRect();
   const x = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-  if (audio && audio.duration) {
-    audio.currentTime = x * audio.duration;
+  if (state.audio && state.audio.duration) {
+    state.audio.currentTime = x * state.audio.duration;
     document.getElementById('progressFill').style.width = `${x * 100}%`;
-    document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
-    updateSubtitles(audio.currentTime);
+    document.getElementById('currentTime').textContent = formatTime(state.audio.currentTime);
+    updateSubtitles(state.audio.currentTime);
   }
 }
 
-function onProgressDown(e)       { if (!audio || loopDragging) return; isDragging = true; seekTo(e.clientX); }
-function onProgressMove(e)        { if (isDragging && !loopDragging) seekTo(e.clientX); }
-function onProgressUp()           { if (isDragging) { isDragging = false; if (audio) updateProgress(); } }
-function onProgressTouchStart(e)  { if (!audio || loopDragging) return; isDragging = true; seekTo(e.touches[0].clientX); }
-function onProgressTouchMove(e)   { if (isDragging && !loopDragging) { e.preventDefault(); seekTo(e.touches[0].clientX); } }
-function onProgressTouchEnd()     { if (isDragging) { isDragging = false; if (audio) updateProgress(); } }
+function onProgressDown(e)       { if (!state.audio || loopDragging) return; state.isDragging = true; seekTo(e.clientX); }
+function onProgressMove(e)        { if (state.isDragging && !loopDragging) seekTo(e.clientX); }
+function onProgressUp()           { if (state.isDragging) { state.isDragging = false; if (state.audio) updateProgress(); } }
+function onProgressTouchStart(e)  { if (!state.audio || loopDragging) return; state.isDragging = true; seekTo(e.touches[0].clientX); }
+function onProgressTouchMove(e)   { if (state.isDragging && !loopDragging) { e.preventDefault(); seekTo(e.touches[0].clientX); } }
+function onProgressTouchEnd()     { if (state.isDragging) { state.isDragging = false; if (state.audio) updateProgress(); } }
 
 // ─── Subtitles ─────────────────────────────────────────────────────────────────
 
@@ -708,9 +711,9 @@ function renderSubtitles(subtitles) {
     line.style.animationDelay = `${0.3 + i * 0.018}s`;
 
     let originalHtml;
-    if (blanksMode) {
+    if (state.blanksMode) {
       originalHtml = renderBlanksLine(sub.original, i);
-    } else if (listeningMode) {
+    } else if (state.listeningMode) {
       originalHtml = renderListeningLine(sub.original, i);
     } else {
       // Split original into clickable words
@@ -735,26 +738,26 @@ function renderSubtitles(subtitles) {
 
     // Single click: seek to line
     line.addEventListener('click', (e) => {
-      if (selectMode) return;
+      if (state.selectMode) return;
       if (e.target.closest('.word-tap')) return;
       if (e.target.closest('.blank-input')) return;
       if (e.target.closest('.listening-input')) return;
-      if (listeningMode) return;
-      if (!audio) return;
-      const offset = currentSong.offset || 0;
-      audio.currentTime = sub.start + offset;
-      if (audio.paused) playAudio();
+      if (state.listeningMode) return;
+      if (!state.audio) return;
+      const offset = state.currentSong.offset || 0;
+      state.audio.currentTime = sub.start + offset;
+      if (state.audio.paused) playAudio();
     });
 
     // Double click: loop this line
     line.addEventListener('dblclick', (e) => {
-      if (selectMode || listeningMode || blanksMode) return;
+      if (state.selectMode || state.listeningMode || state.blanksMode) return;
       if (e.target.closest('.word-tap')) return;
-      if (!audio) return;
-      const offset = currentSong.offset || 0;
-      loopA = sub.start + offset;
-      loopB = loopA + sub.duration;
-      loopActive = true;
+      if (!state.audio) return;
+      const offset = state.currentSong.offset || 0;
+      state.loopA = sub.start + offset;
+      state.loopB = state.loopA + sub.duration;
+      state.loopActive = true;
       const loopBtn = document.getElementById('loopBtn');
       if (loopBtn) {
         loopBtn.classList.remove('setting');
@@ -762,17 +765,17 @@ function renderSubtitles(subtitles) {
         loopBtn.textContent = '⟳';
       }
       const indicator = document.getElementById('loopIndicator');
-      if (indicator) indicator.textContent = `${formatTime(loopA)} → ${formatTime(loopB)}`;
+      if (indicator) indicator.textContent = `${formatTime(state.loopA)} → ${formatTime(state.loopB)}`;
       updateLoopRegion();
-      audio.currentTime = loopA;
-      if (audio.paused) playAudio();
+      state.audio.currentTime = state.loopA;
+      if (state.audio.paused) playAudio();
     });
 
     container.appendChild(line);
   });
 
   // Cache nodeList for perf (avoid querySelectorAll every frame)
-  cachedSubLines = [...container.querySelectorAll('.sub-line')];
+  state.cachedSubLines = [...container.querySelectorAll('.sub-line')];
 
   // Delegate word tap events
   container.addEventListener('click', onWordTap);
@@ -792,7 +795,7 @@ function showDifficultyPicker(mode, onSelect) {
     hard: '2–3 palabras por línea',
   };
   const icons = { easy: '🌱', normal: '🎯', hard: '🔥' };
-  const currentDiff = mode === 'blanks' ? blanksDifficulty : listeningDifficulty;
+  const currentDiff = mode === 'blanks' ? state.blanksDifficulty : state.listeningDifficulty;
 
   const picker = document.createElement('div');
   picker.id = 'difficultyPicker';
@@ -831,10 +834,10 @@ function showDifficultyPicker(mode, onSelect) {
 
 function toggleBlanksMode() {
   // If active → deactivate
-  if (blanksMode) {
-    blanksMode = false;
+  if (state.blanksMode) {
+    state.blanksMode = false;
     document.getElementById('toggleBlanksBtn').classList.remove('active');
-    renderSubtitles(currentSong.subtitles);
+    renderSubtitles(state.currentSong.subtitles);
     const toolbar = document.getElementById('blanksToolbar');
     if (toolbar) toolbar.remove();
     const picker = document.getElementById('difficultyPicker');
@@ -844,26 +847,26 @@ function toggleBlanksMode() {
 
   // Show difficulty picker
   showDifficultyPicker('blanks', (diff) => {
-    blanksDifficulty = diff;
-    blanksMode = true;
+    state.blanksDifficulty = diff;
+    state.blanksMode = true;
     const btn = document.getElementById('toggleBlanksBtn');
     btn.classList.add('active');
 
     // Deactivate listening mode if active
-    if (listeningMode) {
-      listeningMode = false;
+    if (state.listeningMode) {
+      state.listeningMode = false;
       document.getElementById('toggleListeningBtn').classList.remove('active');
       clearListeningTimer();
-      listeningWaiting = false;
-      listeningCurrentBlank = null;
+      state.listeningWaiting = false;
+      state.listeningCurrentBlank = null;
       updateListeningToolbar();
     }
 
-    blanksAnswers = {};
+    state.blanksAnswers = {};
     blanksRevealed = false;
-    if (showTranslation) toggleTranslation();
+    if (state.showTranslation) toggleTranslation();
 
-    renderSubtitles(currentSong.subtitles);
+    renderSubtitles(state.currentSong.subtitles);
 
     // Add blanks toolbar
     const existing = document.getElementById('blanksToolbar');
@@ -888,7 +891,7 @@ function renderBlanksLine(text, lineIndex) {
   const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
   const tokens = text.split(/(\s+)/);
   const rng = seededRandom(lineIndex * 31 + 7);
-  const diff = DIFFICULTY[blanksDifficulty];
+  const diff = DIFFICULTY[state.blanksDifficulty];
 
   // Pass 1 — score content-word candidates
   let wordIdx = 0;
@@ -897,7 +900,7 @@ function renderBlanksLine(text, lineIndex) {
     if (/^\s+$/.test(token)) return;
     const clean = token.toLowerCase().replace(STRIP, '');
     if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
-    const inVocab = vocabData?.some(v => v.word === clean) ?? false;
+    const inVocab = state.vocabData?.some(v => v.word === clean) ?? false;
     candidates.push({ wordIdx, clean, original: token, score: (inVocab ? 100 : 0) + clean.length + rng() * 5 });
     wordIdx++;
   });
@@ -927,7 +930,7 @@ function renderBlanksLine(text, lineIndex) {
     if (!blankSet.has(idx)) return `<span class="blanks-visible">${token}</span>`;
 
     const key = `${lineIndex}-${idx}`;
-    const answered = blanksAnswers[key] || '';
+    const answered = state.blanksAnswers[key] || '';
     return `<span class="blank-wrapper" data-key="${key}">
       <input class="blank-input"
         type="text"
@@ -951,7 +954,7 @@ function validateSingleBlank(input) {
   const valueTrimmed = input.value.trim().toLowerCase();
   const wrapper = input.closest('.blank-wrapper');
 
-  blanksAnswers[input.dataset.key] = input.value.trim();
+  state.blanksAnswers[input.dataset.key] = input.value.trim();
 
   input.classList.remove('blank-correct', 'blank-wrong', 'blank-accent');
   wrapper.classList.remove('blank-correct', 'blank-wrong', 'blank-accent');
@@ -1007,7 +1010,7 @@ function checkBlanks() {
     const valueTrimmed = input.value.trim().toLowerCase();
     const wrapper = input.closest('.blank-wrapper');
 
-    blanksAnswers[input.dataset.key] = input.value.trim();
+    state.blanksAnswers[input.dataset.key] = input.value.trim();
 
     input.classList.remove('blank-correct', 'blank-wrong', 'blank-accent');
     wrapper.classList.remove('blank-correct', 'blank-wrong', 'blank-accent');
@@ -1058,7 +1061,7 @@ function revealBlanks() {
     const inputs = document.querySelectorAll('.blank-input');
     inputs.forEach(input => {
       const key = input.dataset.key;
-      const saved = blanksAnswers[key] || '';
+      const saved = state.blanksAnswers[key] || '';
       const wrapper = input.closest('.blank-wrapper');
       input.value = saved;
       input.classList.remove('blank-revealed', 'blank-correct', 'blank-wrong', 'blank-accent');
@@ -1081,7 +1084,7 @@ function revealBlanks() {
     const wrapper = input.closest('.blank-wrapper');
 
     // Save current user value before overwriting
-    blanksAnswers[input.dataset.key] = input.value.trim();
+    state.blanksAnswers[input.dataset.key] = input.value.trim();
 
     input.classList.remove('blank-wrong');
     wrapper.classList.remove('blank-wrong');
@@ -1102,7 +1105,7 @@ function onBlankInput(e) {
   const input = e.target.closest('.blank-input');
   if (!input) return;
   // Just save the value, no auto-correction
-  blanksAnswers[input.dataset.key] = input.value.trim();
+  state.blanksAnswers[input.dataset.key] = input.value.trim();
 }
 
 function onWordTap(e) {
@@ -1113,15 +1116,15 @@ function onWordTap(e) {
   }
 
   const wordEl = e.target.closest('.word-tap');
-  if (!wordEl || selectMode) return;
+  if (!wordEl || state.selectMode) return;
   e.stopPropagation();
 
   const word = wordEl.dataset.word;
   if (!word) return;
 
   let translation = '';
-  if (vocabData) {
-    const entry = vocabData.find(v => v.word === word);
+  if (state.vocabData) {
+    const entry = state.vocabData.find(v => v.word === word);
     if (entry && entry.translation) {
       translation = entry.translation;
     }
@@ -1188,19 +1191,19 @@ function showWordTooltip(anchor, word, translation) {
 }
 
 function updateSubtitles(time) {
-  if (!currentSong) return;
-  const subs = currentSong.subtitles;
-  const offset = currentSong.offset || 0;
+  if (!state.currentSong) return;
+  const subs = state.currentSong.subtitles;
+  const offset = state.currentSong.offset || 0;
   let activeIndex = -1;
   for (let i = 0; i < subs.length; i++) {
     const s = subs[i].start + offset;
     const e = s + subs[i].duration;
     if (time >= s && time < e) { activeIndex = i; break; }
   }
-  if (activeIndex === currentSubIndex) return;
-  currentSubIndex = activeIndex;
+  if (activeIndex === state.currentSubIndex) return;
+  state.currentSubIndex = activeIndex;
 
-  const lines = cachedSubLines;
+  const lines = state.cachedSubLines;
   for (let i = 0; i < lines.length; i++) {
     const el = lines[i];
     el.classList.remove('active', 'past');
@@ -1213,35 +1216,35 @@ function updateSubtitles(time) {
 
   // Debounced scroll — cancel previous pending scroll
   if (activeIndex !== -1 && lines[activeIndex]) {
-    if (scrollRAF) cancelAnimationFrame(scrollRAF);
+    if (state.scrollRAF) cancelAnimationFrame(state.scrollRAF);
     const target = lines[activeIndex];
-    scrollRAF = requestAnimationFrame(() => {
+    state.scrollRAF = requestAnimationFrame(() => {
       target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      scrollRAF = null;
+      state.scrollRAF = null;
     });
   }
 
   // Announce current line to screen readers
   const srLive = document.getElementById('srLive');
   if (srLive && activeIndex !== -1) {
-    srLive.textContent = currentSong.subtitles[activeIndex].original;
+    srLive.textContent = state.currentSong.subtitles[activeIndex].original;
   }
 
   // Listening challenge: schedule pause at END of line so user hears it first
   // Focus the blank immediately so user can type while line plays
-  if (listeningMode && activeIndex !== -1 && !listeningWaiting && listeningPauseAt === null) {
+  if (state.listeningMode && activeIndex !== -1 && !state.listeningWaiting && state.listeningPauseAt === null) {
     const line = lines[activeIndex];
     const blank = line?.querySelector('.listening-input:not(.lc-correct):not(.lc-wrong):not(.lc-timeout)');
     if (blank) {
       const sub = subs[activeIndex];
-      const offset = currentSong.offset || 0;
-      listeningPauseAt = sub.start + offset + sub.duration;
-      listeningLineStart = sub.start + offset;
-      listeningRepeatCount = 0;
-      listeningNextBlank = blank;
-      // Activate input immediately — no waiting for audio to finish
-      listeningWaiting = true;
-      listeningCurrentBlank = blank;
+      const offset = state.currentSong.offset || 0;
+      state.listeningPauseAt = sub.start + offset + sub.duration;
+      state.listeningLineStart = sub.start + offset;
+      state.listeningRepeatCount = 0;
+      state.listeningNextBlank = blank;
+      // Activate input immediately — no waiting for state.audio to finish
+      state.listeningWaiting = true;
+      state.listeningCurrentBlank = blank;
       blank.focus();
       blank.classList.add('lc-active');
     }
@@ -1249,86 +1252,86 @@ function updateSubtitles(time) {
 }
 
 function toggleTranslation() {
-  showTranslation = !showTranslation;
-  document.getElementById('toggleTransBtn').classList.toggle('active', showTranslation);
-  cachedSubLines.forEach(el => el.classList.toggle('show-trans', showTranslation));
+  state.showTranslation = !state.showTranslation;
+  document.getElementById('toggleTransBtn').classList.toggle('active', state.showTranslation);
+  state.cachedSubLines.forEach(el => el.classList.toggle('show-trans', state.showTranslation));
 }
 
 function toggleSelectMode() {
-  selectMode = !selectMode;
-  document.getElementById('toggleSelectBtn').classList.toggle('active', selectMode);
-  document.getElementById('subContainer').classList.toggle('select-mode', selectMode);
+  state.selectMode = !state.selectMode;
+  document.getElementById('toggleSelectBtn').classList.toggle('active', state.selectMode);
+  document.getElementById('subContainer').classList.toggle('select-mode', state.selectMode);
 }
 
 function toggleLineNumbers() {
-  showLineNumbers = !showLineNumbers;
+  state.showLineNumbers = !state.showLineNumbers;
   const container = document.getElementById('subContainer');
-  if (container) container.classList.toggle('show-line-numbers', showLineNumbers);
+  if (container) container.classList.toggle('show-line-numbers', state.showLineNumbers);
 }
 
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
 
 function toggleListeningMode() {
   // If active → deactivate
-  if (listeningMode) {
-    listeningMode = false;
+  if (state.listeningMode) {
+    state.listeningMode = false;
     document.getElementById('toggleListeningBtn').classList.remove('active');
     clearListeningTimer();
-    listeningWaiting = false;
-    listeningCurrentBlank = null;
-    listeningPauseAt = null;
-    listeningNextBlank = null;
-    listeningRepeatCount = 0;
-    listeningLineStart = null;
-    renderSubtitles(currentSong.subtitles);
+    state.listeningWaiting = false;
+    state.listeningCurrentBlank = null;
+    state.listeningPauseAt = null;
+    state.listeningNextBlank = null;
+    state.listeningRepeatCount = 0;
+    state.listeningLineStart = null;
+    renderSubtitles(state.currentSong.subtitles);
     updateListeningToolbar();
     return;
   }
 
   // Show difficulty picker
   showDifficultyPicker('listening', (diff) => {
-    listeningDifficulty = diff;
-    listeningMode = true;
+    state.listeningDifficulty = diff;
+    state.listeningMode = true;
     const btn = document.getElementById('toggleListeningBtn');
     btn.classList.add('active');
 
     // Deactivate static blanks if active
-    if (blanksMode) {
-      blanksMode = false;
+    if (state.blanksMode) {
+      state.blanksMode = false;
       document.getElementById('toggleBlanksBtn').classList.remove('active');
       const toolbar = document.getElementById('blanksToolbar');
       if (toolbar) toolbar.remove();
     }
 
-    listeningScore = { correct: 0, wrong: 0 };
-    listeningBlanksMap = buildListeningBlanks();
-    if (showTranslation) toggleTranslation();
+    state.listeningScore = { correct: 0, wrong: 0 };
+    state.listeningBlanksMap = buildListeningBlanks();
+    if (state.showTranslation) toggleTranslation();
 
     // Restart from beginning
-    if (audio) {
-      audio.currentTime = 0;
-      audio.pause();
+    if (state.audio) {
+      state.audio.currentTime = 0;
+      state.audio.pause();
     }
-    currentSubIndex = -1;
-    listeningWaiting = false;
+    state.currentSubIndex = -1;
+    state.listeningWaiting = false;
     document.getElementById('playBtn').textContent = '▶';
-    isPlaying = false;
+    state.isPlaying = false;
     stopUpdateLoop();
 
-    renderSubtitles(currentSong.subtitles);
+    renderSubtitles(state.currentSong.subtitles);
     updateListeningToolbar();
   });
 }
 
 function buildListeningBlanks() {
   const map = {};
-  const subs = currentSong.subtitles;
-  const diff = DIFFICULTY[listeningDifficulty];
+  const subs = state.currentSong.subtitles;
+  const diff = DIFFICULTY[state.listeningDifficulty];
 
   // Build set of vocab words (these are the pedagogically interesting ones)
   const vocabWords = new Set();
-  if (vocabData && vocabData.length) {
-    vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
+  if (state.vocabData && state.vocabData.length) {
+    state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
   }
 
   subs.forEach((sub, lineIndex) => {
@@ -1362,7 +1365,7 @@ function buildListeningBlanks() {
 }
 
 function renderListeningLine(text, lineIndex) {
-  const blanks = listeningBlanksMap[lineIndex];
+  const blanks = state.listeningBlanksMap[lineIndex];
   if (!blanks) return text; // No blanks for this line, show as-is
 
   const words = text.split(/(\s+)/);
@@ -1402,7 +1405,7 @@ function updateListeningToolbar() {
   const existing = document.getElementById('listeningToolbar');
   if (existing) existing.remove();
 
-  if (!listeningMode) return;
+  if (!state.listeningMode) return;
 
   const toolbar = document.createElement('div');
   toolbar.id = 'listeningToolbar';
@@ -1419,7 +1422,7 @@ function updateListeningToolbar() {
 function updateListeningScore() {
   const el = document.getElementById('listeningScoreEl');
   if (el) {
-    el.innerHTML = `<span class="lt-correct">✓ ${listeningScore.correct}</span><span class="lt-wrong">✗ ${listeningScore.wrong}</span>`;
+    el.innerHTML = `<span class="lt-correct">✓ ${state.listeningScore.correct}</span><span class="lt-wrong">✗ ${state.listeningScore.wrong}</span>`;
   }
 }
 
@@ -1437,7 +1440,7 @@ function startListeningTimer(input) {
   input.closest('.lc-blank-wrapper').appendChild(timerBar);
 
   let elapsed = 0;
-  listeningTimerId = setInterval(() => {
+  state.listeningTimerId = setInterval(() => {
     elapsed += 50;
     const pct = Math.min((elapsed / (TIMEOUT * 1000)) * 100, 100);
     const fill = document.getElementById('lcTimerFill');
@@ -1446,7 +1449,7 @@ function startListeningTimer(input) {
     if (elapsed >= TIMEOUT * 1000) {
       // Timeout — fail
       clearListeningTimer();
-      listeningScore.wrong++;
+      state.listeningScore.wrong++;
       input.value = input.dataset.original;
       input.size = Math.max(input.dataset.original.length + 1, 4);
       input.classList.remove('lc-active');
@@ -1459,14 +1462,14 @@ function startListeningTimer(input) {
 }
 
 function clearListeningTimer() {
-  if (listeningTimerId) { clearInterval(listeningTimerId); listeningTimerId = null; }
+  if (state.listeningTimerId) { clearInterval(state.listeningTimerId); state.listeningTimerId = null; }
   const bar = document.getElementById('lcTimerBar');
   if (bar) bar.remove();
 }
 
 function submitListeningAnswer() {
-  if (!listeningWaiting || !listeningCurrentBlank) return;
-  const input = listeningCurrentBlank;
+  if (!state.listeningWaiting || !state.listeningCurrentBlank) return;
+  const input = state.listeningCurrentBlank;
   const answer = normalizeForCompare(input.dataset.answer);
   const value = normalizeForCompare(input.value);
 
@@ -1475,12 +1478,12 @@ function submitListeningAnswer() {
 
   if (value === answer) {
     input.classList.add('lc-correct');
-    listeningScore.correct++;
+    state.listeningScore.correct++;
   } else {
     input.classList.add('lc-wrong');
     input.value = input.dataset.original;
     input.size = Math.max(input.dataset.original.length + 1, 4);
-    listeningScore.wrong++;
+    state.listeningScore.wrong++;
   }
 
   input.readOnly = true;
@@ -1490,13 +1493,13 @@ function submitListeningAnswer() {
 
 function resumeListeningAfterDelay() {
   // Save line index BEFORE clearing state
-  const answeredLineIdx = listeningCurrentBlank?.dataset.line;
-  listeningWaiting = false;
-  listeningCurrentBlank = null;
-  listeningPauseAt = null;
-  listeningNextBlank = null;
-  listeningRepeatCount = 0;
-  listeningLineStart = null;
+  const answeredLineIdx = state.listeningCurrentBlank?.dataset.line;
+  state.listeningWaiting = false;
+  state.listeningCurrentBlank = null;
+  state.listeningPauseAt = null;
+  state.listeningNextBlank = null;
+  state.listeningRepeatCount = 0;
+  state.listeningLineStart = null;
 
   // Check for another blank in the SAME line (identified by data-line, not .active class)
   // Using .active would pick up the next line if its start time coincides with the pause point
@@ -1506,8 +1509,8 @@ function resumeListeningAfterDelay() {
     );
     if (nextBlank) {
       setTimeout(() => {
-        listeningWaiting = true;
-        listeningCurrentBlank = nextBlank;
+        state.listeningWaiting = true;
+        state.listeningCurrentBlank = nextBlank;
         nextBlank.focus();
         nextBlank.classList.add('lc-active');
         startListeningTimer(nextBlank);
@@ -1516,11 +1519,11 @@ function resumeListeningAfterDelay() {
     }
   }
 
-  // Resume audio — reset currentSubIndex so updateSubtitles re-evaluates
-  // the current line and can schedule listeningPauseAt for it
-  currentSubIndex = -1;
+  // Resume state.audio — reset state.currentSubIndex so updateSubtitles re-evaluates
+  // the current line and can schedule state.listeningPauseAt for it
+  state.currentSubIndex = -1;
   setTimeout(() => {
-    if (audio && listeningMode) playAudio();
+    if (state.audio && state.listeningMode) playAudio();
   }, 600);
 }
 
@@ -1529,22 +1532,22 @@ function resumeListeningAfterDelay() {
 async function loadVocab(song) {
   try {
     const mod = await import(`./${song.folder}/vocab.js`);
-    vocabData = mod.default;
+    state.vocabData = mod.default;
   } catch {
-    vocabData = [];
+    state.vocabData = [];
   }
 }
 
 function toggleVocabMode() {
-  if (!currentSong || !vocabData) return;
-  showVocabView(currentSong);
+  if (!state.currentSong || !state.vocabData) return;
+  showVocabView(state.currentSong);
 }
 
 function showVocabView(song) {
-  vocabMode = true;
-  if (audio && !audio.paused) {
-    audio.pause();
-    isPlaying = false;
+  state.vocabMode = true;
+  if (state.audio && !state.audio.paused) {
+    state.audio.pause();
+    state.isPlaying = false;
     stopUpdateLoop();
   }
 
@@ -1554,7 +1557,7 @@ function showVocabView(song) {
         <button class="back-btn" id="vocabBackBtn" aria-label="Volver al player">←</button>
         <div class="vocab-header-meta">
           <div class="vocab-header-title">${song.title}</div>
-          <div class="vocab-header-subtitle">${vocabData.length} palabras</div>
+          <div class="vocab-header-subtitle">${state.vocabData.length} palabras</div>
         </div>
       </div>
       <div class="vocab-filter">
@@ -1578,7 +1581,7 @@ function showVocabView(song) {
   `;
 
   document.getElementById('vocabBackBtn').addEventListener('click', () => {
-    vocabMode = false;
+    state.vocabMode = false;
     loadSong(song);
   });
 
@@ -1594,11 +1597,11 @@ function renderVocab(filter = '') {
   container.innerHTML = '';
 
   const filtered = filter
-    ? vocabData.filter(entry =>
+    ? state.vocabData.filter(entry =>
         entry.word.includes(filter) ||
         entry.translation.toLowerCase().includes(filter)
       )
-    : vocabData;
+    : state.vocabData;
 
   filtered.forEach((entry) => {
     const chip = document.createElement('span');
@@ -1617,7 +1620,7 @@ function onVocabTap(e) {
   document.querySelectorAll('.vocab-chip.selected').forEach(el => el.classList.remove('selected'));
   e.currentTarget.classList.add('selected');
 
-  const entry = vocabData.find(v => v.word === word);
+  const entry = state.vocabData.find(v => v.word === word);
   const detail = document.getElementById('vocabDetail');
   const detailWord = document.getElementById('detailWord');
   const detailTrans = document.getElementById('detailTranslation');
@@ -1667,7 +1670,7 @@ function showSongEnd() {
 
   // Score summary if blanks mode was active
   const scoreEl = document.getElementById('blanksScore');
-  if (blanksMode && scoreEl && scoreEl.textContent) {
+  if (state.blanksMode && scoreEl && scoreEl.textContent) {
     const scoreNote = document.createElement('p');
     scoreNote.className = 'song-fin-score';
     scoreNote.textContent = scoreEl.textContent;
@@ -1681,9 +1684,9 @@ function showSongEnd() {
 // ─── Culture View ──────────────────────────────────────────────────────────────
 
 function showCultureView(song) {
-  if (audio && !audio.paused) {
-    audio.pause();
-    isPlaying = false;
+  if (state.audio && !state.audio.paused) {
+    state.audio.pause();
+    state.isPlaying = false;
     stopUpdateLoop();
   }
 
@@ -1733,24 +1736,24 @@ let savedVolume = loadPrefs().volume ?? 1;
 
 function onVolumeChange(e) {
   const vol = parseFloat(e.target.value);
-  if (audio) audio.volume = vol;
+  if (state.audio) state.audio.volume = vol;
   savedVolume = vol;
   updateVolumeIcon(vol);
   savePrefs({ volume: vol });
 }
 
 function toggleMute() {
-  if (!audio) return;
+  if (!state.audio) return;
   const slider = document.getElementById('volumeSlider');
-  if (audio.volume > 0) {
-    savedVolume = audio.volume;
-    audio.volume = 0;
+  if (state.audio.volume > 0) {
+    savedVolume = state.audio.volume;
+    state.audio.volume = 0;
     slider.value = 0;
     updateVolumeIcon(0);
   } else {
-    audio.volume = savedVolume || 1;
-    slider.value = audio.volume;
-    updateVolumeIcon(audio.volume);
+    state.audio.volume = savedVolume || 1;
+    slider.value = state.audio.volume;
+    updateVolumeIcon(state.audio.volume);
   }
 }
 
@@ -1767,7 +1770,7 @@ function updateVolumeIcon(vol) {
 function onKeydown(e) {
   if (e.target.tagName === 'INPUT') {
     // Enter submits listening answer
-    if (e.key === 'Enter' && listeningWaiting && listeningCurrentBlank) {
+    if (e.key === 'Enter' && state.listeningWaiting && state.listeningCurrentBlank) {
       e.preventDefault();
       submitListeningAnswer();
     }
@@ -1775,10 +1778,10 @@ function onKeydown(e) {
   }
 
   // Progress bar keyboard control (when focused)
-  if (e.target.id === 'progressBar' && audio && audio.duration) {
+  if (e.target.id === 'progressBar' && state.audio && state.audio.duration) {
     const step = e.shiftKey ? 10 : 5;
-    if (e.key === 'ArrowRight') { e.preventDefault(); audio.currentTime = Math.min(audio.currentTime + step, audio.duration); updateProgress(); return; }
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); audio.currentTime = Math.max(audio.currentTime - step, 0); updateProgress(); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); state.audio.currentTime = Math.min(state.audio.currentTime + step, state.audio.duration); updateProgress(); return; }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); state.audio.currentTime = Math.max(state.audio.currentTime - step, 0); updateProgress(); return; }
   }
 
   if (e.code === 'Space' || e.code === 'KeyK') { e.preventDefault(); togglePlay(); }
@@ -1798,7 +1801,7 @@ document.addEventListener('input', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.classList.contains('blank-input') && blanksMode) {
+  if (e.key === 'Enter' && e.target.classList.contains('blank-input') && state.blanksMode) {
     e.preventDefault();
     validateSingleBlank(e.target);
     focusNextBlank(e.target);
