@@ -289,6 +289,9 @@ body {
 .song-list {
   display: grid;
   grid-template-columns: 1fr;
+  /* Sin esto, cuando la lista no cabe en su alto (mobile, 1 columna) el grid
+     comprime las filas y recorta los level-badges de las cards. */
+  grid-auto-rows: max-content;
   gap: 10px;
   max-width: 780px;
   margin: 0 auto;
@@ -1058,12 +1061,13 @@ body {
   border-radius: 50%;
   border: 1.5px solid var(--lp-border-strong);
   background: var(--lp-bg-paper);
+  color: var(--lp-ink);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 0.95rem;
-  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s, color 0.2s;
   box-shadow: var(--lp-shadow-sm);
   line-height: 1;
   text-decoration: none;
