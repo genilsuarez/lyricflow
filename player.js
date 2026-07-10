@@ -330,6 +330,26 @@ function loadSong(song) {
   sessionStorage.setItem('lyricflow_active', '1');
 }
 
+// ─── Theme (shared between picker and player) ──────────────────────────────────
+
+function currentThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return isDark ? '☀️' : '🌙';
+}
+
+function toggleTheme(iconEl) {
+  document.documentElement.classList.add('theme-transitioning');
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
+  localStorage.setItem('lp-theme', newTheme);
+  if (location.search.includes('theme=')) {
+    const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
+  }
+  if (iconEl) iconEl.textContent = currentThemeIcon();
+  setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
+}
+
 function bindPlayerEvents(song) {
   const controller = new AbortController();
   const { signal } = controller;
@@ -345,16 +365,7 @@ function bindPlayerEvents(song) {
     }
   }
   document.getElementById('playerThemeToggle').addEventListener('click', () => {
-    document.documentElement.classList.add('theme-transitioning');
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const newTheme = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
-    localStorage.setItem('lp-theme', newTheme);
-    if (location.search.includes('theme=')) {
-      const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
-    }
-    document.getElementById('playerThemeToggle').textContent = isDark ? '🌙' : '☀️';
-    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
+    toggleTheme(document.getElementById('playerThemeToggle'));
   }, { signal });
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
@@ -430,6 +441,26 @@ function initAudio(song) {
   });
 }
 
+function playAudio() {
+  if (!audio) return;
+  audio.play().catch(() => {});
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
+  isPlaying = true;
+  startUpdateLoop();
+  document.querySelector('.artwork')?.classList.add('playing');
+}
+
+function pauseAudio() {
+  if (!audio) return;
+  audio.pause();
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('playBtn').setAttribute('aria-label', 'Reproducir');
+  isPlaying = false;
+  stopUpdateLoop();
+  document.querySelector('.artwork')?.classList.remove('playing');
+}
+
 function togglePlay() {
   if (!audio) return;
 
@@ -439,22 +470,7 @@ function togglePlay() {
     return;
   }
 
-  const artwork = document.querySelector('.artwork');
-  if (audio.paused) {
-    audio.play().catch(() => {});
-    document.getElementById('playBtn').textContent = '⏸';
-    document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
-    isPlaying = true;
-    startUpdateLoop();
-    artwork?.classList.add('playing');
-  } else {
-    audio.pause();
-    document.getElementById('playBtn').textContent = '▶';
-    document.getElementById('playBtn').setAttribute('aria-label', 'Reproducir');
-    isPlaying = false;
-    stopUpdateLoop();
-    artwork?.classList.remove('playing');
-  }
+  if (audio.paused) playAudio(); else pauseAudio();
 }
 
 // ─── Speed Control ─────────────────────────────────────────────────────────────
@@ -727,13 +743,7 @@ function renderSubtitles(subtitles) {
       if (!audio) return;
       const offset = currentSong.offset || 0;
       audio.currentTime = sub.start + offset;
-      if (audio.paused) {
-        audio.play().catch(() => {});
-        document.getElementById('playBtn').textContent = '⏸';
-        isPlaying = true;
-        startUpdateLoop();
-        document.querySelector('.artwork')?.classList.add('playing');
-      }
+      if (audio.paused) playAudio();
     });
 
     // Double click: loop this line
@@ -755,13 +765,7 @@ function renderSubtitles(subtitles) {
       if (indicator) indicator.textContent = `${formatTime(loopA)} → ${formatTime(loopB)}`;
       updateLoopRegion();
       audio.currentTime = loopA;
-      if (audio.paused) {
-        audio.play().catch(() => {});
-        document.getElementById('playBtn').textContent = '⏸';
-        isPlaying = true;
-        startUpdateLoop();
-        document.querySelector('.artwork')?.classList.add('playing');
-      }
+      if (audio.paused) playAudio();
     });
 
     container.appendChild(line);
@@ -1516,13 +1520,7 @@ function resumeListeningAfterDelay() {
   // the current line and can schedule listeningPauseAt for it
   currentSubIndex = -1;
   setTimeout(() => {
-    if (audio && listeningMode) {
-      audio.play().catch(() => {});
-      document.getElementById('playBtn').textContent = '⏸';
-      isPlaying = true;
-      startUpdateLoop();
-      document.querySelector('.artwork')?.classList.add('playing');
-    }
+    if (audio && listeningMode) playAudio();
   }, 600);
 }
 
@@ -1824,24 +1822,9 @@ function setupPickerActions() {
   const themeBtn = document.getElementById('themeToggle');
   const portalLink = document.getElementById('portalLink');
 
-  function updateThemeIcon() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    themeBtn.textContent = isDark ? '☀️' : '🌙';
-  }
-  updateThemeIcon();
+  themeBtn.textContent = currentThemeIcon();
 
-  themeBtn.addEventListener('click', () => {
-    document.documentElement.classList.add('theme-transitioning');
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const newTheme = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
-    localStorage.setItem('lp-theme', newTheme);
-    if (location.search.includes('theme=')) {
-      const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
-    }
-    updateThemeIcon();
-    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
-  });
+  themeBtn.addEventListener('click', () => toggleTheme(themeBtn));
 
   // Local dev: rewrite portal link and propagate theme
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
