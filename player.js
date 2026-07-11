@@ -641,7 +641,8 @@ function updateProgress() {
           state.cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
           blankLine.classList.add('active');
         }
-        // Focus & lc-active already set when line was highlighted; start timer now
+        // NOW activate the input visually and start timer
+        state.listeningCurrentBlank.classList.add('lc-active');
         state.listeningCurrentBlank.focus();
         startListeningTimer(state.listeningCurrentBlank);
       }
@@ -814,9 +815,19 @@ function showDifficultyPicker(mode, onSelect) {
     btn.addEventListener('click', () => {
       const diff = btn.dataset.diff;
       picker.remove();
+      document.removeEventListener('keydown', onPickerEsc);
       onSelect(diff);
     });
   });
+
+  // Escape to close
+  const onPickerEsc = (e) => {
+    if (e.key === 'Escape' && document.getElementById('difficultyPicker')) {
+      picker.remove();
+      document.removeEventListener('keydown', onPickerEsc);
+    }
+  };
+  document.addEventListener('keydown', onPickerEsc);
 }
 
 // ─── Fill-in-the-Blanks ────────────────────────────────────────────────────────
@@ -1220,7 +1231,7 @@ function updateSubtitles(time) {
   }
 
   // Listening challenge: schedule pause at END of line so user hears it first
-  // Focus the blank immediately so user can type while line plays
+  // The blank gets focus (so user can type ahead) but NOT the timer animation until post-replay
   if (state.listeningMode && activeIndex !== -1 && !state.listeningWaiting && state.listeningPauseAt === null) {
     const line = lines[activeIndex];
     const blank = line?.querySelector('.listening-input:not(.lc-correct):not(.lc-wrong):not(.lc-timeout)');
@@ -1231,11 +1242,11 @@ function updateSubtitles(time) {
       state.listeningLineStart = sub.start + offset;
       state.listeningRepeatCount = 0;
       state.listeningNextBlank = blank;
-      // Activate input immediately — no waiting for state.audio to finish
+      // Mark as waiting so no other blank gets scheduled
       state.listeningWaiting = true;
       state.listeningCurrentBlank = blank;
+      // Focus for type-ahead but no lc-active animation yet (timer hasn't started)
       blank.focus();
-      blank.classList.add('lc-active');
     }
   }
 }
@@ -1396,22 +1407,46 @@ function updateListeningToolbar() {
 
   if (!state.listeningMode) return;
 
+  const totalLines = Object.keys(state.listeningBlanksMap).length;
+  const completedLines = countCompletedListeningLines();
+
   const toolbar = document.createElement('div');
   toolbar.id = 'listeningToolbar';
   toolbar.className = 'listening-toolbar';
   toolbar.innerHTML = `
     <span class="lt-badge">🎧 Dictado</span>
     <span class="lt-score" id="listeningScoreEl"><span class="lt-correct">✓ 0</span><span class="lt-wrong">✗ 0</span></span>
+    <span class="lt-progress" id="listeningProgressEl">${completedLines}/${totalLines}</span>
     <span class="lt-hint">Escucha y completa — Enter para confirmar</span>
   `;
   const container = document.getElementById('subContainer');
   container.parentNode.insertBefore(toolbar, container);
 }
 
+function countCompletedListeningLines() {
+  let completed = 0;
+  for (const lineIdx of Object.keys(state.listeningBlanksMap)) {
+    const inputs = document.querySelectorAll(`.listening-input[data-line="${lineIdx}"]`);
+    if (inputs.length === 0) continue;
+    const allDone = [...inputs].every(el =>
+      el.classList.contains('lc-correct') || el.classList.contains('lc-wrong') || el.classList.contains('lc-timeout')
+    );
+    if (allDone) completed++;
+  }
+  return completed;
+}
+
 function updateListeningScore() {
   const el = document.getElementById('listeningScoreEl');
   if (el) {
     el.innerHTML = `<span class="lt-correct">✓ ${state.listeningScore.correct}</span><span class="lt-wrong">✗ ${state.listeningScore.wrong}</span>`;
+  }
+  // Update progress counter
+  const progEl = document.getElementById('listeningProgressEl');
+  if (progEl) {
+    const totalLines = Object.keys(state.listeningBlanksMap).length;
+    const completedLines = countCompletedListeningLines();
+    progEl.textContent = `${completedLines}/${totalLines}`;
   }
 }
 
@@ -1525,6 +1560,18 @@ function showSongEnd() {
   // Remove previous fin card if any
   container.querySelector('.song-fin-card')?.remove();
 
+  // Listening mode → show results modal overlay
+  if (state.listeningMode) {
+    showListeningResults();
+    return;
+  }
+
+  // Blanks mode → show results modal overlay
+  if (state.blanksMode) {
+    showBlanksResults();
+    return;
+  }
+
   const fin = document.createElement('div');
   fin.className = 'song-fin-card';
 
@@ -1539,17 +1586,212 @@ function showSongEnd() {
   backBtn.addEventListener('click', () => showPicker(true));
   fin.appendChild(backBtn);
 
-  // Score summary if blanks mode was active
-  const scoreEl = document.getElementById('blanksScore');
-  if (state.blanksMode && scoreEl && scoreEl.textContent) {
-    const scoreNote = document.createElement('p');
-    scoreNote.className = 'song-fin-score';
-    scoreNote.textContent = scoreEl.textContent;
-    fin.insertBefore(scoreNote, backBtn);
-  }
-
   container.appendChild(fin);
   fin.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showBlanksResults() {
+  // Remove existing modal if any
+  document.getElementById('blanksResultsModal')?.remove();
+
+  // Calculate score from all blanks
+  const inputs = document.querySelectorAll('.blank-input');
+  let correct = 0;
+  let total = 0;
+
+  inputs.forEach(input => {
+    const answer = normalizeForCompare(input.dataset.answer);
+    const value = normalizeForCompare(input.value);
+    if (!input.value.trim()) return; // skip empty
+    total++;
+    if (value === answer) correct++;
+  });
+
+  // If user hasn't filled anything, count total blanks
+  if (total === 0) total = inputs.length;
+
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  let emoji, grade, message;
+  if (pct >= 90) {
+    emoji = '🏆'; grade = 'Excelente'; message = 'Dominio sólido del vocabulario';
+  } else if (pct >= 70) {
+    emoji = '🎉'; grade = 'Muy bien'; message = 'Buen manejo de las palabras clave';
+  } else if (pct >= 50) {
+    emoji = '💪'; grade = 'No está mal'; message = 'Revisa el vocabulario y reintenta';
+  } else {
+    emoji = '📖'; grade = 'Necesitas práctica'; message = 'Usa el modo vocabulario para repasar';
+  }
+
+  const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
+  const diffLabel = diffLabels[state.blanksDifficulty] || 'Normal';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'blanksResultsModal';
+  overlay.className = 'lr-overlay';
+  overlay.innerHTML = `
+    <div class="lr-modal" role="dialog" aria-labelledby="brTitle" aria-modal="true">
+      <div class="lr-emoji">${emoji}</div>
+      <h3 class="lr-title" id="brTitle">${grade}</h3>
+      <p class="lr-message">${message}</p>
+      <div class="lr-stats">
+        <div class="lr-stat lr-stat--correct">
+          <span class="lr-stat-value">${correct}</span>
+          <span class="lr-stat-label">Correctas</span>
+        </div>
+        <div class="lr-stat lr-stat--total">
+          <span class="lr-stat-value">${pct}%</span>
+          <span class="lr-stat-label">Precisión</span>
+        </div>
+        <div class="lr-stat lr-stat--wrong">
+          <span class="lr-stat-value">${total - correct}</span>
+          <span class="lr-stat-label">Errores</span>
+        </div>
+      </div>
+      <p class="lr-meta">✎ Completar huecos · ${diffLabel}</p>
+      <div class="lr-actions">
+        <button class="lr-btn lr-btn--retry" id="brRetryBtn">↻ Reintentar</button>
+        <button class="lr-btn lr-btn--catalog" id="brCatalogBtn">← Catálogo</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const retryBtn = overlay.querySelector('#brRetryBtn');
+  const catalogBtn = overlay.querySelector('#brCatalogBtn');
+  setTimeout(() => retryBtn.focus(), 100);
+
+  retryBtn.addEventListener('click', () => {
+    overlay.remove();
+    // Reset blanks and re-render
+    state.blanksAnswers = {};
+    blanksRevealed = false;
+    renderSubtitles(state.currentSong.subtitles);
+    const scoreEl = document.getElementById('blanksScore');
+    if (scoreEl) scoreEl.textContent = '';
+    if (state.audio) {
+      state.audio.currentTime = 0;
+      playAudio();
+    }
+  });
+
+  catalogBtn.addEventListener('click', () => {
+    overlay.remove();
+    showPicker(true);
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  const onEsc = (e) => {
+    if (e.key === 'Escape' && document.getElementById('blanksResultsModal')) {
+      overlay.remove();
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
+function showListeningResults() {
+  // Remove existing modal if any
+  document.getElementById('listeningResultsModal')?.remove();
+
+  const { correct, wrong } = state.listeningScore;
+  const total = correct + wrong;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  // Determine grade/feedback
+  let emoji, grade, message;
+  if (pct >= 90) {
+    emoji = '🏆'; grade = 'Excelente'; message = 'Oído impecable';
+  } else if (pct >= 70) {
+    emoji = '🎉'; grade = 'Muy bien'; message = 'Buen dominio auditivo';
+  } else if (pct >= 50) {
+    emoji = '💪'; grade = 'No está mal'; message = 'Sigue practicando';
+  } else {
+    emoji = '🎧'; grade = 'Necesitas práctica'; message = 'Intenta a menor velocidad';
+  }
+
+  const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
+  const diffLabel = diffLabels[state.listeningDifficulty] || 'Normal';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'listeningResultsModal';
+  overlay.className = 'lr-overlay';
+  overlay.innerHTML = `
+    <div class="lr-modal" role="dialog" aria-labelledby="lrTitle" aria-modal="true">
+      <div class="lr-emoji">${emoji}</div>
+      <h3 class="lr-title" id="lrTitle">${grade}</h3>
+      <p class="lr-message">${message}</p>
+      <div class="lr-stats">
+        <div class="lr-stat lr-stat--correct">
+          <span class="lr-stat-value">${correct}</span>
+          <span class="lr-stat-label">Correctas</span>
+        </div>
+        <div class="lr-stat lr-stat--total">
+          <span class="lr-stat-value">${pct}%</span>
+          <span class="lr-stat-label">Precisión</span>
+        </div>
+        <div class="lr-stat lr-stat--wrong">
+          <span class="lr-stat-value">${wrong}</span>
+          <span class="lr-stat-label">Errores</span>
+        </div>
+      </div>
+      <p class="lr-meta">🎧 Dictado · ${diffLabel}</p>
+      <div class="lr-actions">
+        <button class="lr-btn lr-btn--retry" id="lrRetryBtn">↻ Reintentar</button>
+        <button class="lr-btn lr-btn--catalog" id="lrCatalogBtn">← Catálogo</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Focus trap — focus first button
+  const retryBtn = overlay.querySelector('#lrRetryBtn');
+  const catalogBtn = overlay.querySelector('#lrCatalogBtn');
+  setTimeout(() => retryBtn.focus(), 100);
+
+  retryBtn.addEventListener('click', () => {
+    overlay.remove();
+    // Reset score and restart song in listening mode
+    state.listeningScore = { correct: 0, wrong: 0 };
+    state.listeningBlanksMap = buildListeningBlanks();
+    state.currentSubIndex = -1;
+    state.listeningWaiting = false;
+    state.listeningCurrentBlank = null;
+    state.listeningPauseAt = null;
+    state.listeningNextBlank = null;
+    state.listeningRepeatCount = 0;
+    state.listeningLineStart = null;
+    renderSubtitles(state.currentSong.subtitles);
+    updateListeningToolbar();
+    if (state.audio) {
+      state.audio.currentTime = 0;
+      playAudio();
+    }
+  });
+
+  catalogBtn.addEventListener('click', () => {
+    overlay.remove();
+    showPicker(true);
+  });
+
+  // Close on overlay click (outside modal)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  // Close on Escape
+  const onEsc = (e) => {
+    if (e.key === 'Escape' && document.getElementById('listeningResultsModal')) {
+      overlay.remove();
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  document.addEventListener('keydown', onEsc);
 }
 
 // ─── Volume ────────────────────────────────────────────────────────────────────
