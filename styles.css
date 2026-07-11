@@ -340,7 +340,7 @@ body {
 .song-list-item:hover {
   border-color: color-mix(in srgb, var(--spine) 50%, var(--lp-border));
   transform: translateY(-2px);
-  box-shadow: var(--lp-shadow-hover);
+  box-shadow: var(--lp-shadow-hover), 0 14px 32px -10px color-mix(in srgb, var(--spine) 35%, transparent);
 }
 
 .song-list-item:active {
@@ -1020,7 +1020,7 @@ body {
 .picker-brand h2 {
   margin: 0;
   font-family: var(--lp-font-display);
-  font-size: 1.6rem;
+  font-size: 1.85rem;
   font-weight: 300;
   font-style: italic;
   color: var(--lp-ink);
