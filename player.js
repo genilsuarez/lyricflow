@@ -4,7 +4,7 @@
 // Features: synced lyrics, vocab, fill-in-the-blanks, A-B loop, speed control, culture
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import songFolders from './songs/catalog.js';
+import pickerSongs from './songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
 
 export const app = document.getElementById('app');
@@ -122,36 +122,21 @@ function seededRandom(seed) {
 
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
-async function showPicker(skipAutoLoad = false) {
+function showPicker(skipAutoLoad = false) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
   if (state.audio) { state.audio.pause(); state.audio = null; }
 
-  const results = await Promise.allSettled(
-    songFolders.map(async (folder) => {
-      const mod = await import(`./songs/${folder}/data.js`);
-      return { ...mod.default, folder: `songs/${folder}` };
-    })
-  );
-  const songs = results
-    .filter(r => r.status === 'fulfilled')
-    .map(r => r.value)
-    .sort((a, b) => {
-      const order = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-      const la = order.indexOf((a.level || '').toLowerCase());
-      const lb = order.indexOf((b.level || '').toLowerCase());
-      const ia = la === -1 ? order.length : la;
-      const ib = lb === -1 ? order.length : lb;
-      return ia - ib || a.title.localeCompare(b.title);
-    });
-
-  if (results.some(r => r.status === 'rejected')) {
-    const failed = results
-      .map((r, i) => r.status === 'rejected' ? songFolders[i] : null)
-      .filter(Boolean);
-    console.warn('[LyricFlow] Failed to load songs:', failed);
-  }
+  // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
+  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+  const songs = [...pickerSongs].sort((a, b) => {
+    const la = levelOrder.indexOf((a.level || '').toLowerCase());
+    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
+    const ia = la === -1 ? levelOrder.length : la;
+    const ib = lb === -1 ? levelOrder.length : lb;
+    return ia - ib || a.title.localeCompare(b.title);
+  });
 
   app.innerHTML = `
     <div class="song-picker">
@@ -183,8 +168,6 @@ async function showPicker(skipAutoLoad = false) {
     filtered.forEach((song, idx) => {
       const item = document.createElement('div');
       item.className = 'song-list-item';
-      item.style.animationDelay = `${0.05 + idx * 0.04}s`;
-      item.style.animation = 'fadeUp 0.45s var(--lp-ease) both';
       item.innerHTML = `
         <span class="icon">${song.icon || '🎵'}</span>
         <div class="info">
@@ -229,7 +212,12 @@ async function showPicker(skipAutoLoad = false) {
 
 // ─── Player View ───────────────────────────────────────────────────────────────
 
-export function loadSong(song) {
+export async function loadSong(song) {
+  // If song only has picker metadata, load full data (subtitles, culture, etc.)
+  if (!song.subtitles) {
+    const mod = await import(`./${song.folder}/data.js`);
+    song = { ...mod.default, folder: song.folder };
+  }
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = song;

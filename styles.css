@@ -6,7 +6,7 @@
    Token prefix: --lp- (Learn Platform)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&display=swap');
+/* Font loaded via <link> in index.html — no @import needed */
 
 :root {
   /* ─── Surface & Paper (light — warm editorial) ─── */
@@ -516,18 +516,6 @@ body {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-.badge {
-  background: color-mix(in srgb, var(--lp-accent) 10%, transparent);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.54rem;
-  font-weight: 700;
-  color: var(--lp-accent-text);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
 }
 
 /* ─── Mode Toolbar ──────────────────────────────────────────────────────────── */
@@ -1126,24 +1114,6 @@ body {
   color: var(--lp-muted, var(--lp-muted));
   font-size: 0.82rem;
   font-weight: 500;
-}
-
-/* ─── Footer ────────────────────────────────────────────────────────────────── */
-
-.footer-note {
-  margin-top: 14px;
-  font-size: 0.56rem;
-  color: var(--lp-ink-faint);
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--lp-border-subtle);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  animation: fadeUp 0.4s var(--lp-ease) 0.35s both;
 }
 
 /* ─── Word Tap ──────────────────────────────────────────────────────────────── */
