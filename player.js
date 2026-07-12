@@ -203,7 +203,7 @@ function showPicker(skipAutoLoad = false) {
   // If navigated from DeskFlow (portal), always show picker
   const prefs = loadPrefs();
   const isSessionActive = sessionStorage.getItem('lyricflow_active');
-  const fromPortal = document.referrer.includes('deskflow') || document.referrer.includes('localhost:3000');
+  const fromPortal = document.referrer.includes('deskflow') || document.referrer.includes(':3000');
   if (!skipAutoLoad && prefs.lastSong && isSessionActive && !fromPortal) {
     const lastSong = songs.find(s => s.folder === prefs.lastSong);
     if (lastSong) loadSong(lastSong);
@@ -349,11 +349,13 @@ function bindPlayerEvents(song) {
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
   // Local dev: el portal del player apunta a la DeskFlow local (mismo patrón que el picker)
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  const _h = location.hostname;
+  const _isLocal = _h === 'localhost' || _h === '127.0.0.1' || _h.startsWith('192.168.');
+  if (_isLocal) {
     const pPortal = document.getElementById('playerPortalLink');
     if (pPortal) {
       const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      pPortal.href = 'http://localhost:3000/?theme=' + theme;
+      pPortal.href = 'http://' + _h + ':3000/?theme=' + theme;
     }
   }
   document.getElementById('playerThemeToggle').addEventListener('click', () => {
@@ -1894,10 +1896,12 @@ function setupPickerActions() {
   themeBtn.addEventListener('click', () => toggleTheme(themeBtn));
 
   // Local dev: rewrite portal link and propagate theme
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    portalLink.href = 'http://localhost:3000/';
+  const _lh = location.hostname;
+  const _lIsLocal = _lh === 'localhost' || _lh === '127.0.0.1' || _lh.startsWith('192.168.');
+  if (_lIsLocal) {
+    portalLink.href = 'http://' + _lh + ':3000/';
     document.addEventListener('click', (e) => {
-      const a = e.target.closest('a[href*="localhost:"]');
+      const a = e.target.closest('a[href*="' + _lh + ':"]');
       if (a) {
         const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
         const url = new URL(a.href);
