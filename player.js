@@ -74,6 +74,9 @@ export const state = {
   listeningRepeatCount: 0,  // 0 = first play, 1 = already repeated → now pause
   listeningLineStart: null, // start time of current listening line (for replay)
 
+  // Highlight toggle
+  highlightEnabled: true, // Ctrl/Cmd+H toggles lyric highlighting on/off
+
   // Misc
   playerCleanup: null,   // Event listener cleanup (AbortController per player session)
   cachedSubLines: [],    // Cached DOM references (set after renderSubtitles)
@@ -302,6 +305,15 @@ export async function loadSong(song) {
 
   bindPlayerEvents(song);
   renderSubtitles(song.subtitles);
+
+  // Local dev: always show line numbers
+  const _hn = location.hostname;
+  if (_hn === 'localhost' || _hn === '127.0.0.1' || _hn.startsWith('192.168.')) {
+    state.showLineNumbers = true;
+    const _sc = document.getElementById('subContainer');
+    if (_sc) _sc.classList.add('show-line-numbers');
+  }
+
   initAudio(song);
   loadVocab(song);
 
@@ -1219,24 +1231,26 @@ function updateSubtitles(time) {
   state.currentSubIndex = activeIndex;
 
   const lines = state.cachedSubLines;
-  for (let i = 0; i < lines.length; i++) {
-    const el = lines[i];
-    el.classList.remove('active', 'past');
-    if (i === activeIndex) {
-      el.classList.add('active');
-    } else if (activeIndex !== -1 && i < activeIndex) {
-      el.classList.add('past');
+  if (state.highlightEnabled) {
+    for (let i = 0; i < lines.length; i++) {
+      const el = lines[i];
+      el.classList.remove('active', 'past');
+      if (i === activeIndex) {
+        el.classList.add('active');
+      } else if (activeIndex !== -1 && i < activeIndex) {
+        el.classList.add('past');
+      }
     }
-  }
 
-  // Debounced scroll — cancel previous pending scroll
-  if (activeIndex !== -1 && lines[activeIndex]) {
-    if (state.scrollRAF) cancelAnimationFrame(state.scrollRAF);
-    const target = lines[activeIndex];
-    state.scrollRAF = requestAnimationFrame(() => {
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      state.scrollRAF = null;
-    });
+    // Debounced scroll — cancel previous pending scroll
+    if (activeIndex !== -1 && lines[activeIndex]) {
+      if (state.scrollRAF) cancelAnimationFrame(state.scrollRAF);
+      const target = lines[activeIndex];
+      state.scrollRAF = requestAnimationFrame(() => {
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        state.scrollRAF = null;
+      });
+    }
   }
 
   // Announce current line to screen readers
@@ -1282,6 +1296,27 @@ function toggleLineNumbers() {
   state.showLineNumbers = !state.showLineNumbers;
   const container = document.getElementById('subContainer');
   if (container) container.classList.toggle('show-line-numbers', state.showLineNumbers);
+}
+
+function toggleHighlight() {
+  state.highlightEnabled = !state.highlightEnabled;
+  const lines = state.cachedSubLines;
+  if (!state.highlightEnabled) {
+    // Remove all highlight classes
+    for (const el of lines) el.classList.remove('active', 'past');
+  } else {
+    // Restore highlight at current position
+    const idx = state.currentSubIndex;
+    for (let i = 0; i < lines.length; i++) {
+      lines[i].classList.remove('active', 'past');
+      if (i === idx) lines[i].classList.add('active');
+      else if (idx !== -1 && i < idx) lines[i].classList.add('past');
+    }
+    // Scroll to current line
+    if (idx !== -1 && lines[idx]) {
+      lines[idx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
 }
 
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
@@ -1904,6 +1939,7 @@ function onKeydown(e) {
   if (e.code === 'KeyS') cycleSpeed();
   if (e.code === 'KeyL') onLoopClick();
   if (e.code === 'KeyB') toggleBlanksMode();
+  if (e.code === 'KeyH' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); toggleHighlight(); }
 }
 
 // ─── Blank input delegation ────────────────────────────────────────────────────
