@@ -1461,14 +1461,15 @@ body {
 }
 
 .vocab-detail-word {
-  font-family: var(--lp-font-display);
-  font-size: 1.3rem;
-  font-weight: 400;
+  font-family: var(--lp-font-body);
+  font-size: 1.35rem;
+  font-weight: 600;
   color: var(--lp-ink);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   display: flex;
   align-items: baseline;
   gap: 12px;
+  letter-spacing: -0.01em;
 }
 
 .vocab-detail-word::after {
@@ -1481,7 +1482,7 @@ body {
 .vocab-detail-body {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 5px 20px;
+  gap: 7px 24px;
   align-items: baseline;
 }
 
@@ -1489,20 +1490,21 @@ body {
 
 .vocab-detail-label {
   font-family: var(--lp-font-body);
-  font-size: 0.55rem;
-  font-weight: 700;
+  font-size: 0.6rem;
+  font-weight: 600;
   color: var(--lp-muted);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  padding-top: 2px;
+  letter-spacing: 0.14em;
+  padding-top: 3px;
+  font-variant-numeric: tabular-nums;
 }
 
 .vocab-detail-value {
-  font-family: var(--lp-font-display);
+  font-family: var(--lp-font-body);
   font-size: 1rem;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--lp-accent-text);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .vocab-detail-example {
@@ -1512,22 +1514,23 @@ body {
 }
 
 .vocab-detail-example .detail-original {
-  font-family: var(--lp-font-display);
+  font-family: var(--lp-font-body);
   font-size: 0.88rem;
-  font-weight: 300;
+  font-weight: 400;
   font-style: italic;
   color: var(--lp-ink-soft);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .vocab-detail-example .detail-trans {
-  font-family: var(--lp-font-display);
-  font-size: 0.76rem;
-  font-weight: 300;
+  font-family: var(--lp-font-body);
+  font-size: 0.78rem;
+  font-weight: 400;
   color: var(--lp-accent-text);
-  padding-left: 10px;
-  border-left: 2px solid color-mix(in srgb, var(--lp-accent) 25%, transparent);
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--lp-accent) 30%, transparent);
   line-height: 1.5;
+  opacity: 0.9;
 }
 
 @media (max-width: 580px) {
@@ -1535,36 +1538,75 @@ body {
   .vocab-header-title { font-size: 1.15rem; }
   .vocab-chip { font-size: 0.82rem; padding: 4px 10px; }
   .vocab-detail { padding: 14px 14px 12px; }
-  .vocab-detail-word { font-size: 1.15rem; margin-bottom: 10px; }
+  .vocab-detail-word { font-size: 1.1rem; margin-bottom: 12px; }
   .vocab-detail-body { grid-template-columns: 1fr; gap: 10px 0; }
-  .vocab-detail-label { margin-bottom: 3px; }
+  .vocab-detail-label { margin-bottom: 3px; font-size: 0.55rem; }
+  .vocab-detail-value { font-size: 0.9rem; }
+  .vocab-detail-example .detail-original { font-size: 0.82rem; }
+  .vocab-detail-example .detail-trans { font-size: 0.72rem; }
+  .vocab-alt-meaning { font-size: 0.78rem; }
+  .vocab-formal { font-size: 0.85rem; }
 }
 
 /* ─── Vocab Alt Meaning + Phrasal Verbs ─────────────────────────────────────── */
 
 .vocab-alt-meaning {
-  font-family: var(--lp-font-display);
-  font-size: 0.85rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--lp-muted);
-  line-height: 1.5;
+  font-family: var(--lp-font-body);
+  font-size: 0.84rem;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--lp-ink-soft);
+  line-height: 1.6;
+  letter-spacing: 0.005em;
 }
 
 .vocab-type-badge {
   font-family: var(--lp-font-body);
-  font-size: 0.55rem;
+  font-size: 0.56rem;
   font-weight: 700;
   color: var(--lp-accent-text);
   background: var(--lp-accent-soft);
-  padding: 3px 9px;
+  padding: 3px 10px;
   border-radius: var(--lp-radius-full);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .vocab-chip--phrasal::before {
   border-style: dashed;
+}
+
+/* Synonym/Antonym chips */
+.vocab-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.vocab-mini-chip {
+  font-family: var(--lp-font-body);
+  font-size: 0.73rem;
+  font-weight: 500;
+  color: var(--lp-accent-text);
+  background: color-mix(in srgb, var(--lp-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lp-accent) 20%, transparent);
+  padding: 4px 11px;
+  border-radius: var(--lp-radius-full);
+  line-height: 1.4;
+}
+
+.vocab-mini-chip--ant {
+  color: var(--lp-muted);
+  background: color-mix(in srgb, var(--lp-muted) 8%, transparent);
+  border-color: color-mix(in srgb, var(--lp-muted) 18%, transparent);
+}
+
+.vocab-formal {
+  font-style: italic;
+  color: var(--lp-accent-text);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
 }
 
 .wt-alt {
