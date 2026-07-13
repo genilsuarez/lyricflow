@@ -1125,22 +1125,26 @@ function onWordTap(e) {
   if (!word) return;
 
   let translation = '';
+  let altMeaning = '';
   if (state.vocabData) {
     const entry = state.vocabData.find(v => v.word === word);
     if (entry && entry.translation) {
       translation = entry.translation;
     }
+    if (entry && entry.altMeaning) {
+      altMeaning = entry.altMeaning;
+    }
   }
 
   if (!translation) return; // No tooltip for words without vocab entry
 
-  showWordTooltip(wordEl, word, translation);
+  showWordTooltip(wordEl, word, translation, altMeaning);
 }
 
 // Tooltip cleanup controller (single active tooltip at a time)
 let tooltipCleanup = null;
 
-function showWordTooltip(anchor, word, translation) {
+function showWordTooltip(anchor, word, translation, altMeaning = '') {
   // Clean up previous tooltip and its listeners
   if (tooltipCleanup) { tooltipCleanup(); tooltipCleanup = null; }
 
@@ -1153,6 +1157,7 @@ function showWordTooltip(anchor, word, translation) {
   tip.innerHTML = `
     <span class="wt-word">${word}</span>
     <span class="wt-trans">${translation}</span>
+    ${altMeaning ? `<span class="wt-alt">${altMeaning}</span>` : ''}
   `;
   document.body.appendChild(tip);
 
@@ -1582,11 +1587,28 @@ function showSongEnd() {
   titleEl.textContent = 'fin';
   fin.appendChild(titleEl);
 
+  const actions = document.createElement('div');
+  actions.className = 'lr-actions';
+
+  const repeatBtn = document.createElement('button');
+  repeatBtn.className = 'lr-btn lr-btn--retry';
+  repeatBtn.textContent = '↻ Repetir';
+  repeatBtn.addEventListener('click', () => {
+    fin.remove();
+    if (state.audio) {
+      state.audio.currentTime = 0;
+      playAudio();
+    }
+  });
+  actions.appendChild(repeatBtn);
+
   const backBtn = document.createElement('button');
-  backBtn.className = 'song-fin-back';
-  backBtn.textContent = '← catálogo';
+  backBtn.className = 'lr-btn lr-btn--catalog';
+  backBtn.textContent = '← Catálogo';
   backBtn.addEventListener('click', () => showPicker(true));
-  fin.appendChild(backBtn);
+  actions.appendChild(backBtn);
+
+  fin.appendChild(actions);
 
   container.appendChild(fin);
   fin.scrollIntoView({ behavior: 'smooth', block: 'center' });

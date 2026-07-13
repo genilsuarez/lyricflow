@@ -6,14 +6,12 @@ export default {
   file: 'hotel_california.mp3',
   offset: 0,
   culture: {
-    artist: 'Eagles es una banda estadounidense de rock formada en Los Ángeles en 1971. Su álbum "Their Greatest Hits" es uno de los más vendidos de todos los tiempos con más de 38 millones de copias solo en EE.UU.',
-    song: 'Hotel California (1977) es una alegoría sobre el exceso, la autodestrucción y el lado oscuro del sueño americano. La guitarra final de 2 minutos es considerada uno de los mejores solos de la historia del rock.',
-    language: 'Vocabulario rico y literario: metáforas, imágenes sensoriales (shimmering, colitas, twisted). Estructuras narrativas en pasado. Nivel B1-B2 por la complejidad léxica y las referencias culturales.',
+    artist: 'Banda de rock de Los Ángeles (1971). Su Greatest Hits, entre los más vendidos de la historia.',
+    song: 'Alegoría del exceso y el sueño americano (1977). Solo final legendario.',
+    language: 'Vocabulario literario con imágenes sensoriales — nivel B1-B2.',
     funFacts: [
-      'Don Felder compuso la música en su casa y la llamaba "Mexican Reggae".',
-      'La canción tardó meses en completarse — Henley y Frey reescribieron la letra múltiples veces.',
-      'El famoso solo final fue grabado nota por nota, no improvisado.',
-      '"You can check out any time you like, but you can never leave" es una de las frases más citadas del rock.'
+      'Felder compuso la música y la llamaba "Mexican Reggae".',
+      '"You can never leave" es una de las frases más citadas del rock.'
     ]
   },
 

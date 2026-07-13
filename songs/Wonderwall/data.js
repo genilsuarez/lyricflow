@@ -2,18 +2,16 @@ export default {
   title: 'Wonderwall',
   artist: 'Oasis',
   icon: '🧱',
-  level: 'A2',
+  level: 'B1',
   file: 'wonderwall.mp3',
   offset: 0,
   culture: {
-    artist: 'Oasis fue una banda británica de rock alternativo formada en Manchester en 1991 por los hermanos Gallagher. Son una de las bandas más exitosas del Britpop de los 90.',
-    song: 'Wonderwall (1995) del álbum "(What\'s the Story) Morning Glory?" es una de las canciones más emblemáticas de los 90. Noel Gallagher la escribió pensando en su novia de entonces, Meg Mathews, aunque después dijo que trata sobre "un amigo imaginario que viene y te salva".',
-    language: 'Vocabulario cotidiano con metáforas accesibles (road, light, wall). Estructuras condicionales ("by now you should\u2019ve somehow\u2026") y futuro con going to. Buen nivel A2 por repetición y vocabulario base.',
+    artist: 'Banda de rock británica (Manchester, 1991), liderada por los hermanos Gallagher. Íconos del Britpop.',
+    song: 'Del álbum "(What\'s the Story) Morning Glory?" (1995). Sobre "un amigo imaginario que te salva".',
+ language: "Metáforas, should've + participio y phrasal verbs — nivel B1.",
     funFacts: [
-      'Es la canción más tocada en guitarra acústica en pubs y fiestas del mundo anglosajón.',
-      'Noel la escribió completa en una noche mientras la banda estaba de gira.',
-      'El término "wonderwall" viene de un álbum instrumental de George Harrison de 1968.',
-      'Ha sido reproducida más de 1.6 mil millones de veces en Spotify.'
+      'La canción más tocada en guitarra acústica en pubs anglosajones.',
+      'Más de 1.6 mil millones de reproducciones en Spotify.'
     ]
   },
   subtitles: [

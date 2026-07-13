@@ -6,14 +6,12 @@ export default {
   file: 'hello_goodbye.mp3',
   offset: 0,
   culture: {
-    artist: 'The Beatles fueron una banda británica formada en Liverpool en 1960. Son considerados la banda más influyente de la historia de la música popular, con más de 600 millones de discos vendidos.',
-    song: 'Hello, Goodbye (1967) fue escrita por Paul McCartney y lanzada como single del álbum Magical Mystery Tour. Es un juego de opuestos y contradicciones — un diálogo interno sobre la comunicación.',
-    language: 'Vocabulario extremadamente simple: hello, goodbye, yes, no, stop, go. Usa opuestos básicos y estructuras repetitivas. Ideal para nivel A1 por la repetición y el vocabulario elemental.',
+    artist: 'Banda británica de Liverpool (1960), 600M+ discos vendidos.',
+    song: 'Single de Magical Mystery Tour (1967), sobre opuestos y comunicación.',
+    language: 'Vocabulario extremadamente simple — ideal A1.',
     funFacts: [
-      'McCartney la escribió improvisando con opuestos mientras Alistair Taylor le hacía preguntas.',
-      'Fue número 1 en el UK y en el US Billboard Hot 100.',
-      'El video fue filmado en el Saville Theatre de Londres propiedad de Brian Epstein.',
-      'John Lennon la consideraba una canción menor, pero fue un éxito comercial masivo.'
+      'McCartney la improvisó jugando con opuestos.',
+      '#1 en UK y en el US Billboard Hot 100.'
     ]
   },
   subtitles: [

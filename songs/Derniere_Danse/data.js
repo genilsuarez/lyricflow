@@ -7,14 +7,12 @@ export default {
   // segundos a sumar a todos los start (ajuste global de sync)
   offset: 0,
   culture: {
-    artist: 'Indila es el nombre artístico de Adila Sedraïa, cantante francesa de raíces argelinas, egipcias, camboyanas e indias. Su estilo fusiona pop, chanson française y world music.',
-    song: 'Dernière Danse (2013) fue su single debut y se convirtió en un éxito masivo en Europa. La canción habla de soledad, esperanza y resiliencia en las calles de París.',
-    language: 'El francés de la canción es poético pero accesible. Usa vocabulario emocional (souffrance, espérance, douleur) y estructuras reflexivas (s\'acharner, m\'enfuir, m\'abandonne) muy comunes en el francés cotidiano.',
+    artist: 'Cantante francesa (Adila Sedraïa), de raíces multiculturales.',
+    song: 'Single debut (2013), éxito masivo en Europa.',
+    language: 'Francés poético pero accesible, con vocabulario emocional.',
     funFacts: [
-      'El videoclip acumula más de 1.000 millones de reproducciones en YouTube.',
-      'Indila es muy reservada: rara vez da entrevistas o aparece en público.',
-      'La canción se usa frecuentemente en clases de francés como lengua extranjera por su dicción clara.',
-      'El estilo vocal recuerda a Edith Piaf, ícono de la chanson française.'
+      'El videoclip supera los 1.000 millones de views en YouTube.',
+      'Su estilo vocal recuerda a Edith Piaf.'
     ]
   },
   subtitles: [

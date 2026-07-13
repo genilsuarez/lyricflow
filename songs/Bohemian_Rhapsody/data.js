@@ -2,18 +2,16 @@ export default {
   title: 'Bohemian Rhapsody',
   artist: 'Queen',
   icon: '👑',
-  level: 'B2',
+  level: 'C1',
   file: 'bohemian_rhapsody.mp3',
   offset: 0,
   culture: {
-    artist: 'Queen fue una banda británica de rock formada en 1970. Con Freddie Mercury como vocalista, son conocidos por su innovación musical, fusionando rock, ópera y pop progresivo.',
-    song: 'Bohemian Rhapsody (1975) es una composición de 6 minutos que desafió todas las convenciones del pop. Tiene 6 secciones distintas: intro a capella, balada, solo de guitarra, ópera, hard rock y outro. Nunca fue tocada en vivo completa hasta mucho después.',
-    language: 'Vocabulario variado y dramático: desde confesiones personales hasta referencias operísticas (Scaramouche, Bismillah, Beelzebub). Estructuras complejas con subjuntivos y condicionales. Nivel B2 por la diversidad léxica.',
+    artist: 'Banda británica de rock (1970); con Freddie Mercury fusionaron rock, ópera y pop.',
+    song: 'Composición de 6 min (1975) con 6 secciones distintas.',
+    language: 'Vocabulario operístico, narrativa compleja y registro literario — nivel C1.',
     funFacts: [
-      'Mercury la compuso durante varios años y la grabación tomó 3 semanas.',
-      'Las harmonías vocales se sobregrabaron más de 180 veces.',
-      'El video promocional es considerado uno de los primeros videoclips modernos.',
-      'Volvió al #1 en 1991 tras la muerte de Mercury y otra vez en 2018 con la película biográfica.'
+      'La grabación tomó 3 semanas; las harmonías se sobregrabaron más de 180 veces.',
+      'Volvió al #1 en 1991 y otra vez en 2018 con el biopic.'
     ]
   },
 
