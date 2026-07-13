@@ -59,6 +59,18 @@ function showVocabView(song) {
             <span class="vocab-detail-label">Otro significado</span>
             <div class="vocab-alt-meaning" id="detailAltMeaning"></div>
           </div>
+          <div class="vocab-detail-section" id="detailSynSection" hidden>
+            <span class="vocab-detail-label">Sinónimos</span>
+            <div class="vocab-detail-chips" id="detailSynonyms"></div>
+          </div>
+          <div class="vocab-detail-section" id="detailAntSection" hidden>
+            <span class="vocab-detail-label">Antónimos</span>
+            <div class="vocab-detail-chips" id="detailAntonyms"></div>
+          </div>
+          <div class="vocab-detail-section" id="detailFormalSection" hidden>
+            <span class="vocab-detail-label">Equivalente formal</span>
+            <div class="vocab-detail-value vocab-formal" id="detailFormal"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -136,6 +148,36 @@ function onVocabTap(e) {
   if (entry && entry.altMeaning) {
     detailAltMeaning.textContent = entry.altMeaning;
     detailAltSection.hidden = false;
+  }
+
+  // Synonyms
+  const synSection = document.getElementById('detailSynSection');
+  const synContainer = document.getElementById('detailSynonyms');
+  synContainer.innerHTML = '';
+  synSection.hidden = true;
+  if (entry && entry.synonyms && entry.synonyms.length > 0) {
+    synContainer.innerHTML = entry.synonyms.map(s => `<span class="vocab-mini-chip">${s}</span>`).join('');
+    synSection.hidden = false;
+  }
+
+  // Antonyms
+  const antSection = document.getElementById('detailAntSection');
+  const antContainer = document.getElementById('detailAntonyms');
+  antContainer.innerHTML = '';
+  antSection.hidden = true;
+  if (entry && entry.antonyms && entry.antonyms.length > 0) {
+    antContainer.innerHTML = entry.antonyms.map(a => `<span class="vocab-mini-chip vocab-mini-chip--ant">${a}</span>`).join('');
+    antSection.hidden = false;
+  }
+
+  // Formal equivalent (for phrasal verbs)
+  const formalSection = document.getElementById('detailFormalSection');
+  const formalEl = document.getElementById('detailFormal');
+  formalEl.textContent = '';
+  formalSection.hidden = true;
+  if (entry && entry.formalEquivalent) {
+    formalEl.textContent = entry.formalEquivalent;
+    formalSection.hidden = false;
   }
 
   detail.hidden = false;
