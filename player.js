@@ -1587,16 +1587,29 @@ function showSongEnd() {
     return;
   }
 
+  // Determine next song in catalog order
+  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+  const sorted = [...pickerSongs].sort((a, b) => {
+    const la = levelOrder.indexOf((a.level || '').toLowerCase());
+    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
+    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
+  });
+  const curIdx = sorted.findIndex(s => s.folder === state.currentSong?.folder);
+  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
+
   const fin = document.createElement('div');
   fin.className = 'song-fin-card';
 
-  const titleEl = document.createElement('p');
-  titleEl.className = 'song-fin-label';
-  titleEl.textContent = 'fin';
-  fin.appendChild(titleEl);
+
 
   const actions = document.createElement('div');
-  actions.className = 'lr-actions';
+  actions.className = 'song-fin-actions';
+
+  const backBtn = document.createElement('button');
+  backBtn.className = 'lr-btn lr-btn--catalog';
+  backBtn.textContent = '← Catálogo';
+  backBtn.addEventListener('click', () => showPicker(true));
+  actions.appendChild(backBtn);
 
   const repeatBtn = document.createElement('button');
   repeatBtn.className = 'lr-btn lr-btn--retry';
@@ -1610,11 +1623,16 @@ function showSongEnd() {
   });
   actions.appendChild(repeatBtn);
 
-  const backBtn = document.createElement('button');
-  backBtn.className = 'lr-btn lr-btn--catalog';
-  backBtn.textContent = '← Catálogo';
-  backBtn.addEventListener('click', () => showPicker(true));
-  actions.appendChild(backBtn);
+  if (nextSong) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'lr-btn lr-btn--next';
+    nextBtn.textContent = 'Siguiente →';
+    nextBtn.addEventListener('click', () => {
+      fin.remove();
+      loadSong(nextSong);
+    });
+    actions.appendChild(nextBtn);
+  }
 
   fin.appendChild(actions);
 
