@@ -50,6 +50,7 @@ function showQuizView(song) {
           <div class="quiz-header-subtitle" id="quizProgress">Mini Quiz</div>
         </div>
       </div>
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill" style="width:0%"></div></div>
       <div class="quiz-body" id="quizBody"></div>
     </div>
   `;
@@ -165,15 +166,20 @@ function selectQuestions(pool) {
 function renderQuizQuestion() {
   quizAnswered = false;
   const q = quizQuestions[quizIndex];
+  const total = quizQuestions.length;
+  const letters = ['A', 'B', 'C', 'D'];
 
-  document.getElementById('quizProgress').textContent = `Pregunta ${quizIndex + 1} / ${quizQuestions.length}`;
+  document.getElementById('quizProgress').textContent = `Pregunta ${quizIndex + 1} / ${total}`;
+  const progressFill = document.getElementById('quizProgressFill');
+  if (progressFill) progressFill.style.width = `${((quizIndex) / total) * 100}%`;
+
   document.getElementById('quizBody').innerHTML = `
     <div class="quiz-card">
       <span class="quiz-type-badge">${TYPE_LABEL[q.type]}</span>
       <p class="quiz-prompt">${q.prompt}</p>
     </div>
     <div class="quiz-options" id="quizOptions">
-      ${q.options.map((opt, i) => `<button class="quiz-option" data-index="${i}">${opt}</button>`).join('')}
+      ${q.options.map((opt, i) => `<button class="quiz-option" data-index="${i}" data-letter="${letters[i] || ''}">${opt}</button>`).join('')}
     </div>
   `;
 
@@ -187,6 +193,11 @@ function onOptionClick(e) {
   const q = quizQuestions[quizIndex];
   const chosenIdx = Number(e.currentTarget.dataset.index);
   if (q.options[chosenIdx] === q.answer) quizScore++;
+
+  // Update progress bar to current completed question
+  const total = quizQuestions.length;
+  const progressFill = document.getElementById('quizProgressFill');
+  if (progressFill) progressFill.style.width = `${((quizIndex + 1) / total) * 100}%`;
 
   const optionsEl = document.getElementById('quizOptions');
   optionsEl.querySelectorAll('.quiz-option').forEach((btn, i) => {
@@ -217,11 +228,22 @@ function renderQuizResults() {
   else if (pct >= 50) { emoji = '👍'; message = 'Buen progreso'; }
   else { emoji = '💪'; message = 'Sigue repasando'; }
 
+  // SVG ring circumference: 2 * pi * 40 = 251.2
+  const circumference = 251.2;
+  const offset = circumference - (circumference * pct / 100);
+
   document.getElementById('quizProgress').textContent = 'Resultado';
   document.getElementById('quizBody').innerHTML = `
     <div class="quiz-results">
-      <div class="quiz-results-emoji">${emoji}</div>
+      <div class="quiz-score-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="40"/>
+          <circle class="ring-fill" cx="50" cy="50" r="40" id="quizRingFill"/>
+        </svg>
+        <div class="ring-label">${emoji}</div>
+      </div>
       <div class="quiz-results-score">${quizScore}/${total}</div>
+      <div class="quiz-results-pct">${pct}% correcto</div>
       <p class="quiz-results-message">${message}</p>
       <div class="quiz-results-actions">
         <button class="lp-btn lp-btn--primary" id="quizRetryBtn">↻ Otra ronda</button>
@@ -229,6 +251,12 @@ function renderQuizResults() {
       </div>
     </div>
   `;
+
+  // Animate ring after DOM paint
+  requestAnimationFrame(() => {
+    const ring = document.getElementById('quizRingFill');
+    if (ring) ring.style.strokeDashoffset = offset;
+  });
 
   document.getElementById('quizRetryBtn').addEventListener('click', () => showQuizView(state.currentSong));
   document.getElementById('quizBackBtn2').addEventListener('click', () => loadSong(state.currentSong));
