@@ -127,6 +127,11 @@ function showPicker(skipAutoLoad = false) {
   state.playerCleanup = null;
   state.currentSong = null;
   if (state.audio) { state.audio.pause(); state.audio = null; }
+  if (location.search.includes('song=')) {
+    const u = new URL(location.href);
+    u.searchParams.delete('song');
+    history.replaceState(null, '', u);
+  }
 
   // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
   const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
@@ -320,6 +325,9 @@ export async function loadSong(song) {
   // Persist last song & mark session as active
   savePrefs({ lastSong: song.folder });
   sessionStorage.setItem('lyricflow_active', '1');
+  const u = new URL(location.href);
+  u.searchParams.set('song', song.folder.split('/').pop());
+  history.replaceState(null, '', u);
 }
 
 // ─── Theme (shared between picker and player) ──────────────────────────────────
@@ -1936,4 +1944,10 @@ function setupPickerActions() {
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
 
-showPicker();
+const songParam = new URLSearchParams(location.search).get('song');
+const initialSong = songParam && pickerSongs.find(s => s.folder.split('/').pop() === songParam);
+if (initialSong) {
+  loadSong(initialSong);
+} else {
+  showPicker();
+}
