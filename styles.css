@@ -167,6 +167,7 @@
 body {
   font-family: var(--lp-font-body);
   background: var(--lp-bg);
+  height: 100vh; /* fallback for browsers without svh support */
   height: 100svh;
   display: flex;
   justify-content: center;
@@ -249,6 +250,7 @@ body {
 .player-wrapper {
   max-width: 860px;
   width: 100%;
+  height: calc(100vh - 32px); /* fallback for browsers without svh support */
   height: calc(100svh - 32px);
   max-height: 940px;
   display: flex;
@@ -1265,6 +1267,7 @@ body {
   body { padding: 8px; }
 
   .player-wrapper {
+    height: calc(100vh - 16px); /* fallback for browsers without svh support */
     height: calc(100svh - 16px);
     padding: 16px 14px 16px;
     border-radius: var(--lp-radius-lg);
@@ -1295,6 +1298,13 @@ body {
   .loop-btn { width: 30px; height: 30px; font-size: 0.76rem; }
 
   .toggle-listening-btn { width: 32px; height: 32px; font-size: 0.8rem; }
+
+  /* Line-number gutter reserves 30px (width + gap) even when hidden,
+     making the left margin roughly double the right one on narrow screens. */
+  .sub-line { gap: 0; }
+  .sub-index { min-width: 0; width: 0; }
+  .subtitle-container.show-line-numbers .sub-line { gap: 10px; }
+  .subtitle-container.show-line-numbers .sub-index { min-width: 20px; width: 20px; }
 }
 
 /* ─── Vocabulary Mode ───────────────────────────────────────────────────────── */
@@ -1372,6 +1382,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -1513,9 +1524,9 @@ body {
   font-family: var(--lp-font-display);
   font-size: 0.76rem;
   font-weight: 300;
-  color: rgba(232, 160, 128, 0.5);
+  color: var(--lp-accent-text);
   padding-left: 10px;
-  border-left: 2px solid rgba(232, 160, 128, 0.15);
+  border-left: 2px solid color-mix(in srgb, var(--lp-accent) 25%, transparent);
   line-height: 1.5;
 }
 
@@ -1527,6 +1538,42 @@ body {
   .vocab-detail-word { font-size: 1.15rem; margin-bottom: 10px; }
   .vocab-detail-body { grid-template-columns: 1fr; gap: 10px 0; }
   .vocab-detail-label { margin-bottom: 3px; }
+}
+
+/* ─── Vocab Alt Meaning + Phrasal Verbs ─────────────────────────────────────── */
+
+.vocab-alt-meaning {
+  font-family: var(--lp-font-display);
+  font-size: 0.85rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--lp-muted);
+  line-height: 1.5;
+}
+
+.vocab-type-badge {
+  font-family: var(--lp-font-body);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--lp-accent-text);
+  background: var(--lp-accent-soft);
+  padding: 3px 9px;
+  border-radius: var(--lp-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.vocab-chip--phrasal::before {
+  border-style: dashed;
+}
+
+.wt-alt {
+  display: block;
+  font-family: var(--lp-font-display);
+  font-size: 0.68rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--lp-muted);
 }
 
 /* ─── Speed Control Button ──────────────────────────────────────────────────── */
@@ -1983,6 +2030,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 4px 2px 40px;
   display: flex;
   flex-direction: column;
@@ -2304,27 +2352,6 @@ body {
   font-weight: 700;
   color: var(--lp-accent-text);
   letter-spacing: 0.04em;
-}
-
-.song-fin-back {
-  background: var(--lp-surface-sunken);
-  border: 1px solid var(--lp-border);
-  color: var(--lp-muted);
-  padding: 7px 20px;
-  border-radius: 18px;
-  font-family: var(--lp-font-body);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all 0.2s var(--lp-ease);
-}
-
-.song-fin-back:hover {
-  border-color: color-mix(in srgb, var(--lp-accent) 25%, transparent);
-  color: var(--lp-accent-text);
-  background: var(--lp-accent-soft);
-  transform: translateX(-2px);
 }
 
 /* ─── Listening Results Modal ────────────────────────────────────────────────── */

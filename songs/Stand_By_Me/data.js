@@ -6,14 +6,12 @@ export default {
   file: 'stand_by_me.mp3',
   offset: 0,
   culture: {
-    artist: 'Ben E. King (1938–2015) fue un cantante estadounidense de soul y R&B. Fue vocalista principal de The Drifters antes de su exitosa carrera en solitario.',
-    song: 'Stand By Me (1961) fue inspirada por un espiritual gospel. Se ha convertido en una de las canciones más reproducidas del siglo XX, con más de 400 versiones grabadas por otros artistas.',
-    language: 'Vocabulario emocional básico con estructuras condicionales simples (if/when). Verbos cotidianos: stand, see, look, cry. Nivel A2 por la claridad y repetición del mensaje.',
+    artist: 'Cantante de soul y R&B (1938–2015), ex vocalista de The Drifters.',
+    song: 'Inspirada en un espiritual gospel (1961). Una de las más versionadas del siglo XX.',
+    language: 'Vocabulario emocional básico y condicionales simples — nivel A2.',
     funFacts: [
-      'La canción se compuso en solo 15 minutos en el estudio de grabación.',
-      'Volvió al Top 10 en 1986 tras ser usada en la película del mismo nombre.',
-      'La línea de bajo es una de las más reconocidas en la historia del pop.',
-      'Ha sido usada en más de 100 películas y programas de televisión.'
+      'Compuesta en solo 15 minutos en el estudio.',
+      'Su línea de bajo es de las más reconocidas del pop.'
     ]
   },
   subtitles: [

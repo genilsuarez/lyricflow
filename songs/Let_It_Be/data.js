@@ -2,18 +2,16 @@ export default {
   title: 'Let It Be',
   artist: 'The Beatles',
   icon: '🕊️',
-  level: 'B1',
+  level: 'A2',
   file: 'let_it_be.mp3',
   offset: 0,
   culture: {
-    artist: 'The Beatles fueron una banda británica formada en Liverpool en 1960. Son considerados la banda más influyente de la historia de la música popular.',
-    song: 'Let It Be (1970) fue escrita por Paul McCartney inspirada en un sueño con su madre Mary, quien había fallecido cuando él tenía 14 años. Es una de las últimas canciones grabadas antes de la separación de la banda.',
-    language: 'Estructuras condicionales simples y vocabulario de consuelo. Mezcla presente simple con futuro (will). Expresiones como "let it be" (déjalo ser) y "words of wisdom" (palabras sabias). Nivel A2-B1.',
+    artist: 'Banda británica de Liverpool (1960), la más influyente de la música popular.',
+    song: 'McCartney la escribió tras soñar con su madre Mary (1970).',
+    language: 'Vocabulario repetitivo de consuelo y condicionales simples — nivel A2.',
     funFacts: [
-      'McCartney soñó que su madre le decía "Let it be" durante un periodo de tensiones en la banda.',
-      'Fue la última canción de The Beatles en alcanzar el #1 en EE.UU.',
-      'Billy Preston tocó el órgano en la grabación original.',
-      'Existen dos versiones muy diferentes: la del single y la del álbum.'
+      'McCartney soñó que su madre le decía "Let it be" en plena crisis de la banda.',
+      'Billy Preston tocó el órgano en la grabación.'
     ]
   },
 

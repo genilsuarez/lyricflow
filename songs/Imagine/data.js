@@ -2,18 +2,16 @@ export default {
   title: 'Imagine',
   artist: 'John Lennon',
   icon: '☮️',
-  level: 'B1',
+  level: 'A2',
   file: 'imagine.mp3',
   offset: 0,
   culture: {
-    artist: 'John Lennon (1940–1980) fue cofundador de The Beatles y uno de los compositores más influyentes del siglo XX. Su obra en solitario exploró temas de paz, amor y crítica social.',
-    song: 'Imagine (1971) es considerada una de las canciones más importantes de la historia. Escrita en su piano blanco en Tittenhurst Park, es un himno utópico que invita a imaginar un mundo sin divisiones.',
-    language: 'El inglés es simple y directo — Lennon usa vocabulario básico (imagine, heaven, people, world) con estructuras condicionales y subjuntivas. Ideal para nivel intermedio.',
+    artist: 'Cofundador de The Beatles (1940–1980). Su obra solista exploró paz y crítica social.',
+    song: 'Himno utópico (1971) escrito en su piano blanco.',
+    language: 'Vocabulario básico con imperativo y present continuous — nivel A2.',
     funFacts: [
-      'Lennon escribió Imagine en una sola sesión matutina.',
-      'Yoko Ono fue co-inspiradora de la letra, basada en su libro "Grapefruit" (1964).',
-      'El piano blanco Steinway donde se compuso fue vendido por £1.67 millones en 2000.',
-      'Es la canción en solitario más vendida de cualquier ex-Beatle.'
+      'Lennon la escribió en una sola sesión matutina.',
+      'Es la canción solista más vendida de un ex-Beatle.'
     ]
   },
 

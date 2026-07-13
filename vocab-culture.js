@@ -55,6 +55,10 @@ function showVocabView(song) {
             <span class="vocab-detail-label">Ejemplo</span>
             <div class="vocab-detail-example" id="detailExample"></div>
           </div>
+          <div class="vocab-detail-section" id="detailAltSection" hidden>
+            <span class="vocab-detail-label">Otro significado</span>
+            <div class="vocab-alt-meaning" id="detailAltMeaning"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -89,6 +93,7 @@ function renderVocab(filter = '') {
     chip.dataset.word = entry.word;
     chip.dataset.lines = JSON.stringify(entry.lines);
     chip.textContent = entry.word;
+    if (entry.type === 'phrasal') chip.classList.add('vocab-chip--phrasal');
     chip.addEventListener('click', onVocabTap);
     container.appendChild(chip);
   });
@@ -105,10 +110,16 @@ function onVocabTap(e) {
   const detailWord = document.getElementById('detailWord');
   const detailTrans = document.getElementById('detailTranslation');
   const detailExample = document.getElementById('detailExample');
+  const detailAltSection = document.getElementById('detailAltSection');
+  const detailAltMeaning = document.getElementById('detailAltMeaning');
 
-  detailWord.textContent = word;
+  detailWord.innerHTML = entry && entry.type === 'phrasal'
+    ? `${word}<span class="vocab-type-badge">phrasal verb</span>`
+    : word;
   detailTrans.textContent = '';
   detailExample.innerHTML = '';
+  detailAltMeaning.textContent = '';
+  detailAltSection.hidden = true;
 
   if (entry && entry.translation) {
     detailTrans.textContent = entry.translation;
@@ -120,6 +131,11 @@ function onVocabTap(e) {
       <span class="detail-original">${ex.original}</span>
       <span class="detail-trans">${ex.translation}</span>
     `;
+  }
+
+  if (entry && entry.altMeaning) {
+    detailAltMeaning.textContent = entry.altMeaning;
+    detailAltSection.hidden = false;
   }
 
   detail.hidden = false;

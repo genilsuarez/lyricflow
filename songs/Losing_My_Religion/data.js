@@ -2,18 +2,16 @@ export default {
   title: 'Losing My Religion',
   artist: 'R.E.M.',
   icon: '🌀',
-  level: 'C1',
+  level: 'B2',
   file: 'losing_my_religion.mp3',
   offset: 0,
   culture: {
-    artist: 'R.E.M. fue una banda estadounidense de rock alternativo formada en 1980 en Athens, Georgia. Fueron pioneros del alternative rock y una influencia clave en el movimiento indie de los 90.',
-    song: 'Losing My Religion (1991) es el mayor éxito comercial de R.E.M. El título es una expresión sureña que significa "perder la paciencia" o "estar al límite". La canción explora la vulnerabilidad, la obsesión no correspondida y la frustración de no poder comunicar lo que sientes.',
-    language: 'Vocabulario idiomático avanzado: "losing my religion" (expresión regional), "the corner of my eye" (visión periférica), "slip" (deslizarse/escaparse). Estructuras condicionales complejas, metáforas sostenidas y registro poético que requiere inferencia cultural.',
+    artist: 'Banda de alt-rock de Athens, Georgia (1980). Pioneros del indie de los 90.',
+    song: 'Mayor éxito de R.E.M. (1991), sobre obsesión no correspondida.',
+    language: 'Expresiones idiomáticas y registro poético accesible — nivel B2.',
     funFacts: [
-      'El riff principal es de mandolina, no de guitarra — inusual para una canción de rock mainstream.',
-      'Michael Stipe dijo que la canción trata sobre una obsesión no correspondida, no sobre religión.',
-      'El video musical se inspiró en la iconografía de Caravaggio.',
-      'Fue nominada a 6 Grammy y ganó dos premios MTV Video Music Awards.'
+      'El riff principal es de mandolina, no de guitarra.',
+      'Nominada a 6 Grammy, ganó 2 MTV VMAs.'
     ]
   },
 

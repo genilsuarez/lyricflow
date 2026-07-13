@@ -30,6 +30,7 @@ export default [
   {
     "word": "backbeat",
     "translation": "ritmo / contratiempo",
+    "altMeaning": "en música, el énfasis en los tiempos débiles del compás (2 y 4)",
     "count": 1,
     "lines": [7],
     "examples": [
@@ -39,6 +40,7 @@ export default [
   {
     "word": "fire",
     "translation": "fuego",
+    "altMeaning": "también significa 'despedir' (de un empleo) o 'disparar' (un arma)",
     "count": 1,
     "lines": [8],
     "examples": [
@@ -57,6 +59,7 @@ export default [
   {
     "word": "winding",
     "translation": "sinuoso / con curvas",
+    "altMeaning": "también 'enrollar' o 'dar cuerda' (de wind /waɪnd/, no /wɪnd/)",
     "count": 1,
     "lines": [13],
     "examples": [
@@ -66,6 +69,7 @@ export default [
   {
     "word": "blinding",
     "translation": "cegador / deslumbrante",
+    "altMeaning": "como verbo, 'blind' también significa 'cegar' o 'ocultar la vista'",
     "count": 1,
     "lines": [14],
     "examples": [
@@ -84,6 +88,7 @@ export default [
   {
     "word": "saves",
     "translation": "salva",
+    "altMeaning": "también 'ahorra' (dinero) o 'guarda' (un archivo)",
     "count": 1,
     "lines": [18],
     "examples": [
@@ -93,6 +98,7 @@ export default [
   {
     "word": "wonderwall",
     "translation": "muro de maravillas (metáfora: protector/a)",
+    "altMeaning": "palabra inventada por Oasis; inspirada en la película 'Wonderwall' (1968) de George Harrison",
     "count": 1,
     "lines": [20],
     "examples": [
@@ -120,10 +126,22 @@ export default [
   {
     "word": "after all",
     "translation": "después de todo",
+    "type": "phrasal",
     "count": 1,
     "lines": [19],
     "examples": [
       { "original": "And after all, you're my wonderwall", "translation": "Y después de todo, eres mi muro de maravillas" }
+    ]
+  },
+  {
+    "word": "throw it back",
+    "translation": "devolver / lanzar de vuelta",
+    "type": "phrasal",
+    "count": 2,
+    "lines": [2, 34],
+    "examples": [
+      { "original": "That they're gonna throw it back to you", "translation": "En que te lo van a devolver" },
+      { "original": "But they'll never throw it back to you", "translation": "Pero nunca te lo van a devolver" }
     ]
   }
 ];
