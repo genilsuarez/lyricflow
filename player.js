@@ -6,6 +6,7 @@
 
 import pickerSongs from './songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
+import { toggleQuizMode } from './quiz.js';
 
 export const app = document.getElementById('app');
 
@@ -272,6 +273,7 @@ export async function loadSong(song) {
         <button class="toggle-listening-btn" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
         <button class="toggle-blanks-btn" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
         <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
+        <button class="toggle-quiz-btn" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Mini Quiz">🧠</button>
         ${song.culture ? '<button class="toggle-culture-btn" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>' : ''}
       </div>
     </div>
@@ -385,6 +387,7 @@ function bindPlayerEvents(song) {
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
   document.getElementById('toggleVocabBtn').addEventListener('click', toggleVocabMode, { signal });
+  document.getElementById('toggleQuizBtn').addEventListener('click', toggleQuizMode, { signal });
   document.getElementById('toggleBlanksBtn').addEventListener('click', toggleBlanksMode, { signal });
   document.getElementById('toggleListeningBtn').addEventListener('click', toggleListeningMode, { signal });
   document.getElementById('speedBtn').addEventListener('click', cycleSpeed, { signal });
