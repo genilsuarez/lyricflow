@@ -32,7 +32,6 @@ export function toggleQuizMode() {
 function showQuizView(song) {
   if (state.audio && !state.audio.paused) {
     state.audio.pause();
-    state.isPlaying = false;
     stopUpdateLoop();
   }
 

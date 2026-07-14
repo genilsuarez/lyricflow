@@ -1,4 +1,4 @@
-// Auto-generated picker metadata — run: node scripts/tmp/build-picker-data.js
+// Picker metadata (maintained by hand — the original generator script no longer exists).
 // Only metadata needed for the song list; full data.js loaded on song select.
 export default [
   { title: "Bohemian Rhapsody", artist: "Queen", icon: "👑", level: "C1", folder: "songs/Bohemian_Rhapsody" },

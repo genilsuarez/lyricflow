@@ -38,7 +38,6 @@ const STOP_WORDS = new Set([
 export const state = {
   // Playback
   audio: null,
-  isPlaying: false,
   currentSubIndex: -1,
   animationFrame: null,
   isDragging: false,
@@ -50,7 +49,6 @@ export const state = {
   selectMode: false,
   showLineNumbers: false,
   vocabData: null,
-  vocabMode: false,
 
   // A-B loop
   loopA: null,
@@ -71,7 +69,6 @@ export const state = {
   listeningScore: { correct: 0, wrong: 0 },
   listeningBlanksMap: {}, // lineIndex -> [{wordIdx, clean, original}]
   listeningPauseAt: null,   // audio time (s) to pause and activate blank
-  listeningNextBlank: null, // blank element to activate when listeningPauseAt fires
   listeningRepeatCount: 0,  // 0 = first play, 1 = already repeated → now pause
   listeningLineStart: null, // start time of current listening line (for replay)
 
@@ -232,7 +229,6 @@ export async function loadSong(song) {
   state.currentSong = song;
   state.showTranslation = false;
   state.showLineNumbers = false;
-  state.vocabMode = false;
   state.blanksMode = false;
   state.blanksAnswers = {};
   state.listeningMode = false;
@@ -241,7 +237,6 @@ export async function loadSong(song) {
   state.listeningScore = { correct: 0, wrong: 0 };
   state.listeningBlanksMap = {};
   state.listeningPauseAt = null;
-  state.listeningNextBlank = null;
   clearListeningTimer();
   state.loopA = null;
   state.loopB = null;
@@ -451,7 +446,6 @@ function initAudio(song) {
 
   state.audio.addEventListener('ended', () => {
     document.getElementById('playBtn').textContent = '▶';
-    state.isPlaying = false;
     stopUpdateLoop();
     document.getElementById('progressFill').style.width = '100%';
     state.cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
@@ -470,7 +464,6 @@ function playAudio() {
   state.audio.play().catch(() => {});
   document.getElementById('playBtn').textContent = '⏸';
   document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
-  state.isPlaying = true;
   startUpdateLoop();
   document.querySelector('.artwork')?.classList.add('playing');
 }
@@ -480,7 +473,6 @@ function pauseAudio() {
   state.audio.pause();
   document.getElementById('playBtn').textContent = '▶';
   document.getElementById('playBtn').setAttribute('aria-label', 'Reproducir');
-  state.isPlaying = false;
   stopUpdateLoop();
   document.querySelector('.artwork')?.classList.remove('playing');
 }
@@ -663,10 +655,8 @@ function updateProgress() {
       } else {
         // Second play done — now pause and start timer
         state.listeningPauseAt = null;
-        state.listeningNextBlank = null;
         state.audio.pause();
         document.getElementById('playBtn').textContent = '▶';
-        state.isPlaying = false;
         // Ensure line stays visually active
         const blankLine = state.listeningCurrentBlank.closest('.sub-line');
         if (blankLine) {
@@ -680,7 +670,6 @@ function updateProgress() {
       }
     } else {
       state.listeningPauseAt = null;
-      state.listeningNextBlank = null;
     }
   }
 }
@@ -1288,7 +1277,6 @@ function updateSubtitles(time) {
       state.listeningPauseAt = sub.start + offset + sub.duration;
       state.listeningLineStart = sub.start + offset;
       state.listeningRepeatCount = 0;
-      state.listeningNextBlank = blank;
       // Mark as waiting so no other blank gets scheduled
       state.listeningWaiting = true;
       state.listeningCurrentBlank = blank;
@@ -1355,7 +1343,6 @@ function toggleListeningMode() {
     state.listeningWaiting = false;
     state.listeningCurrentBlank = null;
     state.listeningPauseAt = null;
-    state.listeningNextBlank = null;
     state.listeningRepeatCount = 0;
     state.listeningLineStart = null;
     renderSubtitles(state.currentSong.subtitles);
@@ -1390,7 +1377,6 @@ function toggleListeningMode() {
     state.currentSubIndex = -1;
     state.listeningWaiting = false;
     document.getElementById('playBtn').textContent = '▶';
-    state.isPlaying = false;
     stopUpdateLoop();
 
     renderSubtitles(state.currentSong.subtitles);
@@ -1596,7 +1582,6 @@ function resumeListeningAfterDelay() {
   state.listeningWaiting = false;
   state.listeningCurrentBlank = null;
   state.listeningPauseAt = null;
-  state.listeningNextBlank = null;
   state.listeningRepeatCount = 0;
   state.listeningLineStart = null;
 
@@ -1873,7 +1858,6 @@ function showListeningResults() {
     state.listeningWaiting = false;
     state.listeningCurrentBlank = null;
     state.listeningPauseAt = null;
-    state.listeningNextBlank = null;
     state.listeningRepeatCount = 0;
     state.listeningLineStart = null;
     renderSubtitles(state.currentSong.subtitles);
