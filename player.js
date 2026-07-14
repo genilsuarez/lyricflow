@@ -251,15 +251,18 @@ export async function loadSong(song) {
 
   app.innerHTML = `
     <div class="song-header">
+      <button class="back-btn" id="backBtn" aria-label="Volver al picker" title="Volver">←</button>
       <div class="artwork">${song.icon || '🎵'}</div>
       <div class="song-meta">
         <div class="song-title">${song.title}</div>
-        <div class="song-artist">${song.artist}</div>
+        <div class="song-artist">
+          <span>${song.artist}</span>
+          ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+        </div>
       </div>
       <div class="song-header-actions">
-        <button class="picker-btn" id="backBtn" aria-label="Volver al picker" title="Volver">←</button>
         <a class="picker-btn" id="playerPortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
-        <button class="picker-btn" id="playerThemeToggle" aria-label="Cambiar tema">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</button>
+        <button class="picker-btn" id="playerThemeToggle" aria-label="Cambiar tema">🌙</button>
       </div>
     </div>
 
@@ -270,9 +273,9 @@ export async function loadSong(song) {
       </div>
       <span class="ctrl-divider" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--study">
-        <button class="toggle-listening-btn" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
-        <button class="toggle-blanks-btn" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
         <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
+        <button class="toggle-blanks-btn" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
+        <button class="toggle-listening-btn" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
         <button class="toggle-quiz-btn" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Mini Quiz">🧠</button>
         ${song.culture ? '<button class="toggle-culture-btn" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>' : ''}
       </div>
@@ -364,25 +367,29 @@ function toggleTheme(iconEl) {
   setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
 }
 
+// Portal + theme toggle wiring shared by every view that carries the
+// [← volver][🏠][🌙] header actions (picker, player, vocab, culture, quiz).
+export function bindHeaderActions(portalId, themeId) {
+  const portal = document.getElementById(portalId);
+  const themeBtn = document.getElementById(themeId);
+  const host = location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
+  if (portal && isLocal) {
+    portal.href = 'http://' + host + ':3000/';
+  }
+  if (themeBtn) {
+    themeBtn.textContent = currentThemeIcon();
+    themeBtn.addEventListener('click', () => toggleTheme(themeBtn));
+  }
+}
+
 function bindPlayerEvents(song) {
   const controller = new AbortController();
   const { signal } = controller;
   state.playerCleanup = () => controller.abort();
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
-  // Local dev: el portal del player apunta a la DeskFlow local (mismo patrón que el picker)
-  const _h = location.hostname;
-  const _isLocal = _h === 'localhost' || _h === '127.0.0.1' || _h.startsWith('192.168.');
-  if (_isLocal) {
-    const pPortal = document.getElementById('playerPortalLink');
-    if (pPortal) {
-      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      pPortal.href = 'http://' + _h + ':3000/?theme=' + theme;
-    }
-  }
-  document.getElementById('playerThemeToggle').addEventListener('click', () => {
-    toggleTheme(document.getElementById('playerThemeToggle'));
-  }, { signal });
+  bindHeaderActions('playerPortalLink', 'playerThemeToggle');
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
@@ -815,6 +822,7 @@ function showDifficultyPicker(mode, onSelect) {
   const picker = document.createElement('div');
   picker.id = 'difficultyPicker';
   picker.className = 'difficulty-picker';
+  picker.dataset.mode = mode;
   picker.innerHTML = `
     <div class="dp-header">
       <span class="dp-title">${mode === 'blanks' ? '✎ Completar huecos' : '🎧 Dictado auditivo'}</span>
@@ -858,6 +866,13 @@ function showDifficultyPicker(mode, onSelect) {
 // ─── Fill-in-the-Blanks ────────────────────────────────────────────────────────
 
 function toggleBlanksMode() {
+  // If the picker is open but no difficulty was chosen yet → cancel it
+  const openPicker = document.getElementById('difficultyPicker');
+  if (openPicker && openPicker.dataset.mode === 'blanks') {
+    openPicker.remove();
+    return;
+  }
+
   // If active → deactivate
   if (state.blanksMode) {
     state.blanksMode = false;
@@ -1325,6 +1340,13 @@ function toggleHighlight() {
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
 
 function toggleListeningMode() {
+  // If the picker is open but no difficulty was chosen yet → cancel it
+  const openPicker = document.getElementById('difficultyPicker');
+  if (openPicker && openPicker.dataset.mode === 'listening') {
+    openPicker.remove();
+    return;
+  }
+
   // If active → deactivate
   if (state.listeningMode) {
     state.listeningMode = false;
@@ -1975,18 +1997,12 @@ document.addEventListener('visibilitychange', () => {
 // ─── Picker Actions (theme + portal) ────────────────────────────────────────────
 
 function setupPickerActions() {
-  const themeBtn = document.getElementById('themeToggle');
-  const portalLink = document.getElementById('portalLink');
+  bindHeaderActions('portalLink', 'themeToggle');
 
-  themeBtn.textContent = currentThemeIcon();
-
-  themeBtn.addEventListener('click', () => toggleTheme(themeBtn));
-
-  // Local dev: rewrite portal link and propagate theme
+  // Local dev: propagate the current theme to any cross-app link on click
   const _lh = location.hostname;
   const _lIsLocal = _lh === 'localhost' || _lh === '127.0.0.1' || _lh.startsWith('192.168.');
   if (_lIsLocal) {
-    portalLink.href = 'http://' + _lh + ':3000/';
     document.addEventListener('click', (e) => {
       const a = e.target.closest('a[href*="' + _lh + ':"]');
       if (a) {
