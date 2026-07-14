@@ -720,7 +720,6 @@ body {
 
 .toggle-trans-btn,
 .toggle-select-btn,
-.toggle-lines-btn,
 .toggle-vocab-btn,
 .toggle-blanks-btn,
 .toggle-culture-btn,
@@ -758,7 +757,6 @@ body {
 /* Hover */
 .toggle-trans-btn:hover,
 .toggle-select-btn:hover,
-.toggle-lines-btn:hover,
 .toggle-vocab-btn:hover,
 .toggle-blanks-btn:hover,
 .toggle-culture-btn:hover,
@@ -773,8 +771,7 @@ body {
 
 /* Active — generic */
 .toggle-trans-btn.active,
-.toggle-select-btn.active,
-.toggle-lines-btn.active {
+.toggle-select-btn.active {
   background: var(--lp-accent-soft);
   border-color: color-mix(in srgb, var(--lp-accent) 35%, transparent);
   color: var(--lp-accent-text);
@@ -2554,17 +2551,6 @@ body {
   animation: fadeUp 0.4s var(--lp-ease) both;
 }
 
-.quiz-results-emoji {
-  font-size: 3rem;
-  animation: resultsBounce 0.5s var(--lp-ease-bounce) both;
-  animation-delay: 0.1s;
-}
-
-@keyframes resultsBounce {
-  0% { opacity: 0; transform: scale(0.5) translateY(10px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
 .quiz-results-score {
   font-family: var(--lp-font-display);
   font-size: 2.4rem;
@@ -2905,14 +2891,6 @@ body {
   box-shadow: 0 4px 12px color-mix(in srgb, var(--lp-accent) 30%, transparent);
 }
 
-.song-fin-score {
-  font-family: var(--lp-font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--lp-accent-text);
-  letter-spacing: 0.04em;
-}
-
 /* ─── Listening Results Modal ────────────────────────────────────────────────── */
 
 .lr-overlay {
@@ -3224,7 +3202,6 @@ a:focus-visible,
 
 .toggle-trans-btn,
 .toggle-select-btn,
-.toggle-lines-btn,
 .toggle-vocab-btn,
 .toggle-blanks-btn,
 .toggle-culture-btn,
@@ -3237,7 +3214,6 @@ a:focus-visible,
   /* No reducir por debajo del tamaño desktop en móvil (donde el dedo importa más) */
   .toggle-trans-btn,
   .toggle-select-btn,
-  .toggle-lines-btn,
   .toggle-vocab-btn,
   .toggle-blanks-btn,
   .toggle-culture-btn,

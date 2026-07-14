@@ -24,10 +24,8 @@ export function toggleVocabMode() {
 }
 
 function showVocabView(song) {
-  state.vocabMode = true;
   if (state.audio && !state.audio.paused) {
     state.audio.pause();
-    state.isPlaying = false;
     stopUpdateLoop();
   }
 
@@ -81,7 +79,6 @@ function showVocabView(song) {
   `;
 
   document.getElementById('vocabBackBtn').addEventListener('click', () => {
-    state.vocabMode = false;
     loadSong(song);
   });
   bindHeaderActions('vocabPortalLink', 'vocabThemeToggle');
@@ -193,7 +190,6 @@ function onVocabTap(e) {
 export function showCultureView(song) {
   if (state.audio && !state.audio.paused) {
     state.audio.pause();
-    state.isPlaying = false;
     stopUpdateLoop();
   }
 
