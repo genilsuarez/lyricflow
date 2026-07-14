@@ -403,6 +403,9 @@ body {
   border-radius: var(--lp-radius-sm);
   flex-shrink: 0;
   border: 1px solid transparent;
+  color: var(--lp-muted);
+  background: var(--lp-surface-sunken);
+  border-color: var(--lp-border-subtle);
 }
 
 .level-badge.level-a1 { color: var(--lp-cat-green); background: var(--lp-cat-green-soft); border-color: color-mix(in srgb, var(--lp-cat-green) 35%, transparent); }
@@ -429,10 +432,6 @@ body {
   gap: 12px;
   margin-bottom: 10px;
   animation: fadeUp 0.4s var(--lp-ease) 0.1s both;
-}
-
-.song-header .picker-btn {
-  margin-left: auto;
 }
 
 .back-btn {
@@ -498,8 +497,9 @@ body {
 
 .song-title {
   font-family: var(--lp-font-display);
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 400;
+  font-style: italic;
   letter-spacing: -0.02em;
   color: var(--lp-ink);
   line-height: 1.1;
@@ -509,14 +509,14 @@ body {
 }
 
 .song-artist {
-  font-size: 0.58rem;
+  font-size: 0.66rem;
   color: var(--lp-muted);
-  margin-top: 3px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -525,8 +525,8 @@ body {
 .mode-toolbar {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
   animation: fadeUp 0.4s var(--lp-ease) 0.15s both;
 }
 
@@ -616,24 +616,14 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 8px;
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-sunken);
-  border: 1px solid var(--lp-border-subtle);
-}
-
-.ctrl-group--display,
-.ctrl-group--study {
-  gap: 4px;
-  padding: 5px 7px;
 }
 
 .ctrl-divider {
   width: 1px;
-  height: 18px;
+  height: 20px;
   background: linear-gradient(180deg, transparent, var(--lp-border), transparent);
   flex-shrink: 0;
-  margin: 0 2px;
+  margin: 0 4px;
 }
 
 .play-btn {
@@ -765,16 +755,6 @@ body {
   font-weight: 700;
 }
 
-.ctrl-group--study .toggle-listening-btn,
-.ctrl-group--study .toggle-blanks-btn,
-.ctrl-group--study .toggle-vocab-btn,
-.ctrl-group--study .toggle-culture-btn,
-.ctrl-group--study .toggle-quiz-btn {
-  background: var(--lp-border-subtle);
-  border-color: var(--lp-border-strong);
-  color: var(--lp-ink-soft);
-}
-
 /* Hover */
 .toggle-trans-btn:hover,
 .toggle-select-btn:hover,
@@ -824,20 +804,19 @@ body {
   color: var(--lp-accent-text);
 }
 
-/* Active — listening (orange) */
+/* Active — listening (amber) */
 .toggle-listening-btn {
   width: 36px;
   height: 36px;
-  font-size: 0.88rem;
-  background: color-mix(in srgb, var(--lp-warning) 6%, transparent);
-  border-color: color-mix(in srgb, var(--lp-warning) 16%, transparent);
-  color: color-mix(in srgb, var(--lp-warning) 75%, transparent);
+  background: color-mix(in srgb, var(--lp-warning) 10%, var(--lp-surface-sunken));
+  border-color: color-mix(in srgb, var(--lp-warning) 28%, var(--lp-border));
+  color: color-mix(in srgb, var(--lp-warning) 75%, var(--lp-ink-soft));
 }
 
 .toggle-listening-btn:hover {
-  border-color: color-mix(in srgb, var(--lp-warning) 38%, transparent);
+  border-color: color-mix(in srgb, var(--lp-warning) 45%, transparent);
   color: var(--lp-warning);
-  background: color-mix(in srgb, var(--lp-warning) 10%, transparent);
+  background: color-mix(in srgb, var(--lp-warning) 16%, var(--lp-surface-sunken));
 }
 
 .toggle-listening-btn.active {
@@ -845,6 +824,134 @@ body {
   border-color: color-mix(in srgb, var(--lp-warning) 45%, transparent);
   color: var(--lp-warning);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--lp-warning) 6%, transparent);
+}
+
+/* ─── Mode Toolbar — Jerarquía (vista vs. modos de estudio) ────────────────────
+   "Vista" (Aa, ⌶) son preferencias de lectura: quietas, sin color propio.
+   "Modos de estudio" son los ejercicios reales: se elevan sobre una repisa y
+   cada uno lleva el color de su categoría (reutilizando --lp-cat-*, ya usados
+   en level-badge/song-list, nunca antes en este toolbar). El orden sigue el
+   andamiaje pedagógico: 📖 aprender → ✎ practicar con texto → 🎧 practicar de
+   oído → 🧠 evaluarse → 🌍 contexto. Un remate de 2px con las 5 tonalidades en
+   secuencia anticipa, de izquierda a derecha, el color de cada icono debajo. */
+
+.ctrl-group--display {
+  gap: 3px;
+  padding: 2px;
+}
+
+.ctrl-group--display .toggle-trans-btn,
+.ctrl-group--display .toggle-select-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 0.72rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--lp-muted);
+}
+
+.ctrl-group--display .toggle-trans-btn:hover,
+.ctrl-group--display .toggle-select-btn:hover {
+  background: var(--lp-surface-sunken);
+  border-color: var(--lp-border-subtle);
+  color: var(--lp-ink-soft);
+  transform: none;
+}
+
+.ctrl-group--display .toggle-trans-btn.active,
+.ctrl-group--display .toggle-select-btn.active {
+  background: var(--lp-ink);
+  border-color: var(--lp-ink);
+  color: var(--lp-bg);
+  box-shadow: none;
+}
+
+.ctrl-group--study {
+  position: relative;
+  gap: 5px;
+  padding: 7px 10px 6px;
+  border-radius: var(--lp-radius-lg);
+  background: linear-gradient(180deg, var(--lp-surface-raised), var(--lp-surface-sunken));
+  border: 1px solid var(--lp-border-subtle);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+.ctrl-group--study::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  border-radius: var(--lp-radius-full);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--lp-cat-blue) 75%, transparent),
+    color-mix(in srgb, var(--lp-success) 75%, transparent),
+    color-mix(in srgb, var(--lp-warning) 75%, transparent),
+    color-mix(in srgb, var(--lp-cat-purple) 75%, transparent),
+    color-mix(in srgb, var(--lp-cat-teal) 75%, transparent));
+}
+
+.ctrl-group--study .toggle-blanks-btn {
+  background: color-mix(in srgb, var(--lp-success) 10%, var(--lp-surface-sunken));
+  border-color: color-mix(in srgb, var(--lp-success) 28%, var(--lp-border));
+  color: color-mix(in srgb, var(--lp-success) 70%, var(--lp-ink-soft));
+}
+.ctrl-group--study .toggle-blanks-btn:hover {
+  border-color: color-mix(in srgb, var(--lp-success) 45%, transparent);
+  background: color-mix(in srgb, var(--lp-success) 16%, var(--lp-surface-sunken));
+  color: var(--lp-success);
+}
+
+.ctrl-group--study .toggle-vocab-btn {
+  background: color-mix(in srgb, var(--lp-cat-blue) 10%, var(--lp-surface-sunken));
+  border-color: color-mix(in srgb, var(--lp-cat-blue) 28%, var(--lp-border));
+  color: color-mix(in srgb, var(--lp-cat-blue) 75%, var(--lp-ink-soft));
+}
+.ctrl-group--study .toggle-vocab-btn:hover {
+  border-color: color-mix(in srgb, var(--lp-cat-blue) 45%, transparent);
+  background: color-mix(in srgb, var(--lp-cat-blue) 16%, var(--lp-surface-sunken));
+  color: var(--lp-cat-blue);
+}
+.ctrl-group--study .toggle-vocab-btn.active {
+  background: var(--lp-cat-blue-soft);
+  border-color: color-mix(in srgb, var(--lp-cat-blue) 45%, transparent);
+  color: var(--lp-cat-blue);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lp-cat-blue) 10%, transparent);
+}
+
+.ctrl-group--study .toggle-quiz-btn {
+  background: color-mix(in srgb, var(--lp-cat-purple) 10%, var(--lp-surface-sunken));
+  border-color: color-mix(in srgb, var(--lp-cat-purple) 28%, var(--lp-border));
+  color: color-mix(in srgb, var(--lp-cat-purple) 75%, var(--lp-ink-soft));
+}
+.ctrl-group--study .toggle-quiz-btn:hover {
+  border-color: color-mix(in srgb, var(--lp-cat-purple) 45%, transparent);
+  background: color-mix(in srgb, var(--lp-cat-purple) 16%, var(--lp-surface-sunken));
+  color: var(--lp-cat-purple);
+}
+.ctrl-group--study .toggle-quiz-btn.active {
+  background: var(--lp-cat-purple-soft);
+  border-color: color-mix(in srgb, var(--lp-cat-purple) 45%, transparent);
+  color: var(--lp-cat-purple);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lp-cat-purple) 10%, transparent);
+}
+
+.ctrl-group--study .toggle-culture-btn {
+  background: color-mix(in srgb, var(--lp-cat-teal) 10%, var(--lp-surface-sunken));
+  border-color: color-mix(in srgb, var(--lp-cat-teal) 28%, var(--lp-border));
+  color: color-mix(in srgb, var(--lp-cat-teal) 75%, var(--lp-ink-soft));
+}
+.ctrl-group--study .toggle-culture-btn:hover {
+  border-color: color-mix(in srgb, var(--lp-cat-teal) 45%, transparent);
+  background: color-mix(in srgb, var(--lp-cat-teal) 16%, var(--lp-surface-sunken));
+  color: var(--lp-cat-teal);
+}
+.ctrl-group--study .toggle-culture-btn.active {
+  background: var(--lp-cat-teal-soft);
+  border-color: color-mix(in srgb, var(--lp-cat-teal) 45%, transparent);
+  color: var(--lp-cat-teal);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lp-cat-teal) 10%, transparent);
 }
 
 /* ─── Subtitles ─────────────────────────────────────────────────────────────── */
@@ -1280,27 +1387,19 @@ body {
 
   .song-title { font-size: 1.1rem; }
   .artwork { width: 38px; height: 38px; font-size: 1.2rem; }
-  .play-btn { width: 38px; height: 38px; font-size: 0.88rem; }
   .volume-control { display: none; }
   .picker-brand h2 { font-size: 1.4rem; }
   .sub-line .original { font-size: 0.92rem; }
   .sub-line.active .original { font-size: 1.02rem; }
 
-  .mode-toolbar { gap: 3px; }
+  .mode-toolbar { gap: 6px; }
   .controls-row { gap: 6px; }
-  .ctrl-group { padding: 4px 5px; gap: 3px; }
+  .ctrl-group--study { padding: 6px 8px 5px; gap: 4px; }
+  .ctrl-group--display { gap: 2px; }
   .ctrl-divider { height: 16px; margin: 0; }
-  .speed-btn { font-size: 0.58rem; padding: 4px 7px; height: 28px; }
 
-  .toggle-trans-btn,
-  .toggle-select-btn,
-  .toggle-lines-btn,
-  .toggle-vocab-btn,
-  .toggle-blanks-btn,
-  .toggle-culture-btn,
-  .loop-btn { width: 30px; height: 30px; font-size: 0.76rem; }
-
-  .toggle-listening-btn { width: 32px; height: 32px; font-size: 0.8rem; }
+  /* Tamaños de botones en móvil: NO se definen aquí. Los fijan las secciones
+     Fase C/F al final del archivo (≥ tamaño desktop, guardrail 44px). */
 
   /* Line-number gutter reserves 30px (width + gap) even when hidden,
      making the left margin roughly double the right one on narrow screens. */
@@ -1339,6 +1438,7 @@ body {
   font-family: var(--lp-font-display);
   font-size: 1.4rem;
   font-weight: 400;
+  font-style: italic;
   color: var(--lp-ink);
   letter-spacing: -0.02em;
 }
@@ -1975,36 +2075,70 @@ body {
 .dp-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .dp-option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 12px 8px;
-  border-radius: var(--lp-radius-sm);
+  gap: 8px;
+  padding: 14px 8px 12px;
+  border-radius: var(--lp-radius-md);
   background: var(--lp-surface-sunken);
   border: 1px solid var(--lp-border);
   cursor: pointer;
   transition: all 0.2s var(--lp-ease);
 }
 
-.dp-option:hover {
-  background: color-mix(in srgb, var(--lp-accent) 6%, transparent);
-  border-color: color-mix(in srgb, var(--lp-accent) 25%, transparent);
-  transform: translateY(-2px);
-}
-
 .dp-option:active { transform: translateY(0); }
 
-.dp-option.dp-selected {
-  background: color-mix(in srgb, var(--lp-accent) 8%, transparent);
-  border-color: color-mix(in srgb, var(--lp-accent) 30%, transparent);
+/* Semáforo de dificultad: mismo idioma que los --lp-cat-* del mode-toolbar —
+   cada nivel tiene su propio color en vez de compartir el acento genérico. */
+.dp-option[data-diff="easy"]:hover,
+.dp-option[data-diff="easy"].dp-selected {
+  background: color-mix(in srgb, var(--lp-success) 7%, transparent);
+  border-color: color-mix(in srgb, var(--lp-success) 35%, transparent);
+}
+.dp-option[data-diff="normal"]:hover,
+.dp-option[data-diff="normal"].dp-selected {
+  background: color-mix(in srgb, var(--lp-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--lp-accent) 35%, transparent);
+}
+.dp-option[data-diff="hard"]:hover,
+.dp-option[data-diff="hard"].dp-selected {
+  background: color-mix(in srgb, var(--lp-error) 7%, transparent);
+  border-color: color-mix(in srgb, var(--lp-error) 35%, transparent);
 }
 
-.dp-icon { font-size: 1.2rem; line-height: 1; }
+.dp-option:hover { transform: translateY(-2px); }
+
+.dp-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-radius: 50%;
+  background: var(--lp-surface-raised);
+  border: 1px solid var(--lp-border-subtle);
+  transition: all 0.2s var(--lp-ease);
+}
+
+.dp-option[data-diff="easy"] .dp-icon {
+  background: color-mix(in srgb, var(--lp-success) 10%, var(--lp-surface-raised));
+  border-color: color-mix(in srgb, var(--lp-success) 25%, var(--lp-border-subtle));
+}
+.dp-option[data-diff="normal"] .dp-icon {
+  background: color-mix(in srgb, var(--lp-accent) 10%, var(--lp-surface-raised));
+  border-color: color-mix(in srgb, var(--lp-accent) 25%, var(--lp-border-subtle));
+}
+.dp-option[data-diff="hard"] .dp-icon {
+  background: color-mix(in srgb, var(--lp-error) 10%, var(--lp-surface-raised));
+  border-color: color-mix(in srgb, var(--lp-error) 25%, var(--lp-border-subtle));
+}
 
 .dp-label {
   font-family: var(--lp-font-body);
@@ -2024,8 +2158,8 @@ body {
 @media (max-width: 580px) {
   .difficulty-picker { padding: 12px 12px; gap: 8px; }
   .dp-options { gap: 5px; }
-  .dp-option { padding: 9px 5px; gap: 4px; }
-  .dp-icon { font-size: 1rem; }
+  .dp-option { padding: 10px 5px 9px; gap: 6px; }
+  .dp-icon { width: 30px; height: 30px; font-size: 0.95rem; }
   .dp-label { font-size: 0.65rem; }
   .dp-desc { font-size: 0.52rem; }
 }
@@ -2058,6 +2192,7 @@ body {
   font-family: var(--lp-font-display);
   font-size: 1.4rem;
   font-weight: 400;
+  font-style: italic;
   color: var(--lp-ink);
   letter-spacing: -0.02em;
 }
@@ -2178,6 +2313,7 @@ body {
   font-family: var(--lp-font-display);
   font-size: 1.4rem;
   font-weight: 400;
+  font-style: italic;
   color: var(--lp-ink);
   letter-spacing: -0.02em;
 }
@@ -3107,11 +3243,12 @@ a:focus-visible,
   .toggle-culture-btn,
   .toggle-quiz-btn,
   .loop-btn { width: 36px; height: 36px; font-size: 0.82rem; }
-  .toggle-listening-btn { width: 38px; height: 38px; font-size: 0.86rem; }
+  .toggle-listening-btn { width: 36px; height: 36px; font-size: 0.82rem; }
   .speed-btn { height: 34px; padding: 5px 8px; font-size: 0.6rem; }
 }
 
-/* Header player: acciones agrupadas (←, 🏠, 🌙) a la derecha */
+/* Header: 🏠 + 🌙 agrupados a la derecha; ← vive junto al título (mismo patrón
+   en song-header, vocab-header, culture-header, quiz-header) */
 .song-header-actions {
   display: flex;
   align-items: center;
