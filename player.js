@@ -612,12 +612,12 @@ function initUnifiedNavigation() {
       <button class="unified-nav-item" id="navigationAbout" type="button">
         <span class="unified-nav-icon" aria-hidden="true">ⓘ</span><span>About LearnFlow</span>
       </button>
-      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('/deskflow/', 3000)}">
-        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Portal</span>
-      </a>
       <button class="unified-nav-item" id="navigationTheme" type="button">
         <span class="unified-nav-icon" id="navigationThemeIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeLabel">Modo oscuro</span>
       </button>
+      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('/deskflow/', 3000)}">
+        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Portal</span>
+      </a>
     </footer>
   `;
 
