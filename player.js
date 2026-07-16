@@ -370,6 +370,56 @@ function showStats() {
 
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
+const PICKER_ACTIVITY_ORDER = ['listen', 'challenge', 'dictation', 'quiz'];
+
+// Surfaces one recommendation to orient the learner: resume the song they
+// most recently left mid-way, or failing that, point at the first untouched
+// song (songs arg is already sorted easiest-first by CEFR level).
+function pickRecommendation(songs) {
+  const withProgress = songs.map((song) => ({ song, progress: getSongProgress(song.id) }));
+
+  const inProgress = withProgress
+    .filter(({ progress }) => progress.progressPct > 0 && !progress.completed)
+    .map(({ song, progress }) => {
+      const lastAttemptAt = Math.max(0, ...PICKER_ACTIVITY_ORDER.map((activity) => {
+        const at = progress.activities[activity].lastAttemptAt;
+        return at ? new Date(at).getTime() : 0;
+      }));
+      return { song, progress, lastAttemptAt };
+    })
+    .sort((a, b) => b.lastAttemptAt - a.lastAttemptAt);
+
+  if (inProgress.length) {
+    const { song, progress } = inProgress[0];
+    const nextActivity = PICKER_ACTIVITY_ORDER.find((activity) => !progress.activities[activity].completed);
+    return { type: 'continue', song, progress, nextLabel: PROGRESS_ACTIVITY_LABELS[nextActivity] };
+  }
+
+  const untouched = withProgress.find(({ progress }) => progress.attempts === 0 && progress.progressPct === 0);
+  if (untouched) return { type: 'start', song: untouched.song, progress: untouched.progress };
+
+  return null;
+}
+
+function renderHeroHtml(recommendation) {
+  if (!recommendation) return '';
+  const { type, song, progress, nextLabel } = recommendation;
+  const eyebrow = type === 'continue' ? 'Continúa donde lo dejaste' : 'Empieza aquí';
+  const cta = type === 'continue' ? 'Continuar' : 'Comenzar';
+  const detail = type === 'continue'
+    ? `. Siguiente: ${nextLabel}, ${progress.progressPct}% completado`
+    : `. Nivel ${song.level || '—'}`;
+  return `
+    <button type="button" class="picker-hero picker-hero--${type}" id="pickerHero" aria-label="${cta} ${song.title} de ${song.artist}${detail}">
+      <span class="picker-hero-body">
+        <span class="picker-hero-eyebrow">${eyebrow}</span>
+        <span class="picker-hero-title">${song.title} <span class="picker-hero-artist">— ${song.artist}</span></span>
+      </span>
+      <span class="picker-hero-play" aria-hidden="true">▶</span>
+    </button>
+  `;
+}
+
 function showPicker(skipAutoLoad = false) {
   state.playerCleanup?.();
   state.playerCleanup = null;
@@ -396,14 +446,23 @@ function showPicker(skipAutoLoad = false) {
     return ia - ib || a.title.localeCompare(b.title);
   });
 
+  const recommendation = pickRecommendation(songs);
+
   app.innerHTML = `
     <div class="song-picker">
-      <div class="search-bar">
-        <input type="search" id="songSearch" placeholder="Search songs..." aria-label="Search songs" autocomplete="off">
+      <div class="picker-toprow">
+        ${renderHeroHtml(recommendation)}
+        <div class="search-bar">
+          <input type="search" id="songSearch" placeholder="Search songs..." aria-label="Search songs" autocomplete="off">
+        </div>
       </div>
       <div class="song-list" id="songList"></div>
     </div>
   `;
+
+  if (recommendation) {
+    document.getElementById('pickerHero').addEventListener('click', () => loadSong(recommendation.song));
+  }
 
   const list = document.getElementById('songList');
 

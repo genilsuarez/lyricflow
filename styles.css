@@ -319,6 +319,122 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Picker Hero ("Empieza aquí" / "Continuar") ─────────────────────────────
+   Single recommended next step, surfaced next to the search bar so a new or
+   returning learner never has to guess where to click first — without
+   costing an extra full-width row above the catalog. */
+
+.picker-toprow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto 10px;
+}
+
+.picker-hero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 50px;
+  padding: 0 8px 0 14px;
+  border-radius: var(--lp-radius-lg);
+  border: 1.5px solid color-mix(in srgb, var(--lp-accent) 45%, var(--lp-border));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--lp-accent) 14%, var(--lp-surface)), var(--lp-surface));
+  box-shadow: var(--lp-shadow-md), 0 0 0 4px color-mix(in srgb, var(--lp-accent) 8%, transparent);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.25s var(--lp-ease), transform 0.25s var(--lp-ease), box-shadow 0.25s var(--lp-ease);
+  animation: fadeUp 0.5s var(--lp-ease) both;
+}
+
+.picker-toprow .search-bar {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.picker-toprow .search-bar input {
+  height: 50px;
+  padding: 0 16px 0 36px;
+  font-size: 0.85rem;
+}
+
+.picker-hero:hover {
+  transform: translateY(-2px);
+  border-color: var(--lp-accent);
+  box-shadow: var(--lp-shadow-hover), 0 0 0 4px color-mix(in srgb, var(--lp-accent) 16%, transparent);
+}
+
+.picker-hero:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 0.08s;
+}
+
+.picker-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.picker-hero-eyebrow {
+  font-family: var(--lp-font-body);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-accent-text);
+}
+
+.picker-hero-title {
+  font-family: var(--lp-font-display);
+  font-size: 0.95rem;
+  color: var(--lp-ink);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-hero-artist {
+  font-family: var(--lp-font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--lp-muted);
+}
+
+.picker-hero-play {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, var(--lp-accent), color-mix(in srgb, var(--lp-accent) 60%, white));
+  color: color-mix(in srgb, var(--lp-accent-dark) 55%, black);
+  font-size: 0.76rem;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--lp-accent) 35%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 0.2s var(--lp-ease-bounce);
+}
+
+.picker-hero:hover .picker-hero-play {
+  transform: scale(1.08);
+}
+
+@media (max-width: 580px) {
+  .picker-toprow { grid-template-columns: 1fr; }
+  .picker-toprow .search-bar input { height: auto; padding: 10px 14px 10px 34px; font-size: 0.8rem; }
+  .picker-hero { height: auto; padding: 10px 12px; gap: 10px; }
+  .picker-hero-title { font-size: 0.95rem; }
+}
+
 .song-list {
   display: grid;
   grid-template-columns: 1fr;
