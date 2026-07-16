@@ -227,6 +227,7 @@ function renderQuizResults() {
 
   recordActivityResult({
     contentId: state.currentSong.id,
+    title: state.currentSong.title,
     activity: 'quiz',
     scorePct: pct,
     correct: quizScore,

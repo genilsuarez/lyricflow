@@ -184,12 +184,13 @@ function hasRecordedRun(runId) {
   return Array.isArray(ledger.events) && ledger.events.some(event => event.runId === runId);
 }
 
-function eventFor({ contentId, activity, runId, scorePct, passed, durationMs, metrics }) {
+function eventFor({ contentId, title, activity, runId, scorePct, passed, durationMs, metrics }) {
   const event = {
     eventId: uniqueId('event'),
     runId,
     app: APP_ID,
     contentId,
+    title: title || contentId,
     activity,
     eventType: 'attempt_completed',
     occurredAt: nowIso(),
@@ -225,6 +226,7 @@ export function getSongProgress(contentId) {
 
 export function recordActivityResult({
   contentId,
+  title,
   activity,
   scorePct,
   correct,
@@ -264,6 +266,7 @@ export function recordActivityResult({
 
   appendEvent(eventFor({
     contentId,
+    title,
     activity,
     runId: attemptRunId,
     scorePct: normalizedScore,
@@ -301,7 +304,7 @@ function compactRanges(ranges) {
   return ranges.map(([start, end]) => [Number(start.toFixed(2)), Number(end.toFixed(2))]);
 }
 
-function saveListenCoverage({ contentId, ranges, eligibleDurationSec, runId }) {
+function saveListenCoverage({ contentId, title, ranges, eligibleDurationSec, runId }) {
   const document = readJson(PROGRESS_KEY, emptyProgress);
   const song = ensureSong(document, contentId);
   const listen = song.activities.listen;
@@ -340,6 +343,7 @@ function saveListenCoverage({ contentId, ranges, eligibleDurationSec, runId }) {
   if (justCompleted) {
     appendEvent(eventFor({
       contentId,
+      title,
       activity: 'listen',
       runId,
       scorePct: listen.coveragePct,
@@ -358,6 +362,7 @@ function saveListenCoverage({ contentId, ranges, eligibleDurationSec, runId }) {
 
 export function createListenTracker({
   contentId,
+  title,
   eligibleStartSec = 0,
   eligibleEndSec = null,
   onProgress = null,
@@ -406,7 +411,7 @@ export function createListenTracker({
     if (duration <= 0) return null;
     const covered = rangeDuration(ranges);
     if (covered <= lastPersistedCovered + 0.001) return getSongProgress(contentId);
-    const song = saveListenCoverage({ contentId, ranges, eligibleDurationSec: duration, runId });
+    const song = saveListenCoverage({ contentId, title, ranges, eligibleDurationSec: duration, runId });
     ranges = normalizeRanges(song.activities.listen.coverageRanges || []);
     lastPersistedCovered = rangeDuration(ranges);
     onProgress?.(song);
