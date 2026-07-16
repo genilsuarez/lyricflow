@@ -7,6 +7,7 @@
 import pickerSongs from './songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
 import { toggleQuizMode } from './quiz.js';
+import { renderStats, cleanupStats } from './stats.js';
 import {
   configureProgressCatalog,
   createListenTracker,
@@ -75,6 +76,7 @@ export const state = {
 
   // Listening challenge
   listeningMode: false,
+  listeningStarted: false, // true once user clicks play in listening mode
   listeningWaiting: false,
   listeningCurrentBlank: null,
   listeningTimerId: null,
@@ -109,8 +111,119 @@ function savePrefs(partial) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
 }
 
+// ─── Mode Toolbar (shared across player, quiz, vocab, culture) ─────────────────
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+export function modeToolbarHtml(song, activeMode = '') {
+  const showDisplay = activeMode === '' || activeMode === 'blanks' || activeMode === 'listening';
+  return `
+    <div class="mode-toolbar">
+      <div class="ctrl-group ctrl-group--study">
+        <button class="toggle-player-btn${activeMode === '' ? ' active' : ''}" id="togglePlayerBtn" aria-label="Volver al reproductor" data-tooltip="Reproductor">🎵</button>
+        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
+        <button class="toggle-listening-btn${activeMode === 'listening' ? ' active' : ''}" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
+        <button class="toggle-blanks-btn${activeMode === 'blanks' ? ' active' : ''}" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
+        <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Mini Quiz">🧠</button>
+        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>` : ''}
+      </div>
+      ${showDisplay ? `
+      <span class="ctrl-divider" aria-hidden="true"></span>
+      <div class="ctrl-group ctrl-group--display">
+        <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
+        <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
+      </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// Update toolbar active states without destroying/recreating it
+export function updateToolbarActiveState(activeMode) {
+  const map = {
+    '': 'togglePlayerBtn',
+    vocab: 'toggleVocabBtn',
+    listening: 'toggleListeningBtn',
+    blanks: 'toggleBlanksBtn',
+    quiz: 'toggleQuizBtn',
+    culture: 'toggleCultureBtn',
+  };
+  // Remove active from all study buttons
+  Object.values(map).forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  // Set active on current
+  const activeId = map[activeMode];
+  if (activeId) document.getElementById(activeId)?.classList.add('active');
+
+  // Show/hide display group
+  const showDisplay = activeMode === '' || activeMode === 'blanks' || activeMode === 'listening';
+  const divider = document.querySelector('.mode-toolbar .ctrl-divider');
+  const displayGroup = document.querySelector('.mode-toolbar .ctrl-group--display');
+  if (divider) divider.style.display = showDisplay ? '' : 'none';
+  if (displayGroup) displayGroup.style.display = showDisplay ? '' : 'none';
+}
+
+// Render toolbar into persistent container (only if not already there)
+function ensureModeToolbar(song, activeMode = '') {
+  let container = document.getElementById('modeToolbarContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'modeToolbarContainer';
+    app.prepend(container);
+  }
+  // Always re-render toolbar with correct culture button presence
+  container.innerHTML = modeToolbarHtml(song, activeMode);
+  // Bind persistent nav handlers on toolbar
+  bindModeToolbarNav(song);
+}
+
+// Set mode content (everything below the toolbar)
+function setModeContent(html) {
+  let content = document.getElementById('modeContent');
+  if (!content) {
+    content = document.createElement('div');
+    content.id = 'modeContent';
+    content.className = 'mode-content';
+    app.appendChild(content);
+  }
+  content.innerHTML = html;
+}
+
+export function bindModeToolbarNav(song) {
+  document.getElementById('togglePlayerBtn')?.addEventListener('click', () => {
+    if (state.blanksMode || state.listeningMode) {
+      returnToPlayer();
+    } else {
+      loadSong(song);
+    }
+  });
+  document.getElementById('toggleVocabBtn')?.addEventListener('click', () => {
+    toggleVocabMode();
+  });
+  document.getElementById('toggleListeningBtn')?.addEventListener('click', () => {
+    if (!document.getElementById('subContainer')) {
+      state.pendingMode = 'listening';
+      loadSong(song);
+      return;
+    }
+    toggleListeningMode();
+  });
+  document.getElementById('toggleBlanksBtn')?.addEventListener('click', () => {
+    if (!document.getElementById('subContainer')) {
+      state.pendingMode = 'blanks';
+      loadSong(song);
+      return;
+    }
+    toggleBlanksMode();
+  });
+  document.getElementById('toggleQuizBtn')?.addEventListener('click', () => {
+    toggleQuizMode();
+  });
+  if (song.culture) {
+    document.getElementById('toggleCultureBtn')?.addEventListener('click', () => {
+      showCultureView(song);
+    });
+  }
+}
 
 // Strip accents for comparison — "déambule" == "deambule"
 const COMBINING_MARKS = new RegExp('[\\u0300-\\u036f]', 'g');
@@ -165,8 +278,8 @@ function updateAppHeaderProgress() {
   if (!el) return;
   const { summary } = getProgress();
   el.innerHTML = `
-    <span><strong>${Math.round(summary.progressPct)}%</strong> en LyricFlow</span>
-    <span>${summary.completedContent}/${summary.totalContent} canciones · ${summary.completedActivities}/${summary.totalActivities} actividades</span>
+    <span><strong>${summary.completedContent}</strong> canciones</span>
+    <span><strong>${summary.completedActivities}/${summary.totalActivities}</strong> ★</span>
   `;
 }
 
@@ -210,6 +323,29 @@ function seededRandom(seed) {
   };
 }
 
+// ─── Stats View ────────────────────────────────────────────────────────────────
+
+function setActiveNavItem(id) {
+  document.querySelectorAll('.unified-nav-item').forEach(item => item.classList.remove('is-active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('is-active');
+}
+
+function showStats() {
+  state.playerCleanup?.();
+  state.playerCleanup = null;
+  state.currentSong = null;
+  if (state.audio) { state.audio.pause(); state.audio = null; }
+  if (location.search.includes('song=')) {
+    const u = new URL(location.href);
+    u.searchParams.delete('song');
+    history.replaceState(null, '', u);
+  }
+  setActiveNavItem('navigationStats');
+  renderAppHeader();
+  renderStats();
+}
+
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
 function showPicker(skipAutoLoad = false) {
@@ -217,6 +353,8 @@ function showPicker(skipAutoLoad = false) {
   state.playerCleanup = null;
   state.currentSong = null;
   if (state.audio) { state.audio.pause(); state.audio = null; }
+  cleanupStats();
+  setActiveNavItem('navigationHome');
   if (location.search.includes('song=')) {
     const u = new URL(location.href);
     u.searchParams.delete('song');
@@ -301,6 +439,7 @@ function showPicker(skipAutoLoad = false) {
 // ─── Player View ───────────────────────────────────────────────────────────────
 
 export async function loadSong(song) {
+  cleanupStats();
   // If song only has picker metadata, load full data (subtitles, culture, etc.)
   if (!song.subtitles) {
     try {
@@ -329,6 +468,7 @@ export async function loadSong(song) {
   state.blanksAnswers = {};
   state.challengeRunId = null;
   state.listeningMode = false;
+  state.listeningStarted = false;
   state.listeningWaiting = false;
   state.listeningCurrentBlank = null;
   state.listeningScore = { correct: 0, wrong: 0 };
@@ -342,22 +482,15 @@ export async function loadSong(song) {
   state.playbackRate = 1;
   state.currentSubIndex = -1;
 
-  app.innerHTML = `
-    <div class="mode-toolbar">
-      <div class="ctrl-group ctrl-group--study">
-        <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
-        <button class="toggle-listening-btn" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
-        <button class="toggle-blanks-btn" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
-        <button class="toggle-quiz-btn" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Mini Quiz">🧠</button>
-        ${song.culture ? '<button class="toggle-culture-btn" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>' : ''}
-      </div>
-      <span class="ctrl-divider" aria-hidden="true"></span>
-      <div class="ctrl-group ctrl-group--display">
-        <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
-        <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
-      </div>
-    </div>
-
+  // Preserve toolbar if already present, only recreate content
+  const existingToolbar = document.getElementById('modeToolbarContainer');
+  if (existingToolbar) {
+    updateToolbarActiveState('');
+  } else {
+    app.innerHTML = '';
+    ensureModeToolbar(song, '');
+  }
+  setModeContent(`
     <div class="subtitle-container" id="subContainer"></div>
     <div class="sr-live" id="srLive" aria-live="polite" aria-atomic="true"></div>
 
@@ -383,7 +516,7 @@ export async function loadSong(song) {
         <button class="loop-btn" id="loopBtn" aria-label="A-B Loop" data-tooltip="Repetir sección A→B">⟳</button>
       </div>
     </div>
-  `;
+  `);
 
   renderAppHeader(song);
 
@@ -424,6 +557,14 @@ export async function loadSong(song) {
   const u = new URL(location.href);
   u.searchParams.set('song', song.folder.split('/').pop());
   history.replaceState(null, '', u);
+
+  // Activate pending mode if navigated from another view
+  if (state.pendingMode) {
+    const mode = state.pendingMode;
+    state.pendingMode = null;
+    if (mode === 'blanks') toggleBlanksMode();
+    else if (mode === 'listening') toggleListeningMode();
+  }
 }
 
 // ─── Theme (shared between picker and player) ──────────────────────────────────
@@ -614,6 +755,9 @@ function initUnifiedNavigation() {
       <button class="unified-nav-item is-active" id="navigationHome" type="button">
         <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
       </button>
+      <button class="unified-nav-item" id="navigationStats" type="button">
+        <span class="unified-nav-icon" aria-hidden="true">📊</span><span>Estadísticas</span>
+      </button>
 
     </nav>
     <footer class="unified-nav-footer">
@@ -654,6 +798,10 @@ function initUnifiedNavigation() {
   document.getElementById('navigationHome').addEventListener('click', () => {
     setNavigationOpen(false, true);
     showPicker(true);
+  });
+  document.getElementById('navigationStats').addEventListener('click', () => {
+    setNavigationOpen(false, true);
+    showStats();
   });
   document.getElementById('navigationAbout').addEventListener('click', aboutEvent => {
     setNavigationOpen(false);
@@ -710,18 +858,10 @@ function bindPlayerEvents(song) {
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
-  document.getElementById('toggleVocabBtn').addEventListener('click', toggleVocabMode, { signal });
-  document.getElementById('toggleQuizBtn').addEventListener('click', toggleQuizMode, { signal });
-  document.getElementById('toggleBlanksBtn').addEventListener('click', toggleBlanksMode, { signal });
-  document.getElementById('toggleListeningBtn').addEventListener('click', toggleListeningMode, { signal });
   document.getElementById('speedBtn').addEventListener('click', cycleSpeed, { signal });
   document.getElementById('loopBtn').addEventListener('click', onLoopClick, { signal });
   document.getElementById('volumeBtn').addEventListener('click', toggleMute, { signal });
   document.getElementById('volumeSlider').addEventListener('input', onVolumeChange, { signal });
-
-  if (song.culture) {
-    document.getElementById('toggleCultureBtn').addEventListener('click', () => showCultureView(song), { signal });
-  }
 
   const progressBar = document.getElementById('progressBar');
   progressBar.addEventListener('mousedown', onProgressDown, { signal });
@@ -806,6 +946,7 @@ function playAudio() {
   state.audio.play().catch(() => {});
   document.getElementById('playBtn').textContent = '⏸';
   document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
+  if (state.listeningMode) state.listeningStarted = true;
   startUpdateLoop();
   document.querySelector('.artwork')?.classList.add('playing');
 }
@@ -1195,6 +1336,20 @@ function showDifficultyPicker(mode, onSelect) {
   document.addEventListener('keydown', onPickerEsc);
 }
 
+// ─── Return to Player (deactivate any active in-place mode) ────────────────────
+
+function returnToPlayer() {
+  // Close difficulty picker if open
+  const picker = document.getElementById('difficultyPicker');
+  if (picker) picker.remove();
+
+  if (state.blanksMode) {
+    toggleBlanksMode(); // deactivates blanks
+  } else if (state.listeningMode) {
+    toggleListeningMode(); // deactivates listening
+  }
+}
+
 // ─── Fill-in-the-Blanks ────────────────────────────────────────────────────────
 
 function toggleBlanksMode() {
@@ -1209,6 +1364,7 @@ function toggleBlanksMode() {
   if (state.blanksMode) {
     state.blanksMode = false;
     document.getElementById('toggleBlanksBtn').classList.remove('active');
+    document.getElementById('togglePlayerBtn')?.classList.add('active');
     renderSubtitles(state.currentSong.subtitles);
     const toolbar = document.getElementById('blanksToolbar');
     if (toolbar) toolbar.remove();
@@ -1223,10 +1379,12 @@ function toggleBlanksMode() {
     state.blanksMode = true;
     const btn = document.getElementById('toggleBlanksBtn');
     btn.classList.add('active');
+    document.getElementById('togglePlayerBtn')?.classList.remove('active');
 
     // Deactivate listening mode if active
     if (state.listeningMode) {
       state.listeningMode = false;
+      state.listeningStarted = false;
       document.getElementById('toggleListeningBtn').classList.remove('active');
       clearListeningTimer();
       state.listeningWaiting = false;
@@ -1698,7 +1856,9 @@ function toggleListeningMode() {
   // If active → deactivate
   if (state.listeningMode) {
     state.listeningMode = false;
+    state.listeningStarted = false;
     document.getElementById('toggleListeningBtn').classList.remove('active');
+    document.getElementById('togglePlayerBtn')?.classList.add('active');
     clearListeningTimer();
     state.listeningWaiting = false;
     state.listeningCurrentBlank = null;
@@ -1716,6 +1876,7 @@ function toggleListeningMode() {
     state.listeningMode = true;
     const btn = document.getElementById('toggleListeningBtn');
     btn.classList.add('active');
+    document.getElementById('togglePlayerBtn')?.classList.remove('active');
 
     // Deactivate static blanks if active
     if (state.blanksMode) {
@@ -1737,6 +1898,9 @@ function toggleListeningMode() {
     }
     state.currentSubIndex = -1;
     state.listeningWaiting = false;
+    state.listeningStarted = false;
+    state.listeningCurrentBlank = null;
+    state.listeningPauseAt = null;
     document.getElementById('playBtn').textContent = '▶';
     stopUpdateLoop();
 
