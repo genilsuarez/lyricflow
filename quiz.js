@@ -6,7 +6,8 @@
 // vuelve al player vía loadSong.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop, bindHeaderActions } from './player.js';
+import { state, app, loadSong, stopUpdateLoop } from './player.js';
+import { createRunId, recordActivityResult } from './progress.js';
 
 const TARGET_QUESTIONS = 10;
 const MIN_QUESTIONS = 4; // también: mínimo de entradas de vocab para poder armar 3 distractores
@@ -23,6 +24,7 @@ let quizQuestions = [];
 let quizIndex = 0;
 let quizScore = 0;
 let quizAnswered = false;
+let quizRunId = null;
 
 export function toggleQuizMode() {
   if (!state.currentSong) return;
@@ -39,6 +41,7 @@ function showQuizView(song) {
   quizIndex = 0;
   quizScore = 0;
   quizAnswered = false;
+  quizRunId = createRunId('quiz');
 
   app.innerHTML = `
     <div class="quiz-view">
@@ -48,10 +51,6 @@ function showQuizView(song) {
           <div class="quiz-header-title">${song.title}</div>
           <div class="quiz-header-subtitle" id="quizProgress">Mini Quiz</div>
         </div>
-        <div class="song-header-actions">
-          <a class="picker-btn" id="quizPortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
-          <button class="picker-btn" id="quizThemeToggle" aria-label="Cambiar tema">🌙</button>
-        </div>
       </div>
       <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill" style="width:0%"></div></div>
       <div class="quiz-body" id="quizBody"></div>
@@ -59,7 +58,6 @@ function showQuizView(song) {
   `;
 
   document.getElementById('quizBackBtn').addEventListener('click', () => loadSong(song));
-  bindHeaderActions('quizPortalLink', 'quizThemeToggle');
 
   if (quizQuestions.length < MIN_QUESTIONS) {
     document.getElementById('quizBody').innerHTML = `
@@ -226,6 +224,15 @@ function onOptionClick(e) {
 function renderQuizResults() {
   const total = quizQuestions.length;
   const pct = total > 0 ? Math.round((quizScore / total) * 100) : 0;
+
+  recordActivityResult({
+    contentId: state.currentSong.id,
+    activity: 'quiz',
+    scorePct: pct,
+    correct: quizScore,
+    total,
+    runId: quizRunId,
+  });
 
   let emoji, message;
   if (pct >= 80) { emoji = '🏆'; message = 'Dominas este vocabulario'; }
