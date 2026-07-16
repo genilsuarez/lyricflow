@@ -5,7 +5,7 @@
 // call back into `loadSong`/`stopUpdateLoop` to return to the player view).
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop } from './player.js';
+import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState } from './player.js';
 
 // ─── Vocabulary ────────────────────────────────────────────────────────────────
 
@@ -30,10 +30,11 @@ function showVocabView(song) {
     stopUpdateLoop();
   }
 
-  app.innerHTML = `
+  updateToolbarActiveState('vocab');
+  const content = document.getElementById('modeContent');
+  content.innerHTML = `
     <div class="vocab-view">
       <div class="vocab-header">
-        <button class="back-btn" id="vocabBackBtn" aria-label="Volver al player">←</button>
         <div class="vocab-header-meta">
           <div class="vocab-header-title">${song.title}</div>
           <div class="vocab-header-subtitle">${state.vocabData.length} palabras</div>
@@ -74,10 +75,6 @@ function showVocabView(song) {
       </div>
     </div>
   `;
-
-  document.getElementById('vocabBackBtn').addEventListener('click', () => {
-    loadSong(song);
-  });
 
   document.getElementById('vocabFilter').addEventListener('input', (e) => {
     renderVocab(e.target.value.trim().toLowerCase());
@@ -194,10 +191,11 @@ export function showCultureView(song) {
     ? c.funFacts.map(f => `<li>${f}</li>`).join('')
     : '';
 
-  app.innerHTML = `
+  updateToolbarActiveState('culture');
+  const content = document.getElementById('modeContent');
+  content.innerHTML = `
     <div class="culture-view">
       <div class="culture-header">
-        <button class="back-btn" id="cultureBackBtn" aria-label="Volver al player">←</button>
         <div class="culture-header-meta">
           <div class="culture-header-title">${song.title}</div>
           <div class="culture-header-subtitle">Contexto cultural</div>
@@ -225,6 +223,4 @@ export function showCultureView(song) {
       </div>
     </div>
   `;
-
-  document.getElementById('cultureBackBtn').addEventListener('click', () => loadSong(song));
 }

@@ -6,7 +6,7 @@
 // vuelve al player vía loadSong.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop } from './player.js';
+import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState } from './player.js';
 import { createRunId, recordActivityResult } from './progress.js';
 
 const TARGET_QUESTIONS = 10;
@@ -43,10 +43,11 @@ function showQuizView(song) {
   quizAnswered = false;
   quizRunId = createRunId('quiz');
 
-  app.innerHTML = `
+  updateToolbarActiveState('quiz');
+  const content = document.getElementById('modeContent');
+  content.innerHTML = `
     <div class="quiz-view">
       <div class="quiz-header">
-        <button class="back-btn" id="quizBackBtn" aria-label="Volver al player">←</button>
         <div class="quiz-header-meta">
           <div class="quiz-header-title">${song.title}</div>
           <div class="quiz-header-subtitle" id="quizProgress">Mini Quiz</div>
@@ -56,8 +57,6 @@ function showQuizView(song) {
       <div class="quiz-body" id="quizBody"></div>
     </div>
   `;
-
-  document.getElementById('quizBackBtn').addEventListener('click', () => loadSong(song));
 
   if (quizQuestions.length < MIN_QUESTIONS) {
     document.getElementById('quizBody').innerHTML = `
