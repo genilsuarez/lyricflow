@@ -1157,6 +1157,7 @@ body {
 .app-header--player {
   justify-content: flex-start;
   gap: 10px;
+  min-height: 82px;
   padding: 22px clamp(16px, 3vw, 34px);
   flex-wrap: nowrap;
   align-items: center;
