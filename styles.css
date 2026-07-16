@@ -550,7 +550,6 @@ body {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 
 .mode-toolbar {
@@ -754,6 +753,7 @@ body {
 
 .toggle-trans-btn,
 .toggle-select-btn,
+.toggle-theater-btn,
 .toggle-player-btn,
 .toggle-vocab-btn,
 .toggle-blanks-btn,
@@ -814,6 +814,7 @@ body {
 /* Hover */
 .toggle-trans-btn:hover,
 .toggle-select-btn:hover,
+.toggle-theater-btn:hover,
 .toggle-player-btn:hover,
 .toggle-vocab-btn:hover,
 .toggle-blanks-btn:hover,
@@ -829,7 +830,8 @@ body {
 
 /* Active — generic */
 .toggle-trans-btn.active,
-.toggle-select-btn.active {
+.toggle-select-btn.active,
+.toggle-theater-btn.active {
   background: var(--lp-accent-soft);
   border-color: color-mix(in srgb, var(--lp-accent) 35%, transparent);
   color: var(--lp-accent-text);
@@ -883,7 +885,8 @@ body {
 }
 
 .ctrl-group--display .toggle-trans-btn,
-.ctrl-group--display .toggle-select-btn {
+.ctrl-group--display .toggle-select-btn,
+.ctrl-group--display .toggle-theater-btn {
   width: 32px;
   height: 32px;
   font-size: 0.72rem;
@@ -892,8 +895,14 @@ body {
   color: var(--lp-muted);
 }
 
+.ctrl-group--display .toggle-theater-btn {
+  font-size: 0.88rem;
+  color: var(--lp-ink-soft);
+}
+
 .ctrl-group--display .toggle-trans-btn:hover,
-.ctrl-group--display .toggle-select-btn:hover {
+.ctrl-group--display .toggle-select-btn:hover,
+.ctrl-group--display .toggle-theater-btn:hover {
   background: var(--lp-surface-sunken);
   border-color: var(--lp-border-subtle);
   color: var(--lp-ink-soft);
@@ -901,7 +910,8 @@ body {
 }
 
 .ctrl-group--display .toggle-trans-btn.active,
-.ctrl-group--display .toggle-select-btn.active {
+.ctrl-group--display .toggle-select-btn.active,
+.ctrl-group--display .toggle-theater-btn.active {
   background: var(--lp-ink);
   border-color: var(--lp-ink);
   color: var(--lp-bg);
@@ -1283,6 +1293,23 @@ body {
   padding: 12px clamp(16px, 3vw, 34px);
   border-top: 1.5px solid var(--lp-border);
   background: var(--lp-bg);
+}
+
+/* ─── Theater Mode (hide header + footer) ───────────────────────────────────── */
+
+.theater-mode .app-header,
+.theater-mode .site-foot,
+.theater-mode #unifiedNavTrigger,
+.theater-mode #unifiedNavigation {
+  display: none;
+}
+
+.theater-mode {
+  padding-left: 0 !important;
+}
+
+.theater-mode .app-stage {
+  flex: 1;
 }
 
 .picker-btn {
@@ -2167,9 +2194,8 @@ body {
 .difficulty-picker {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 18px;
-  margin-bottom: 8px;
+  padding: 6px 10px;
+  margin-bottom: 3px;
   border-radius: var(--lp-radius-md);
   background: linear-gradient(135deg, color-mix(in srgb, var(--lp-accent) 3%, transparent), color-mix(in srgb, var(--lp-accent-dark) 2%, transparent));
   border: 1px solid color-mix(in srgb, var(--lp-accent) 10%, transparent);
@@ -2177,52 +2203,18 @@ body {
   flex-shrink: 0;
 }
 
-.dp-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.dp-title {
-  font-family: var(--lp-font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--lp-ink);
-  letter-spacing: 0.02em;
-}
-
-.dp-close {
-  background: transparent;
-  border: none;
-  color: var(--lp-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s var(--lp-ease);
-}
-
-.dp-close:hover {
-  background: var(--lp-border);
-  color: var(--lp-ink);
-}
-
 .dp-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 5px;
 }
 
 .dp-option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px 8px 12px;
+  gap: 1px;
+  padding: 4px 4px 3px;
   border-radius: var(--lp-radius-md);
   background: var(--lp-surface-sunken);
   border: 1px solid var(--lp-border);
@@ -2253,12 +2245,12 @@ body {
 .dp-option:hover { transform: translateY(-2px); }
 
 .dp-icon {
-  width: 36px;
-  height: 36px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 0.65rem;
   line-height: 1;
   border-radius: 50%;
   background: var(--lp-surface-raised);
@@ -2295,12 +2287,12 @@ body {
 }
 
 @media (max-width: 580px) {
-  .difficulty-picker { padding: 12px 12px; gap: 8px; }
-  .dp-options { gap: 5px; }
-  .dp-option { padding: 10px 5px 9px; gap: 6px; }
-  .dp-icon { width: 30px; height: 30px; font-size: 0.95rem; }
-  .dp-label { font-size: 0.65rem; }
-  .dp-desc { font-size: 0.52rem; }
+  .difficulty-picker { padding: 5px 7px; }
+  .dp-options { gap: 4px; }
+  .dp-option { padding: 3px 3px 2px; gap: 1px; }
+  .dp-icon { width: 16px; height: 16px; font-size: 0.6rem; }
+  .dp-label { font-size: 0.58rem; }
+  .dp-desc { font-size: 0.48rem; }
 }
 
 /* ─── Culture View ──────────────────────────────────────────────────────────── */
@@ -3345,6 +3337,7 @@ a:focus-visible,
 
 .toggle-trans-btn,
 .toggle-select-btn,
+.toggle-theater-btn,
 .toggle-vocab-btn,
 .toggle-blanks-btn,
 .toggle-culture-btn,
@@ -3357,6 +3350,7 @@ a:focus-visible,
   /* No reducir por debajo del tamaño desktop en móvil (donde el dedo importa más) */
   .toggle-trans-btn,
   .toggle-select-btn,
+  .toggle-theater-btn,
   .toggle-vocab-btn,
   .toggle-blanks-btn,
   .toggle-culture-btn,
@@ -3739,6 +3733,10 @@ body {
   padding: 6px 8px 16px;
   border-bottom: 1px solid var(--lp-border);
 }
+.unified-nav-brand > span:not(.unified-nav-mark) {
+  flex: 1;
+  min-width: 0;
+}
 
 .unified-nav-mark,
 .about-identity {
@@ -3824,12 +3822,31 @@ body {
   font-weight: 700;
 }
 
-.navigation-mode-toggle {
-  margin-bottom: 8px;
+.unified-nav-mode-toggle {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 50%;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-surface);
+  color: var(--lp-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  transition: opacity 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-
-.navigation-mode-toggle .unified-nav-icon {
-  color: var(--lp-accent);
+.unified-nav-mode-toggle:hover {
+  opacity: 1;
+  border-color: var(--lp-accent);
+  color: var(--lp-ink);
+}
+.unified-nav-mode-toggle:focus-visible {
+  outline: 2px solid var(--lp-accent);
+  outline-offset: 2px;
 }
 
 .unified-nav-icon {
