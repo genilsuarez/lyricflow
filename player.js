@@ -58,6 +58,7 @@ export const state = {
   // View toggles
   showTranslation: false,
   selectMode: false,
+  theaterMode: false,
   showLineNumbers: false,
   vocabData: null,
 
@@ -130,6 +131,7 @@ export function modeToolbarHtml(song, activeMode = '') {
       <div class="ctrl-group ctrl-group--display">
         <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
         <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
+        <button class="toggle-theater-btn" id="toggleTheaterBtn" aria-label="Modo teatro" data-tooltip="Maximizar reproductor">⛶</button>
       </div>
       ` : ''}
     </div>
@@ -191,37 +193,56 @@ function setModeContent(html) {
 export function bindModeToolbarNav(song) {
   document.getElementById('togglePlayerBtn')?.addEventListener('click', () => {
     if (state.blanksMode || state.listeningMode) {
+      pauseOnModeSwitch();
       returnToPlayer();
     } else {
       loadSong(song);
     }
   });
   document.getElementById('toggleVocabBtn')?.addEventListener('click', () => {
+    pauseOnModeSwitch();
     toggleVocabMode();
   });
   document.getElementById('toggleListeningBtn')?.addEventListener('click', () => {
     if (!document.getElementById('subContainer')) {
+      pauseOnModeSwitch();
       state.pendingMode = 'listening';
       loadSong(song);
       return;
     }
+    pauseOnModeSwitch();
     toggleListeningMode();
   });
   document.getElementById('toggleBlanksBtn')?.addEventListener('click', () => {
     if (!document.getElementById('subContainer')) {
+      pauseOnModeSwitch();
       state.pendingMode = 'blanks';
       loadSong(song);
       return;
     }
+    pauseOnModeSwitch();
     toggleBlanksMode();
   });
   document.getElementById('toggleQuizBtn')?.addEventListener('click', () => {
+    pauseOnModeSwitch();
     toggleQuizMode();
   });
   if (song.culture) {
     document.getElementById('toggleCultureBtn')?.addEventListener('click', () => {
+      pauseOnModeSwitch();
       showCultureView(song);
     });
+  }
+}
+
+// Pause audio when switching between study modes
+function pauseOnModeSwitch() {
+  if (state.audio && !state.audio.paused) {
+    state.audio.pause();
+    stopUpdateLoop();
+    const playBtn = document.getElementById('playBtn');
+    if (playBtn) playBtn.textContent = '▶';
+    document.querySelector('.artwork')?.classList.remove('playing');
   }
 }
 
@@ -335,7 +356,8 @@ function showStats() {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
-  if (state.audio) { state.audio.pause(); state.audio = null; }
+  if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
+  stopUpdateLoop();
   if (location.search.includes('song=')) {
     const u = new URL(location.href);
     u.searchParams.delete('song');
@@ -352,8 +374,10 @@ function showPicker(skipAutoLoad = false) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
-  if (state.audio) { state.audio.pause(); state.audio = null; }
+  if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
+  stopUpdateLoop();
   cleanupStats();
+  if (state.theaterMode) { state.theaterMode = false; document.body.classList.remove('theater-mode'); }
   setActiveNavItem('navigationHome');
   if (location.search.includes('song=')) {
     const u = new URL(location.href);
@@ -461,6 +485,8 @@ export async function loadSong(song) {
   }
   state.playerCleanup?.();
   state.playerCleanup = null;
+  if (state.audio) { state.audio.pause(); state.audio = null; }
+  stopUpdateLoop();
   state.currentSong = song;
   state.showTranslation = false;
   state.showLineNumbers = false;
@@ -580,9 +606,6 @@ function toggleTheme(iconEl) {
   const newTheme = isDark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
   localStorage.setItem('lp-theme', newTheme);
-  if (location.search.includes('theme=')) {
-    const u = new URL(location.href); u.searchParams.set('theme', newTheme); history.replaceState(null, '', u);
-  }
   if (iconEl) iconEl.textContent = currentThemeIcon();
   setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
 }
@@ -599,14 +622,12 @@ function isUnifiedLocalPlatform() {
 }
 
 function themedAppHref(path, localPort) {
-  const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
   const isUnifiedLocal = isUnifiedLocalPlatform();
   const url = isUnifiedLocal
     ? new URL(path, location.origin)
     : isLocalHost()
       ? new URL(`http://${location.hostname}:${localPort}/`)
       : new URL(path, location.origin);
-  if (isLocalHost() && !isUnifiedLocal) url.searchParams.set('theme', theme);
   return url.toString();
 }
 
@@ -622,13 +643,14 @@ function updateNavigationMode(mode, persist = false) {
   if (persist) localStorage.setItem(NAVIGATION_STORAGE_KEY, resolvedMode);
 
   const toggle = document.getElementById('navigationModeToggle');
-  const label = document.getElementById('navigationModeLabel');
   const isFloating = resolvedMode === 'floating';
   if (toggle) {
     toggle.setAttribute('aria-pressed', String(isFloating));
-    toggle.setAttribute('aria-label', isFloating ? 'Cambiar a navegación lateral' : 'Cambiar a navegación flotante');
+    toggle.setAttribute('aria-label', isFloating ? 'Usar barra lateral fija' : 'Usar menú flotante');
+    toggle.title = isFloating ? 'Muestra la barra lateral fija' : 'Oculta la barra lateral y usa un menú flotante';
+    const icon = toggle.querySelector('span');
+    if (icon) icon.textContent = isFloating ? '▣' : '◫';
   }
-  if (label) label.textContent = isFloating ? 'Usar modo lateral' : 'Usar modo flotante';
 }
 
 function setNavigationOpen(isOpen, restoreFocus = false) {
@@ -747,11 +769,9 @@ function initUnifiedNavigation() {
     <div class="unified-nav-brand">
       <span class="unified-nav-mark" aria-hidden="true">LF</span>
       <span><strong>LyricFlow</strong><small>LearnFlow</small></span>
+      <button class="unified-nav-mode-toggle" id="navigationModeToggle" type="button" aria-pressed="false" aria-label="Usar menú flotante" title="Oculta la barra lateral y usa un menú flotante"><span aria-hidden="true">◫</span></button>
     </div>
     <nav class="unified-nav-menu" aria-label="Navegación principal">
-      <button class="unified-nav-item navigation-mode-toggle" id="navigationModeToggle" type="button" aria-pressed="false">
-        <span class="unified-nav-icon" aria-hidden="true">◫</span><span id="navigationModeLabel">Usar modo flotante</span>
-      </button>
       <button class="unified-nav-item is-active" id="navigationHome" type="button">
         <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
       </button>
@@ -858,6 +878,7 @@ function bindPlayerEvents(song) {
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
+  document.getElementById('toggleTheaterBtn')?.addEventListener('click', toggleTheaterMode, { signal });
   document.getElementById('speedBtn').addEventListener('click', cycleSpeed, { signal });
   document.getElementById('loopBtn').addEventListener('click', onLoopClick, { signal });
   document.getElementById('volumeBtn').addEventListener('click', toggleMute, { signal });
@@ -963,9 +984,9 @@ function pauseAudio() {
 function togglePlay() {
   if (!state.audio) return;
 
-  // In listening mode: don't resume while waiting for blank input
-  if (state.listeningMode && state.listeningWaiting && state.audio.paused) {
-    if (state.listeningCurrentBlank) state.listeningCurrentBlank.focus();
+  // In listening mode: don't resume while waiting for blank input (timer already running)
+  if (state.listeningMode && state.listeningWaiting && state.audio.paused && state.listeningCurrentBlank?.classList.contains('lc-active')) {
+    state.listeningCurrentBlank.focus();
     return;
   }
 
@@ -1297,10 +1318,6 @@ function showDifficultyPicker(mode, onSelect) {
   picker.className = 'difficulty-picker';
   picker.dataset.mode = mode;
   picker.innerHTML = `
-    <div class="dp-header">
-      <span class="dp-title">${mode === 'blanks' ? '✎ Completar huecos' : '🎧 Dictado auditivo'}</span>
-      <button class="dp-close" id="dpClose" aria-label="Cancelar">✕</button>
-    </div>
     <div class="dp-options">
       ${Object.keys(DIFFICULTY).map(key => `
         <button class="dp-option ${key === currentDiff ? 'dp-selected' : ''}" data-diff="${key}">
@@ -1316,7 +1333,6 @@ function showDifficultyPicker(mode, onSelect) {
   container.parentNode.insertBefore(picker, container);
 
   // Bind events
-  picker.querySelector('#dpClose').addEventListener('click', () => picker.remove());
   picker.querySelectorAll('.dp-option').forEach(btn => {
     btn.addEventListener('click', () => {
       const diff = btn.dataset.diff;
@@ -1814,6 +1830,22 @@ function toggleSelectMode() {
   state.selectMode = !state.selectMode;
   document.getElementById('toggleSelectBtn').classList.toggle('active', state.selectMode);
   document.getElementById('subContainer').classList.toggle('select-mode', state.selectMode);
+}
+
+function toggleTheaterMode() {
+  state.theaterMode = !state.theaterMode;
+  document.body.classList.toggle('theater-mode', state.theaterMode);
+
+  const btn = document.getElementById('toggleTheaterBtn');
+  if (state.theaterMode) {
+    btn.textContent = '⊡';
+    btn.setAttribute('aria-label', 'Restaurar vista');
+    btn.setAttribute('data-tooltip', 'Restaurar vista');
+  } else {
+    btn.textContent = '⛶';
+    btn.setAttribute('aria-label', 'Modo teatro');
+    btn.setAttribute('data-tooltip', 'Maximizar reproductor');
+  }
 }
 
 function toggleLineNumbers() {
@@ -2510,6 +2542,12 @@ document.addEventListener('visibilitychange', () => {
   } else {
     orbs.forEach(el => el.classList.remove('paused'));
   }
+});
+
+// ─── Page unload: stop audio when navigating away ───────────────────────────────
+
+window.addEventListener('pagehide', () => {
+  if (state.audio) { state.audio.pause(); state.audio.src = ''; }
 });
 
 // ─── Init ──────────────────────────────────────────────────────────────────────

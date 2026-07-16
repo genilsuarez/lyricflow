@@ -159,6 +159,10 @@ export function renderStats() {
       return sp?.progress.completed;
     }).length;
     return { level, completed, total: songs.length };
+  }).sort((a, b) => {
+    const ia = LEVEL_ORDER.indexOf(a.level.toLowerCase());
+    const ib = LEVEL_ORDER.indexOf(b.level.toLowerCase());
+    return (ia === -1 ? LEVEL_ORDER.length : ia) - (ib === -1 ? LEVEL_ORDER.length : ib);
   });
 
   const totalAttempts = songDetails.reduce((sum, s) => sum + (s.progress.attempts || 0), 0);
