@@ -7,18 +7,27 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111827'/%3E%3Ccircle cx='16' cy='16' r='8' stroke='%2338bdf8' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%2338bdf8'/%3E%3C/svg%3E" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <meta name="description" content="LyricFlow — Learn languages through music with synced lyrics, fill-in-the-blank exercises, and immersive listening.">
-  <script>var p=new URLSearchParams(location.search).get('theme'),t=p||localStorage.getItem('lp-theme');if(p)localStorage.setItem('lp-theme',p);if(t==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <script>var p=new URLSearchParams(location.search).get('theme'),t=p||localStorage.getItem('lp-theme'),n=localStorage.getItem('lp-navigation-mode');if(p)localStorage.setItem('lp-theme',p);if(t==='dark')document.documentElement.setAttribute('data-theme','dark');document.documentElement.dataset.navigationMode=n==='floating'?'floating':'sidebar'</script>
   <style>body{background:#FAF7F2;color:#2C2418}[data-theme="dark"] body{background:#1A1714;color:#EDE8E0}</style>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=15" />
 </head>
 <body>
   <div class="orb orb-1" aria-hidden="true"></div>
   <div class="orb orb-2" aria-hidden="true"></div>
   <div class="orb orb-3" aria-hidden="true"></div>
   <div class="grain" aria-hidden="true"></div>
-  <div class="player-wrapper" id="app"></div>
+  <header class="app-header" id="appHeader"></header>
+  <div class="app-stage">
+    <div class="app-shell">
+      <div class="player-wrapper" id="app"></div>
+    </div>
+  </div>
+  <footer class="site-foot">
+    <span class="foot-sig">Genil Suárez</span>
+    <span class="foot-meta">LyricFlow → LearnFlow</span>
+  </footer>
   <script type="module" src="player.js"></script>
 </body>
 </html>

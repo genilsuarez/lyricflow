@@ -5,13 +5,14 @@
 // call back into `loadSong`/`stopUpdateLoop` to return to the player view).
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop, bindHeaderActions } from './player.js';
+import { state, app, loadSong, stopUpdateLoop } from './player.js';
 
 // ─── Vocabulary ────────────────────────────────────────────────────────────────
 
 export async function loadVocab(song) {
   try {
-    const mod = await import(`./${song.folder}/vocab.js`);
+    const folderName = song.folder.replace(/^songs\//, '');
+    const mod = await import(`./songs/${folderName}/vocab.js`);
     state.vocabData = mod.default;
   } catch {
     state.vocabData = [];
@@ -36,10 +37,6 @@ function showVocabView(song) {
         <div class="vocab-header-meta">
           <div class="vocab-header-title">${song.title}</div>
           <div class="vocab-header-subtitle">${state.vocabData.length} palabras</div>
-        </div>
-        <div class="song-header-actions">
-          <a class="picker-btn" id="vocabPortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
-          <button class="picker-btn" id="vocabThemeToggle" aria-label="Cambiar tema">🌙</button>
         </div>
       </div>
       <div class="vocab-filter">
@@ -81,7 +78,6 @@ function showVocabView(song) {
   document.getElementById('vocabBackBtn').addEventListener('click', () => {
     loadSong(song);
   });
-  bindHeaderActions('vocabPortalLink', 'vocabThemeToggle');
 
   document.getElementById('vocabFilter').addEventListener('input', (e) => {
     renderVocab(e.target.value.trim().toLowerCase());
@@ -206,10 +202,6 @@ export function showCultureView(song) {
           <div class="culture-header-title">${song.title}</div>
           <div class="culture-header-subtitle">Contexto cultural</div>
         </div>
-        <div class="song-header-actions">
-          <a class="picker-btn" id="culturePortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
-          <button class="picker-btn" id="cultureThemeToggle" aria-label="Cambiar tema">🌙</button>
-        </div>
       </div>
       <div class="culture-content">
         <div class="culture-section">
@@ -235,5 +227,4 @@ export function showCultureView(song) {
   `;
 
   document.getElementById('cultureBackBtn').addEventListener('click', () => loadSong(song));
-  bindHeaderActions('culturePortalLink', 'cultureThemeToggle');
 }

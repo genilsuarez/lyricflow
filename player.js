@@ -7,6 +7,16 @@
 import pickerSongs from './songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
 import { toggleQuizMode } from './quiz.js';
+import {
+  configureProgressCatalog,
+  createListenTracker,
+  createRunId,
+  getProgress,
+  getSongProgress,
+  recordActivityResult,
+} from './progress.js';
+
+configureProgressCatalog(pickerSongs);
 
 export const app = document.getElementById('app');
 
@@ -59,7 +69,9 @@ export const state = {
   blanksMode: false,
   blanksAnswers: {},
   blanksDifficulty: 'normal',
+  challengeRunId: null,
   listeningDifficulty: 'normal',
+  dictationRunId: null,
 
   // Listening challenge
   listeningMode: false,
@@ -77,6 +89,7 @@ export const state = {
 
   // Misc
   playerCleanup: null,   // Event listener cleanup (AbortController per player session)
+  listenTracker: null,   // Unique timeline coverage tracker for the active song
   cachedSubLines: [],    // Cached DOM references (set after renderSubtitles)
   scrollRAF: null,       // Debounce scroll — avoid queueing multiple smooth scrolls
 };
@@ -110,6 +123,64 @@ function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+const PROGRESS_ACTIVITY_LABELS = {
+  listen: 'Escucha',
+  challenge: 'Challenge',
+  dictation: 'Dictado',
+  quiz: 'Quiz',
+};
+
+function progressInnerHtml(songProgress) {
+  const completed = Object.values(songProgress.activities).filter(activity => activity.completed).length;
+  const segments = Object.entries(PROGRESS_ACTIVITY_LABELS).map(([activity, label]) => {
+    const done = songProgress.activities[activity].completed;
+    return `<span class="song-progress-segment ${done ? 'is-complete' : ''}" title="${label}: ${done ? 'completada' : 'pendiente'}"></span>`;
+  }).join('');
+  return `
+    <span class="song-progress-copy"><strong>${songProgress.progressPct}%</strong> · ${completed}/4 actividades</span>
+    <span class="song-progress-track" aria-hidden="true">${segments}</span>
+  `;
+}
+
+function songProgressHtml(contentId, className = '') {
+  const songProgress = getSongProgress(contentId);
+  return `<div class="song-learning-progress ${className}" data-song-progress="${contentId}" role="status" aria-label="Progreso de la canción: ${songProgress.progressPct}%">${progressInnerHtml(songProgress)}</div>`;
+}
+
+function updateSongProgressUi(contentId) {
+  const songProgress = getSongProgress(contentId);
+  document.querySelectorAll(`[data-song-progress="${contentId}"]`).forEach(element => {
+    element.innerHTML = progressInnerHtml(songProgress);
+    element.setAttribute('aria-label', `Progreso de la canción: ${songProgress.progressPct}%`);
+  });
+  updateAppHeaderProgress();
+}
+
+// ─── App Header (persistent: brand + overall progress, shown on every view) ────
+
+function updateAppHeaderProgress() {
+  const el = document.getElementById('appHeaderProgress');
+  if (!el) return;
+  const { summary } = getProgress();
+  el.innerHTML = `
+    <span><strong>${Math.round(summary.progressPct)}%</strong> en LyricFlow</span>
+    <span>${summary.completedContent}/${summary.totalContent} canciones · ${summary.completedActivities}/${summary.totalActivities} actividades</span>
+  `;
+}
+
+function renderAppHeader() {
+  const header = document.getElementById('appHeader');
+  if (!header) return;
+  header.innerHTML = `
+    <div class="app-header-brand">
+      <h1>LyricFlow</h1>
+      <span>Aprende idiomas con música</span>
+    </div>
+    <div class="app-header-progress" id="appHeaderProgress" aria-label="Progreso total de LyricFlow"></div>
+  `;
+  updateAppHeaderProgress();
 }
 
 // Simple seeded random for consistent blanks per song
@@ -146,16 +217,6 @@ function showPicker(skipAutoLoad = false) {
 
   app.innerHTML = `
     <div class="song-picker">
-      <div class="picker-header">
-        <div class="picker-brand">
-          <h2>LyricFlow</h2>
-          <p>Learn languages through music</p>
-        </div>
-        <div class="picker-actions">
-          <a class="picker-btn" id="portalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Back to Portal" title="Back to Portal">🏠</a>
-          <button class="picker-btn" id="themeToggle" aria-label="Toggle theme">🌙</button>
-        </div>
-      </div>
       <div class="search-bar">
         <input type="search" id="songSearch" placeholder="Search songs..." aria-label="Search songs" autocomplete="off">
       </div>
@@ -171,16 +232,21 @@ function showPicker(skipAutoLoad = false) {
       list.innerHTML = '<div class="no-results">No songs match your search.</div>';
       return;
     }
-    filtered.forEach((song, idx) => {
-      const item = document.createElement('div');
+    filtered.forEach((song) => {
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'song-list-item';
+      item.setAttribute('aria-label', `Abrir ${song.title} de ${song.artist}`);
       item.innerHTML = `
         <span class="icon">${song.icon || '🎵'}</span>
-        <div class="info">
-          <div class="title">${song.title}</div>
-          <div class="artist">${song.artist}</div>
-          ${song.level ? `<div class="song-tags"><span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span></div>` : ''}
-        </div>
+        <span class="info">
+          <span class="title">${song.title}</span>
+          <span class="artist">${song.artist}</span>
+          <span class="song-card-meta">
+            ${song.level ? `<span class="song-tags"><span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span></span>` : ''}
+            ${songProgressHtml(song.id, 'song-learning-progress--card')}
+          </span>
+        </span>
       `;
       item.addEventListener('click', () => loadSong(song));
       list.appendChild(item);
@@ -201,9 +267,6 @@ function showPicker(skipAutoLoad = false) {
     renderSongs(filtered);
   });
 
-  // Theme toggle + portal link (inside picker)
-  setupPickerActions();
-
   // Auto-load last played song ONLY if this is a same-session return
   // (not a fresh tab, not from DeskFlow, not first visit)
   // If navigated from DeskFlow (portal), always show picker
@@ -221,8 +284,22 @@ function showPicker(skipAutoLoad = false) {
 export async function loadSong(song) {
   // If song only has picker metadata, load full data (subtitles, culture, etc.)
   if (!song.subtitles) {
-    const mod = await import(`./${song.folder}/data.js`);
-    song = { ...mod.default, folder: song.folder };
+    try {
+      const folderName = song.folder.replace(/^songs\//, '');
+      const mod = await import(`./songs/${folderName}/data.js`);
+      song = { ...mod.default, id: song.id, folder: song.folder };
+    } catch (err) {
+      console.error(`[LyricFlow] Failed to load song data: ${song.folder}`, err);
+      app.innerHTML = `
+        <div class="audio-error">
+          <p class="audio-error-icon">⚠️</p>
+          <p class="audio-error-msg">No se pudo cargar la canción</p>
+          <p class="audio-error-path">${song.title || song.folder}</p>
+          <button class="audio-error-retry" onclick="location.reload()">Reintentar</button>
+        </div>
+      `;
+      return;
+    }
   }
   state.playerCleanup?.();
   state.playerCleanup = null;
@@ -231,10 +308,12 @@ export async function loadSong(song) {
   state.showLineNumbers = false;
   state.blanksMode = false;
   state.blanksAnswers = {};
+  state.challengeRunId = null;
   state.listeningMode = false;
   state.listeningWaiting = false;
   state.listeningCurrentBlank = null;
   state.listeningScore = { correct: 0, wrong: 0 };
+  state.dictationRunId = null;
   state.listeningBlanksMap = {};
   state.listeningPauseAt = null;
   clearListeningTimer();
@@ -254,10 +333,7 @@ export async function loadSong(song) {
           <span>${song.artist}</span>
           ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
         </div>
-      </div>
-      <div class="song-header-actions">
-        <a class="picker-btn" id="playerPortalLink" href="https://genilsuarez.github.io/deskflow/" aria-label="Ir al portal DeskFlow" title="Portal">🏠</a>
-        <button class="picker-btn" id="playerThemeToggle" aria-label="Cambiar tema">🌙</button>
+        ${songProgressHtml(song.id, 'song-learning-progress--player')}
       </div>
     </div>
 
@@ -363,28 +439,267 @@ function toggleTheme(iconEl) {
 }
 
 // Portal + theme toggle wiring shared by every view that carries the
-// [← volver][🏠][🌙] header actions (picker, player, vocab, culture, quiz).
-export function bindHeaderActions(portalId, themeId) {
-  const portal = document.getElementById(portalId);
-  const themeBtn = document.getElementById(themeId);
+// [← volver][ⓘ LearnFlow][🏠][🌙] header actions.
+function isLocalHost() {
   const host = location.hostname;
-  const isLocal = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
-  if (portal && isLocal) {
-    portal.href = 'http://' + host + ':3000/';
+  return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
+}
+
+function isUnifiedLocalPlatform() {
+  return isLocalHost() && location.port === '3000' && location.pathname.startsWith('/lyricflow/');
+}
+
+function themedAppHref(path, localPort) {
+  const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const isUnifiedLocal = isUnifiedLocalPlatform();
+  const url = isUnifiedLocal
+    ? new URL(path, location.origin)
+    : isLocalHost()
+      ? new URL(`http://${location.hostname}:${localPort}/`)
+      : new URL(path, location.origin);
+  if (isLocalHost() && !isUnifiedLocal) url.searchParams.set('theme', theme);
+  return url.toString();
+}
+
+const NAVIGATION_STORAGE_KEY = 'lp-navigation-mode';
+
+function navigationMode() {
+  return localStorage.getItem(NAVIGATION_STORAGE_KEY) === 'floating' ? 'floating' : 'sidebar';
+}
+
+function updateNavigationMode(mode, persist = false) {
+  const resolvedMode = mode === 'floating' ? 'floating' : 'sidebar';
+  document.documentElement.dataset.navigationMode = resolvedMode;
+  if (persist) localStorage.setItem(NAVIGATION_STORAGE_KEY, resolvedMode);
+
+  const toggle = document.getElementById('navigationModeToggle');
+  const label = document.getElementById('navigationModeLabel');
+  const isFloating = resolvedMode === 'floating';
+  if (toggle) {
+    toggle.setAttribute('aria-pressed', String(isFloating));
+    toggle.setAttribute('aria-label', isFloating ? 'Cambiar a navegación lateral' : 'Cambiar a navegación flotante');
   }
-  if (themeBtn) {
-    themeBtn.textContent = currentThemeIcon();
-    themeBtn.addEventListener('click', () => toggleTheme(themeBtn));
-  }
+  if (label) label.textContent = isFloating ? 'Usar modo lateral' : 'Usar modo flotante';
+}
+
+function setNavigationOpen(isOpen, restoreFocus = false) {
+  const navigation = document.getElementById('unifiedNavigation');
+  const trigger = document.getElementById('unifiedNavTrigger');
+  const backdrop = document.getElementById('unifiedNavBackdrop');
+  if (!navigation || !trigger || !backdrop) return;
+
+  const isPersistent = window.innerWidth > 580 && navigationMode() === 'sidebar';
+  const isInteractive = isPersistent || isOpen;
+  navigation.classList.toggle('is-open', isOpen);
+  navigation.inert = !isInteractive;
+  navigation.setAttribute('aria-hidden', String(!isInteractive));
+  backdrop.classList.toggle('is-open', isOpen && !isPersistent);
+  trigger.setAttribute('aria-expanded', String(isOpen));
+  document.body.classList.toggle('navigation-open', isOpen && !isPersistent);
+  if (isOpen) navigation.querySelector('button, a[href]')?.focus();
+  else if (restoreFocus && !isPersistent) trigger.focus();
+}
+
+function showAboutLearnFlow(event) {
+  document.getElementById('aboutLearnFlow')?.remove();
+  const opener = event?.currentTarget instanceof HTMLElement ? event.currentTarget : document.activeElement;
+  const appRoot = document.getElementById('app');
+  const navigation = document.getElementById('unifiedNavigation');
+  const navigationTrigger = document.getElementById('unifiedNavTrigger');
+  const overlay = document.createElement('div');
+  overlay.id = 'aboutLearnFlow';
+  overlay.className = 'about-overlay';
+  overlay.innerHTML = `
+    <section class="about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutLearnFlowTitle" aria-describedby="aboutLearnFlowDescription">
+      <header class="about-header">
+        <div class="about-identity" aria-hidden="true">LF</div>
+        <div>
+          <p class="about-eyebrow">LyricFlow · Parte de LearnFlow</p>
+          <h2 id="aboutLearnFlowTitle">About LearnFlow</h2>
+        </div>
+        <button class="about-close" id="aboutCloseBtn" type="button" aria-label="Cerrar About LearnFlow">✕</button>
+      </header>
+      <p id="aboutLearnFlowDescription" class="about-description">Aprende idiomas con música mediante letras sincronizadas, vocabulario y actividades de escucha.</p>
+      <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
+        <a href="${themedAppHref('/deskflow/', 3000)}"><strong>LearnFlow</strong><span>Portal y progreso global</span></a>
+        <a href="${themedAppHref('/fluentflow/', 3001)}"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></a>
+        <a href="${themedAppHref('/hubflow/', 3002)}"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></a>
+      </nav>
+      <footer class="about-footer">
+        <p><strong>Progreso local</strong><span>Guardado únicamente en este navegador.</span></p>
+        <p><strong>Autor</strong><span>Genil Suárez</span></p>
+      </footer>
+    </section>
+  `;
+  if (navigation) navigation.inert = true;
+  if (navigationTrigger) navigationTrigger.inert = true;
+  appRoot.inert = true;
+  document.body.appendChild(overlay);
+
+  const focusable = [...overlay.querySelectorAll('button, a[href]')];
+  const close = () => {
+    overlay.remove();
+    appRoot.inert = false;
+    setNavigationOpen(false);
+    if (navigationTrigger) navigationTrigger.inert = false;
+    document.removeEventListener('keydown', onAboutKeydown);
+    const fallback = document.getElementById('unifiedNavTrigger');
+    const openerNavigation = opener instanceof HTMLElement ? opener.closest('#unifiedNavigation') : null;
+    if (opener instanceof HTMLElement && opener.isConnected && !openerNavigation?.inert) opener.focus();
+    else fallback?.focus();
+  };
+  const onAboutKeydown = keyEvent => {
+    if (keyEvent.key === 'Escape') {
+      keyEvent.preventDefault();
+      close();
+      return;
+    }
+    if (keyEvent.key !== 'Tab' || focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (keyEvent.shiftKey && document.activeElement === first) {
+      keyEvent.preventDefault();
+      last.focus();
+    } else if (!keyEvent.shiftKey && document.activeElement === last) {
+      keyEvent.preventDefault();
+      first.focus();
+    }
+  };
+
+  overlay.querySelector('#aboutCloseBtn').addEventListener('click', close);
+  overlay.addEventListener('click', clickEvent => { if (clickEvent.target === overlay) close(); });
+  document.addEventListener('keydown', onAboutKeydown);
+  overlay.querySelector('#aboutCloseBtn').focus();
+}
+
+function initUnifiedNavigation() {
+  // Guard against duplicate initialization (Vite HMR re-executes the module)
+  if (document.getElementById('unifiedNavTrigger')) return;
+
+  const trigger = document.createElement('button');
+  trigger.id = 'unifiedNavTrigger';
+  trigger.className = 'lp-icon-btn unified-nav-trigger';
+  trigger.type = 'button';
+  trigger.setAttribute('aria-label', 'Abrir navegación');
+  trigger.setAttribute('aria-controls', 'unifiedNavigation');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.textContent = '☰';
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'unifiedNavBackdrop';
+  backdrop.className = 'unified-nav-backdrop';
+  backdrop.setAttribute('aria-hidden', 'true');
+
+  const navigation = document.createElement('aside');
+  navigation.id = 'unifiedNavigation';
+  navigation.className = 'unified-nav';
+  navigation.setAttribute('aria-label', 'Navegación de LearnFlow');
+  navigation.innerHTML = `
+    <div class="unified-nav-brand">
+      <span class="unified-nav-mark" aria-hidden="true">LF</span>
+      <span><strong>LyricFlow</strong><small>LearnFlow</small></span>
+    </div>
+    <nav class="unified-nav-menu" aria-label="Navegación principal">
+      <button class="unified-nav-item navigation-mode-toggle" id="navigationModeToggle" type="button" aria-pressed="false">
+        <span class="unified-nav-icon" aria-hidden="true">◫</span><span id="navigationModeLabel">Usar modo flotante</span>
+      </button>
+      <button class="unified-nav-item is-active" id="navigationHome" type="button">
+        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
+      </button>
+
+    </nav>
+    <footer class="unified-nav-footer">
+      <button class="unified-nav-item" id="navigationAbout" type="button">
+        <span class="unified-nav-icon" aria-hidden="true">ⓘ</span><span>About LearnFlow</span>
+      </button>
+      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('/deskflow/', 3000)}">
+        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Portal</span>
+      </a>
+      <button class="unified-nav-item" id="navigationTheme" type="button">
+        <span class="unified-nav-icon" id="navigationThemeIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeLabel">Modo oscuro</span>
+      </button>
+    </footer>
+  `;
+
+  document.body.append(backdrop, navigation, trigger);
+  updateNavigationMode(navigationMode());
+  setNavigationOpen(false);
+
+  const modeToggle = document.getElementById('navigationModeToggle');
+  const themeButton = document.getElementById('navigationTheme');
+  const themeIcon = document.getElementById('navigationThemeIcon');
+  const themeLabel = document.getElementById('navigationThemeLabel');
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
+  themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  const platformLinks = [
+    ['navigationPortal', '/deskflow/', 3000],
+  ];
+
+  trigger.addEventListener('click', () => setNavigationOpen(true));
+  backdrop.addEventListener('click', () => setNavigationOpen(false, true));
+  modeToggle.addEventListener('click', () => {
+    const nextMode = navigationMode() === 'sidebar' ? 'floating' : 'sidebar';
+    updateNavigationMode(nextMode, true);
+    setNavigationOpen(false, true);
+  });
+  document.getElementById('navigationHome').addEventListener('click', () => {
+    setNavigationOpen(false, true);
+    showPicker(true);
+  });
+  document.getElementById('navigationAbout').addEventListener('click', aboutEvent => {
+    setNavigationOpen(false);
+    showAboutLearnFlow(aboutEvent);
+  });
+  themeButton.addEventListener('click', () => {
+    toggleTheme(themeIcon);
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
+    themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  });
+  platformLinks.forEach(([id, path, port]) => {
+    document.getElementById(id).addEventListener('click', linkEvent => {
+      linkEvent.currentTarget.href = themedAppHref(path, port);
+      setNavigationOpen(false);
+    });
+  });
+  window.addEventListener('storage', storageEvent => {
+    if (storageEvent.key !== NAVIGATION_STORAGE_KEY) return;
+    updateNavigationMode(storageEvent.newValue === 'floating' ? 'floating' : 'sidebar');
+    setNavigationOpen(false);
+  });
+  window.addEventListener('resize', () => setNavigationOpen(false));
+  document.addEventListener('keydown', navigationEvent => {
+    if (!navigation.classList.contains('is-open')) return;
+    if (navigationEvent.key === 'Escape') {
+      navigationEvent.preventDefault();
+      setNavigationOpen(false, true);
+      return;
+    }
+    if (navigationEvent.key !== 'Tab') return;
+    const focusable = [...navigation.querySelectorAll('button, a[href]')];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (navigationEvent.shiftKey && document.activeElement === first) {
+      navigationEvent.preventDefault();
+      last.focus();
+    } else if (!navigationEvent.shiftKey && document.activeElement === last) {
+      navigationEvent.preventDefault();
+      first.focus();
+    }
+  });
 }
 
 function bindPlayerEvents(song) {
   const controller = new AbortController();
   const { signal } = controller;
-  state.playerCleanup = () => controller.abort();
+  state.playerCleanup = () => {
+    controller.abort();
+    state.listenTracker?.destroy();
+    state.listenTracker = null;
+  };
 
   document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
-  bindHeaderActions('playerPortalLink', 'playerThemeToggle');
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
@@ -419,6 +734,13 @@ function initAudio(song) {
   state.audio = new Audio(mediaPath);
   state.audio.preload = 'metadata';
   state.audio.playbackRate = state.playbackRate;
+  const eligibleRange = song.eligibleRange || {};
+  state.listenTracker = createListenTracker({
+    contentId: song.id,
+    eligibleStartSec: Number.isFinite(eligibleRange.start) ? eligibleRange.start : 0,
+    eligibleEndSec: Number.isFinite(eligibleRange.end) ? eligibleRange.end : null,
+    onProgress: () => updateSongProgressUi(song.id),
+  });
 
   state.audio.addEventListener('error', () => {
     console.warn(`[Cancion] Audio failed to load: ${mediaPath}`);
@@ -444,7 +766,19 @@ function initAudio(song) {
     document.getElementById('durationTime').textContent = formatTime(state.audio.duration);
   });
 
+  state.audio.addEventListener('playing', () => {
+    state.listenTracker?.play(state.audio.currentTime, state.audio.duration);
+  });
+  state.audio.addEventListener('pause', () => {
+    state.listenTracker?.pause(state.audio.currentTime, state.audio.duration);
+  });
+  state.audio.addEventListener('seeking', () => state.listenTracker?.seeking());
+  state.audio.addEventListener('seeked', () => {
+    state.listenTracker?.seeked(state.audio.currentTime, state.audio.duration);
+  });
+
   state.audio.addEventListener('ended', () => {
+    state.listenTracker?.pause(state.audio.currentTime, state.audio.duration);
     document.getElementById('playBtn').textContent = '▶';
     stopUpdateLoop();
     document.getElementById('progressFill').style.width = '100%';
@@ -623,6 +957,7 @@ function updateProgress() {
   if (!state.audio || state.isDragging) return;
   const current = state.audio.currentTime;
   const duration = state.audio.duration || 0;
+  state.listenTracker?.sample(current, duration);
 
   // A-B loop enforcement (in rAF for higher precision than timeupdate)
   if (state.loopActive && state.loopA !== null && state.loopB !== null && current >= state.loopB) {
@@ -892,6 +1227,7 @@ function toggleBlanksMode() {
     }
 
     state.blanksAnswers = {};
+    state.challengeRunId = createRunId('challenge');
     blanksRevealed = false;
     if (state.showTranslation) toggleTranslation();
 
@@ -1047,7 +1383,10 @@ function checkBlanks() {
     wrapper.removeAttribute('data-correction');
 
     if (!value) {
-      total--;
+      // Empty answers remain part of the denominator and count as incorrect.
+      input.classList.add('blank-wrong');
+      wrapper.classList.add('blank-wrong');
+      wrapper.dataset.correction = original.replace(/[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g, '');
     } else if (valueTrimmed === input.dataset.answer) {
       // Exact match including accents
       input.classList.add('blank-correct');
@@ -1067,15 +1406,27 @@ function checkBlanks() {
     }
   });
 
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
   // Show score
   const scoreEl = document.getElementById('blanksScore');
   if (scoreEl) {
-    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
     scoreEl.textContent = `${correct}/${total} (${pct}%)`;
     scoreEl.classList.toggle('score-good', pct >= 80);
     scoreEl.classList.toggle('score-mid', pct >= 50 && pct < 80);
     scoreEl.classList.toggle('score-low', pct < 50);
   }
+
+  recordActivityResult({
+    contentId: state.currentSong.id,
+    activity: 'challenge',
+    scorePct: pct,
+    correct,
+    total,
+    runId: state.challengeRunId,
+  });
+  state.challengeRunId = createRunId('challenge');
+  updateSongProgressUi(state.currentSong.id);
 }
 
 let blanksRevealed = false;
@@ -1366,6 +1717,7 @@ function toggleListeningMode() {
     }
 
     state.listeningScore = { correct: 0, wrong: 0 };
+    state.dictationRunId = createRunId('dictation');
     state.listeningBlanksMap = buildListeningBlanks();
     if (state.showTranslation) toggleTranslation();
 
@@ -1692,18 +2044,13 @@ function showBlanksResults() {
   // Calculate score from all blanks
   const inputs = document.querySelectorAll('.blank-input');
   let correct = 0;
-  let total = 0;
+  const total = inputs.length;
 
   inputs.forEach(input => {
     const answer = normalizeForCompare(input.dataset.answer);
     const value = normalizeForCompare(input.value);
-    if (!input.value.trim()) return; // skip empty
-    total++;
-    if (value === answer) correct++;
+    if (value && value === answer) correct++;
   });
-
-  // If user hasn't filled anything, count total blanks
-  if (total === 0) total = inputs.length;
 
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
 
@@ -1759,8 +2106,9 @@ function showBlanksResults() {
 
   retryBtn.addEventListener('click', () => {
     overlay.remove();
-    // Reset blanks and re-render
+    // Reset blanks and re-render as a new attempt
     state.blanksAnswers = {};
+    state.challengeRunId = createRunId('challenge');
     blanksRevealed = false;
     renderSubtitles(state.currentSong.subtitles);
     const scoreEl = document.getElementById('blanksScore');
@@ -1796,6 +2144,16 @@ function showListeningResults() {
   const { correct, wrong } = state.listeningScore;
   const total = correct + wrong;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  recordActivityResult({
+    contentId: state.currentSong.id,
+    activity: 'dictation',
+    scorePct: pct,
+    correct,
+    total,
+    runId: state.dictationRunId,
+  });
+  updateSongProgressUi(state.currentSong.id);
 
   // Determine grade/feedback
   let emoji, grade, message;
@@ -1851,8 +2209,9 @@ function showListeningResults() {
 
   retryBtn.addEventListener('click', () => {
     overlay.remove();
-    // Reset score and restart song in listening mode
+    // Reset score and restart song in listening mode as a new attempt
     state.listeningScore = { correct: 0, wrong: 0 };
+    state.dictationRunId = createRunId('dictation');
     state.listeningBlanksMap = buildListeningBlanks();
     state.currentSubIndex = -1;
     state.listeningWaiting = false;
@@ -1926,6 +2285,7 @@ function updateVolumeIcon(vol) {
 // ─── Keyboard ──────────────────────────────────────────────────────────────────
 
 function onKeydown(e) {
+  if (e.target.closest('.about-overlay, .unified-nav, .unified-nav-trigger')) return;
   if (e.target.tagName === 'INPUT') {
     // Enter submits listening answer
     if (e.key === 'Enter' && state.listeningWaiting && state.listeningCurrentBlank) {
@@ -1978,33 +2338,22 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// ─── Picker Actions (theme + portal) ────────────────────────────────────────────
-
-function setupPickerActions() {
-  bindHeaderActions('portalLink', 'themeToggle');
-
-  // Local dev: propagate the current theme to any cross-app link on click
-  const _lh = location.hostname;
-  const _lIsLocal = _lh === 'localhost' || _lh === '127.0.0.1' || _lh.startsWith('192.168.');
-  if (_lIsLocal) {
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest('a[href*="' + _lh + ':"]');
-      if (a) {
-        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-        const url = new URL(a.href);
-        url.searchParams.set('theme', theme);
-        a.href = url.toString();
-      }
-    });
-  }
-}
-
 // ─── Init ──────────────────────────────────────────────────────────────────────
 
+initUnifiedNavigation();
+renderAppHeader();
+
 const songParam = new URLSearchParams(location.search).get('song');
-const initialSong = songParam && pickerSongs.find(s => s.folder.split('/').pop() === songParam);
+const isSessionReturn = sessionStorage.getItem('lyricflow_active');
+const initialSong = songParam && isSessionReturn && pickerSongs.find(s => s.folder.split('/').pop() === songParam);
 if (initialSong) {
   loadSong(initialSong);
 } else {
+  // Clean stale ?song= param if not resuming
+  if (songParam) {
+    const u = new URL(location.href);
+    u.searchParams.delete('song');
+    history.replaceState(null, '', u);
+  }
   showPicker();
 }
