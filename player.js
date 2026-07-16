@@ -170,17 +170,35 @@ function updateAppHeaderProgress() {
   `;
 }
 
-function renderAppHeader() {
+function renderAppHeader(song) {
   const header = document.getElementById('appHeader');
   if (!header) return;
-  header.innerHTML = `
-    <div class="app-header-brand">
-      <h1>LyricFlow</h1>
-      <span>Aprende idiomas con música</span>
-    </div>
-    <div class="app-header-progress" id="appHeaderProgress" aria-label="Progreso total de LyricFlow"></div>
-  `;
-  updateAppHeaderProgress();
+  if (song) {
+    header.classList.add('app-header--player');
+    header.innerHTML = `
+      <button class="back-btn" id="headerBackBtn" aria-label="Volver al picker" title="Volver">←</button>
+      <div class="artwork">${song.icon || '🎵'}</div>
+      <div class="song-meta">
+        <div class="song-title">${song.title}</div>
+        <div class="song-artist">
+          <span>${song.artist}</span>
+          ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+        </div>
+      </div>
+      ${songProgressHtml(song.id, 'song-learning-progress--player')}
+    `;
+    document.getElementById('headerBackBtn').addEventListener('click', () => showPicker(true));
+  } else {
+    header.classList.remove('app-header--player');
+    header.innerHTML = `
+      <div class="app-header-brand">
+        <h1>LyricFlow</h1>
+        <span>Aprende idiomas con música</span>
+      </div>
+      <div class="app-header-progress" id="appHeaderProgress" aria-label="Progreso total de LyricFlow"></div>
+    `;
+    updateAppHeaderProgress();
+  }
 }
 
 // Simple seeded random for consistent blanks per song
@@ -204,6 +222,7 @@ function showPicker(skipAutoLoad = false) {
     u.searchParams.delete('song');
     history.replaceState(null, '', u);
   }
+  renderAppHeader();
 
   // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
   const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
@@ -324,19 +343,6 @@ export async function loadSong(song) {
   state.currentSubIndex = -1;
 
   app.innerHTML = `
-    <div class="song-header">
-      <button class="back-btn" id="backBtn" aria-label="Volver al picker" title="Volver">←</button>
-      <div class="artwork">${song.icon || '🎵'}</div>
-      <div class="song-meta">
-        <div class="song-title">${song.title}</div>
-        <div class="song-artist">
-          <span>${song.artist}</span>
-          ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
-        </div>
-        ${songProgressHtml(song.id, 'song-learning-progress--player')}
-      </div>
-    </div>
-
     <div class="mode-toolbar">
       <div class="ctrl-group ctrl-group--study">
         <button class="toggle-vocab-btn" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
@@ -378,6 +384,8 @@ export async function loadSong(song) {
       </div>
     </div>
   `;
+
+  renderAppHeader(song);
 
   bindPlayerEvents(song);
   renderSubtitles(song.subtitles);
@@ -699,7 +707,6 @@ function bindPlayerEvents(song) {
     state.listenTracker = null;
   };
 
-  document.getElementById('backBtn').addEventListener('click', () => showPicker(true), { signal });
   document.getElementById('playBtn').addEventListener('click', togglePlay, { signal });
   document.getElementById('toggleTransBtn').addEventListener('click', toggleTranslation, { signal });
   document.getElementById('toggleSelectBtn').addEventListener('click', toggleSelectMode, { signal });
@@ -737,6 +744,7 @@ function initAudio(song) {
   const eligibleRange = song.eligibleRange || {};
   state.listenTracker = createListenTracker({
     contentId: song.id,
+    title: song.title,
     eligibleStartSec: Number.isFinite(eligibleRange.start) ? eligibleRange.start : 0,
     eligibleEndSec: Number.isFinite(eligibleRange.end) ? eligibleRange.end : null,
     onProgress: () => updateSongProgressUi(song.id),
@@ -1419,6 +1427,7 @@ function checkBlanks() {
 
   recordActivityResult({
     contentId: state.currentSong.id,
+    title: state.currentSong.title,
     activity: 'challenge',
     scorePct: pct,
     correct,
@@ -2147,6 +2156,7 @@ function showListeningResults() {
 
   recordActivityResult({
     contentId: state.currentSong.id,
+    title: state.currentSong.title,
     activity: 'dictation',
     scorePct: pct,
     correct,

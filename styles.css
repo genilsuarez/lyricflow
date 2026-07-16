@@ -444,7 +444,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   animation: fadeUp 0.4s var(--lp-ease) 0.1s both;
 }
 
@@ -539,9 +539,13 @@ body {
 .mode-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 14px;
   animation: fadeUp 0.4s var(--lp-ease) 0.15s both;
+}
+
+.mode-toolbar .song-learning-progress--player {
+  flex-shrink: 0;
 }
 
 /* ─── Bottom Bar ────────────────────────────────────────────────────────────── */
@@ -849,6 +853,8 @@ body {
 .ctrl-group--display {
   gap: 3px;
   padding: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .ctrl-group--display .toggle-trans-btn,
@@ -1132,7 +1138,7 @@ body {
    vocab, quiz… — same containment pattern as HubFlow/FluentFlow's header) ──── */
 
 .app-header {
-  position: relative; /* stays in normal flow, but lets z-index lift it above the fixed grain */
+  position: relative;
   z-index: 3;
   width: 100%;
   flex-shrink: 0;
@@ -1141,10 +1147,67 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 12px;
+  min-height: 85px;
   padding: 22px clamp(16px, 3vw, 34px);
   border-bottom: 1.5px solid var(--lp-border);
   background: var(--lp-bg);
   text-align: left;
+}
+
+.app-header--player {
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 22px clamp(16px, 3vw, 34px);
+  flex-wrap: nowrap;
+  align-items: center;
+  position: relative;
+}
+
+.app-header--player .song-meta {
+  min-width: 0;
+}
+
+.app-header--player .song-learning-progress--player {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.app-header--player .song-title {
+  font-family: var(--lp-font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-header--player .song-artist {
+  font-size: 0.6rem;
+  color: var(--lp-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-header--player .artwork {
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+}
+
+.app-header--player .back-btn {
+  width: 36px;
+  height: 36px;
 }
 
 .app-header-brand {
@@ -2921,16 +2984,17 @@ body {
 
 .song-fin-actions {
   display: flex;
-  gap: 8px;
-  width: 100%;
+  gap: 6px;
+  justify-content: center;
   margin-top: 4px;
 }
 
 .song-fin-actions .lr-btn {
-  flex: 1;
-  padding: 8px 10px;
+  flex: 0 1 auto;
+  padding: 6px 14px;
   font-size: 0.7rem;
-  min-height: 38px;
+  min-height: 32px;
+  border-radius: var(--lp-radius-md);
 }
 
 .lr-btn--next {
@@ -3041,14 +3105,14 @@ body {
 
 .lr-actions {
   display: flex;
-  gap: 10px;
-  width: 100%;
+  gap: 6px;
+  justify-content: center;
 }
 
 .lr-btn {
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: 20px;
+  flex: 0 1 auto;
+  padding: 6px 14px;
+  border-radius: var(--lp-radius-md);
   font-family: var(--lp-font-body);
   font-size: 0.75rem;
   font-weight: 600;
@@ -3390,7 +3454,7 @@ a:focus-visible,
 }
 
 .song-learning-progress--player {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .song-progress-track {
@@ -3516,6 +3580,14 @@ a:focus-visible,
   .app-header {
     padding: 10px 14px 8px;
   }
+
+  .app-header--player {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .app-header--player .song-title { font-size: 0.95rem; }
+  .app-header--player .artwork { width: 30px; height: 30px; font-size: 1rem; }
 
   .app-header-progress {
     align-items: flex-start;
