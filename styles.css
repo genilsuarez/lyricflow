@@ -12,7 +12,7 @@
   /* ─── Surface & Paper (light — warm editorial) ─── */
   --lp-bg: #FAF7F2;
   --lp-bg-paper: #F5F1EB;
-  --lp-surface: rgba(255, 255, 255, 0.92);
+  --lp-surface: #FFFFFF;
   --lp-surface-raised: #FFFFFF;
   --lp-surface-sunken: rgba(240, 237, 231, 0.6);
 
@@ -262,12 +262,10 @@ body {
   max-height: 846px;
   display: flex;
   flex-direction: column;
-  background: var(--lp-surface);
+  background: var(--lp-bg-paper);
   border-radius: var(--lp-radius-xl);
   border: 1px solid var(--lp-border);
   box-shadow: var(--lp-shadow-lg);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
   position: relative;
   z-index: 2;
   animation: cardReveal 0.7s var(--lp-ease) both;
@@ -1143,11 +1141,9 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 12px;
-  padding: 25px clamp(16px, 3vw, 34px) 24px;
+  padding: 22px clamp(16px, 3vw, 34px);
   border-bottom: 1.5px solid var(--lp-border);
-  background: color-mix(in srgb, var(--lp-bg) 92%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--lp-bg);
   text-align: left;
 }
 
@@ -1181,7 +1177,7 @@ body {
 
 /* ─── Footer (signature, home/picker view) ──────────────────────────────────── */
 
-.foot-sig { font-family: var(--lp-font-display); font-style: italic; font-size: 13px; color: var(--lp-ink-soft); }
+.foot-sig { font-family: var(--lp-font-display); font-style: italic; font-size: 13px; color: var(--lp-muted); }
 .foot-meta { font-family: var(--lp-font-mono); font-size: 9px; font-weight: 700; color: var(--lp-muted); letter-spacing: .08em; text-transform: uppercase; }
 
 /* ─── Site footer (page-level, in normal flow below the floating card — same
@@ -1197,9 +1193,7 @@ body {
   justify-content: space-between;
   padding: 12px clamp(16px, 3vw, 34px);
   border-top: 1.5px solid var(--lp-border);
-  background: color-mix(in srgb, var(--lp-bg) 92%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--lp-bg);
 }
 
 .picker-btn {
@@ -1425,8 +1419,6 @@ body {
 
   .app-shell {
     border-radius: var(--lp-radius-lg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
   .player-wrapper {
@@ -3701,6 +3693,10 @@ body {
 
 .navigation-mode-toggle {
   margin-bottom: 8px;
+}
+
+.navigation-mode-toggle .unified-nav-icon {
+  color: var(--lp-accent);
 }
 
 .unified-nav-icon {
