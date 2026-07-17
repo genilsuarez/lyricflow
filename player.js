@@ -24,15 +24,22 @@ export const app = document.getElementById('app');
 // Speed control options
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25];
 
-// Difficulty levels — shared between blanks and listening
-// easy: 1 blank/line, only rich lines, min 4 chars
-// normal: 1-2 blanks (current default)
-// hard: 2-3 blanks, shorter words eligible
+// ─── Difficulty System (pedagogically-driven) ──────────────────────────────────
+// Philosophy: blanks reinforce KEY vocabulary from the song, not random words.
+// vocabData words are blanked first; only when cap allows do content words fill in.
+//
+// totalCap: max blanks for the entire song (absolute ceiling)
+// vocabBoost: multiplier for vocab-word score (higher = vocab almost always chosen)
+// minWordLen: words shorter than this are never blanked
+// maxPerLine: never exceed this many blanks on a single line
 const DIFFICULTY = {
-  easy:   { maxBlanks: 1, richThreshold: 2, minWordLen: 2 },
-  normal: { maxBlanks: 2, richThreshold: 3, minWordLen: 2 },
-  hard:   { maxBlanks: 3, richThreshold: 2, minWordLen: 1 },
+  easy:   { totalCap: 8,  vocabBoost: 200, minWordLen: 3, maxPerLine: 1 },
+  normal: { totalCap: 16, vocabBoost: 150, minWordLen: 2, maxPerLine: 1 },
+  hard:   { totalCap: 30, vocabBoost: 100, minWordLen: 1, maxPerLine: 2 },
 };
+
+// CEFR multiplier — lower levels get fewer blanks (more focus, less overwhelm)
+const LEVEL_FACTOR = { A1: 0.6, A2: 0.75, B1: 1.0, B2: 1.0, C1: 1.1, C2: 1.2 };
 
 // Shared stop words — never blanked in either mode
 const STOP_WORDS = new Set([
@@ -70,6 +77,7 @@ export const state = {
   // Fill-in-the-blanks
   blanksMode: false,
   blanksAnswers: {},
+  blanksBlanksMap: {},  // lineIndex -> Set of wordIdx to blank (pre-computed)
   blanksDifficulty: 'normal',
   challengeRunId: null,
   listeningDifficulty: 'normal',
@@ -95,6 +103,9 @@ export const state = {
   listenTracker: null,   // Unique timeline coverage tracker for the active song
   cachedSubLines: [],    // Cached DOM references (set after renderSubtitles)
   scrollRAF: null,       // Debounce scroll — avoid queueing multiple smooth scrolls
+
+  // Navigation
+  previousView: 'dashboard', // 'dashboard' | 'picker' | 'stats' — where to return on back
 };
 
 // ─── Persistence (localStorage) ────────────────────────────────────────────────
@@ -112,19 +123,53 @@ function savePrefs(partial) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
 }
 
+// ─── Section Visit Tracking ────────────────────────────────────────────────────
+
+const VISITS_KEY = 'lyricflow_visits';
+
+function getVisits() {
+  try { return JSON.parse(localStorage.getItem(VISITS_KEY)) || {}; } catch { return {}; }
+}
+
+function getSectionVisited(songId, section) {
+  const visits = getVisits();
+  return !!(visits[songId] && visits[songId][section]);
+}
+
+function markSectionVisited(songId, section) {
+  const visits = getVisits();
+  if (!visits[songId]) visits[songId] = {};
+  if (visits[songId][section]) return; // already marked
+  visits[songId][section] = Date.now();
+  try { localStorage.setItem(VISITS_KEY, JSON.stringify(visits)); } catch {}
+  // Update just the button — no full re-render to avoid breaking song load
+  const btnMap = { vocab: 'toggleVocabBtn', culture: 'toggleCultureBtn' };
+  const btn = document.getElementById(btnMap[section]);
+  if (btn && !btn.querySelector('.toolbar-done-dot')) {
+    btn.classList.add('is-activity-done');
+    btn.insertAdjacentHTML('beforeend', '<span class="toolbar-done-dot" aria-label="completada">✓</span>');
+    const tooltip = btn.dataset.tooltip;
+    if (tooltip && !tooltip.includes('✓')) btn.dataset.tooltip = tooltip + ' ✓';
+  }
+}
+
 // ─── Mode Toolbar (shared across player, quiz, vocab, culture) ─────────────────
 
 export function modeToolbarHtml(song, activeMode = '') {
   const showDisplay = activeMode === '' || activeMode === 'blanks' || activeMode === 'listening';
+  const sp = getSongProgress(song.id);
+  const done = (act) => sp.activities[act]?.completed;
+  const visited = (section) => getSectionVisited(song.id, section);
+  const check = (show) => show ? '<span class="toolbar-done-dot" aria-label="completada">✓</span>' : '';
   return `
     <div class="mode-toolbar">
       <div class="ctrl-group ctrl-group--study">
-        <button class="toggle-player-btn${activeMode === '' ? ' active' : ''}" id="togglePlayerBtn" aria-label="Volver al reproductor" data-tooltip="Reproductor">🎵</button>
-        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario">📖</button>
-        <button class="toggle-listening-btn${activeMode === 'listening' ? ' active' : ''}" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado auditivo">🎧</button>
-        <button class="toggle-blanks-btn${activeMode === 'blanks' ? ' active' : ''}" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos">✎</button>
-        <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Mini Quiz">🧠</button>
-        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Contexto cultural">🌍</button>` : ''}
+        <button class="toggle-player-btn${activeMode === '' ? ' active' : ''}${done('listen') ? ' is-activity-done' : ''}" id="togglePlayerBtn" aria-label="Volver al reproductor" data-tooltip="Escucha${done('listen') ? ' ✓' : ''}">🎵${check(done('listen'))}</button>
+        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}${visited('vocab') ? ' is-activity-done' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario${visited('vocab') ? ' ✓' : ''}">📖${check(visited('vocab'))}</button>
+        <button class="toggle-listening-btn${activeMode === 'listening' ? ' active' : ''}${done('dictation') ? ' is-activity-done' : ''}" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado${done('dictation') ? ' ✓' : ''}">🎧${check(done('dictation'))}</button>
+        <button class="toggle-blanks-btn${activeMode === 'blanks' ? ' active' : ''}${done('challenge') ? ' is-activity-done' : ''}" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos${done('challenge') ? ' ✓' : ''}">✎${check(done('challenge'))}</button>
+        <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}${done('quiz') ? ' is-activity-done' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Quiz${done('quiz') ? ' ✓' : ''}">🧠${check(done('quiz'))}</button>
+        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${check(visited('culture'))}</button>` : ''}
       </div>
       ${showDisplay ? `
       <span class="ctrl-divider" aria-hidden="true"></span>
@@ -201,6 +246,7 @@ export function bindModeToolbarNav(song) {
   });
   document.getElementById('toggleVocabBtn')?.addEventListener('click', () => {
     pauseOnModeSwitch();
+    markSectionVisited(song.id, 'vocab');
     toggleVocabMode();
   });
   document.getElementById('toggleListeningBtn')?.addEventListener('click', () => {
@@ -230,6 +276,7 @@ export function bindModeToolbarNav(song) {
   if (song.culture) {
     document.getElementById('toggleCultureBtn')?.addEventListener('click', () => {
       pauseOnModeSwitch();
+      markSectionVisited(song.id, 'culture');
       showCultureView(song);
     });
   }
@@ -266,6 +313,14 @@ const PROGRESS_ACTIVITY_LABELS = {
   quiz: 'Quiz',
 };
 
+function progressTooltipHtml(songProgress) {
+  const lines = Object.entries(PROGRESS_ACTIVITY_LABELS).map(([activity, label]) => {
+    const done = songProgress.activities[activity].completed;
+    return `<span class="progress-tooltip-line ${done ? 'is-done' : ''}">${done ? '✓' : '○'} ${label}</span>`;
+  }).join('');
+  return lines;
+}
+
 function progressInnerHtml(songProgress) {
   const completed = Object.values(songProgress.activities).filter(activity => activity.completed).length;
   const segments = Object.entries(PROGRESS_ACTIVITY_LABELS).map(([activity, label]) => {
@@ -274,7 +329,7 @@ function progressInnerHtml(songProgress) {
   }).join('');
   return `
     <span class="song-progress-copy"><strong>${songProgress.progressPct}%</strong> · ${completed}/4 actividades</span>
-    <span class="song-progress-track" aria-hidden="true">${segments}</span>
+    <span class="song-progress-hitarea" aria-hidden="true"><span class="song-progress-track">${segments}</span></span>
   `;
 }
 
@@ -308,9 +363,10 @@ function renderAppHeader(song) {
   const header = document.getElementById('appHeader');
   if (!header) return;
   if (song) {
+    const backLabel = state.previousView === 'picker' ? 'Volver a canciones' : state.previousView === 'stats' ? 'Volver a estadísticas' : 'Volver al inicio';
     header.classList.add('app-header--player');
     header.innerHTML = `
-      <button class="back-btn" id="headerBackBtn" aria-label="Volver al picker" title="Volver">←</button>
+      <button class="back-btn" id="headerBackBtn" aria-label="${backLabel}" title="Volver">←</button>
       <div class="artwork">${song.icon || '🎵'}</div>
       <div class="song-meta">
         <div class="song-title">${song.title}</div>
@@ -321,7 +377,12 @@ function renderAppHeader(song) {
       </div>
       ${songProgressHtml(song.id, 'song-learning-progress--player')}
     `;
-    document.getElementById('headerBackBtn').addEventListener('click', () => showDashboard());
+    document.getElementById('headerBackBtn').addEventListener('click', () => {
+      const dest = state.previousView;
+      if (dest === 'picker') showPicker(true);
+      else if (dest === 'stats') showStats();
+      else showDashboard();
+    });
   } else {
     header.classList.remove('app-header--player');
     header.innerHTML = `
@@ -356,6 +417,7 @@ function showDashboard() {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
+  state.previousView = 'dashboard';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupStats();
@@ -373,6 +435,7 @@ function showStats() {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
+  state.previousView = 'stats';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupDashboard();
@@ -392,6 +455,7 @@ function showPicker(skipAutoLoad = false) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
+  state.previousView = 'picker';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupStats();
@@ -456,6 +520,46 @@ function showPicker(skipAutoLoad = false) {
   }
 
   renderSongs(songs);
+
+  // Floating tooltip for song progress on hover
+  let floatingTooltip = document.getElementById('progressFloatingTooltip');
+  if (!floatingTooltip) {
+    floatingTooltip = document.createElement('div');
+    floatingTooltip.id = 'progressFloatingTooltip';
+    floatingTooltip.className = 'progress-tooltip';
+    floatingTooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(floatingTooltip);
+  }
+
+  list.addEventListener('pointerenter', (e) => {
+    const hitarea = e.target.closest('.song-progress-hitarea');
+    if (!hitarea) return;
+    const progressEl = hitarea.closest('[data-song-progress]');
+    if (!progressEl) return;
+    const contentId = progressEl.dataset.songProgress;
+    const sp = getSongProgress(contentId);
+    floatingTooltip.innerHTML = progressTooltipHtml(sp);
+    floatingTooltip.classList.add('is-visible');
+    const rect = hitarea.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      const ttRect = floatingTooltip.getBoundingClientRect();
+      let top = rect.top - ttRect.height - 6;
+      if (top < 4) top = rect.bottom + 6;
+      let left = rect.right - ttRect.width;
+      if (left < 4) left = 4;
+      floatingTooltip.style.top = `${top}px`;
+      floatingTooltip.style.left = `${left}px`;
+    });
+  }, true);
+
+  list.addEventListener('pointerleave', (e) => {
+    const hitarea = e.target.closest('.song-progress-hitarea');
+    if (hitarea) floatingTooltip.classList.remove('is-visible');
+  }, true);
+
+  list.addEventListener('click', () => {
+    floatingTooltip.classList.remove('is-visible');
+  }, true);
 
   const searchInput = document.getElementById('songSearch');
   searchInput.addEventListener('input', () => {
@@ -1334,9 +1438,9 @@ function showDifficultyPicker(mode, onSelect) {
 
   const labels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
   const descriptions = {
-    easy: '1 palabra por línea',
-    normal: '1–2 palabras por línea',
-    hard: '2–3 palabras por línea',
+    easy: 'Solo vocabulario clave',
+    normal: 'Vocabulario + contexto',
+    hard: 'Intensivo, muchas palabras',
   };
   const icons = { easy: '🌱', normal: '🎯', hard: '🔥' };
   const currentDiff = mode === 'blanks' ? state.blanksDifficulty : state.listeningDifficulty;
@@ -1441,6 +1545,7 @@ function toggleBlanksMode() {
     blanksRevealed = false;
     if (state.showTranslation) toggleTranslation();
 
+    state.blanksBlanksMap = buildBlanksMap();
     renderSubtitles(state.currentSong.subtitles);
 
     // Add blanks toolbar
@@ -1465,38 +1570,18 @@ function toggleBlanksMode() {
 function renderBlanksLine(text, lineIndex) {
   const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
   const tokens = text.split(/(\s+)/);
-  const rng = seededRandom(lineIndex * 31 + 7);
-  const diff = DIFFICULTY[state.blanksDifficulty];
+  const blankSet = state.blanksBlanksMap[lineIndex];
 
-  // Pass 1 — score content-word candidates
-  let wordIdx = 0;
-  const candidates = [];
-  tokens.forEach(token => {
-    if (/^\s+$/.test(token)) return;
-    const clean = token.toLowerCase().replace(STRIP, '');
-    if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
-    const inVocab = state.vocabData?.some(v => v.word === clean) ?? false;
-    candidates.push({ wordIdx, clean, original: token, score: (inVocab ? 100 : 0) + clean.length + rng() * 5 });
-    wordIdx++;
-  });
-
-  // Skip lines without enough candidates for this difficulty
-  if (candidates.length < diff.richThreshold) {
-    wordIdx = 0;
+  // No blanks planned for this line — render all visible
+  if (!blankSet || blankSet.size === 0) {
     return tokens.map(token => {
       if (/^\s+$/.test(token)) return token;
-      wordIdx++;
       return `<span class="blanks-visible">${token}</span>`;
     }).join('');
   }
 
-  // Pick blanks based on difficulty
-  candidates.sort((a, b) => b.score - a.score);
-  const maxBlanks = Math.min(diff.maxBlanks, candidates.length);
-  const blankSet = new Set(candidates.slice(0, maxBlanks).map(c => c.wordIdx));
-
-  // Pass 2 — render tokens
-  wordIdx = 0;
+  // Render with blanks at pre-computed positions
+  let wordIdx = 0;
   return tokens.map(token => {
     if (/^\s+$/.test(token)) return token;
     const clean = token.toLowerCase().replace(STRIP, '');
@@ -1512,7 +1597,7 @@ function renderBlanksLine(text, lineIndex) {
         data-key="${key}"
         data-answer="${clean}"
         data-original="${token}"
-        style="width:${Math.max(clean.length, 3) + 1}ch"
+        style="width:${Math.max(clean.length, 3) + 2}ch"
         maxlength="${clean.length + 5}"
         value="${answered}"
         placeholder="${'·'.repeat(clean.length)}"
@@ -1520,6 +1605,71 @@ function renderBlanksLine(text, lineIndex) {
         spellcheck="false" />
     </span>`;
   }).join('');
+}
+
+// ─── Blanks Map Builder (pedagogically-driven word selection) ───────────────────
+// Pre-computes which words to blank across the entire song, respecting:
+// 1. Global cap (adjusted by CEFR level)
+// 2. Vocab words have massive score priority
+// 3. Per-line max to avoid overwhelming any single line
+// 4. Spread across the song (not clustered at the top)
+
+function buildBlanksMap() {
+  const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
+  const subs = state.currentSong.subtitles;
+  const diff = DIFFICULTY[state.blanksDifficulty];
+
+  // Adjust cap by CEFR level
+  const level = state.currentSong.level || 'B1';
+  const factor = LEVEL_FACTOR[level] ?? 1.0;
+  const totalCap = Math.round(diff.totalCap * factor);
+
+  // Build vocab word set with their line positions for extra precision
+  const vocabWords = new Set();
+  if (state.vocabData && state.vocabData.length) {
+    state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
+  }
+
+  // Pass 1: collect ALL candidates across the song with scores
+  const allCandidates = [];
+  subs.forEach((sub, lineIndex) => {
+    const tokens = sub.original.split(/(\s+)/);
+    const rng = seededRandom(lineIndex * 31 + 7);
+    let wordIdx = 0;
+
+    tokens.forEach(token => {
+      if (/^\s+$/.test(token)) return;
+      const clean = token.toLowerCase().replace(STRIP, '');
+      if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
+
+      const inVocab = vocabWords.has(clean);
+      // Score: vocab words get huge boost; then word length; small random jitter for variety
+      const score = (inVocab ? diff.vocabBoost : 0) + clean.length * 2 + rng() * 3;
+      allCandidates.push({ lineIndex, wordIdx, clean, score, isVocab: inVocab });
+      wordIdx++;
+    });
+  });
+
+  // Pass 2: sort by score (vocab first, then longest/most interesting)
+  allCandidates.sort((a, b) => b.score - a.score);
+
+  // Pass 3: greedily pick up to totalCap, respecting maxPerLine
+  const lineCounts = {};  // lineIndex -> count of blanks assigned
+  const map = {};         // lineIndex -> Set of wordIdx
+
+  let picked = 0;
+  for (const c of allCandidates) {
+    if (picked >= totalCap) break;
+    const lc = lineCounts[c.lineIndex] || 0;
+    if (lc >= diff.maxPerLine) continue;
+
+    if (!map[c.lineIndex]) map[c.lineIndex] = new Set();
+    map[c.lineIndex].add(c.wordIdx);
+    lineCounts[c.lineIndex] = lc + 1;
+    picked++;
+  }
+
+  return map;
 }
 
 function validateSingleBlank(input) {
@@ -1970,43 +2120,57 @@ function toggleListeningMode() {
 }
 
 function buildListeningBlanks() {
-  const map = {};
+  const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
   const subs = state.currentSong.subtitles;
   const diff = DIFFICULTY[state.listeningDifficulty];
 
-  // Build set of vocab words (these are the pedagogically interesting ones)
+  // Adjust cap by CEFR level
+  const level = state.currentSong.level || 'B1';
+  const factor = LEVEL_FACTOR[level] ?? 1.0;
+  const totalCap = Math.round(diff.totalCap * factor);
+
+  // Build vocab word set
   const vocabWords = new Set();
   if (state.vocabData && state.vocabData.length) {
     state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
   }
 
+  // Collect all candidates across the song
+  const allCandidates = [];
   subs.forEach((sub, lineIndex) => {
-    const words = sub.original.split(/(\s+)/);
+    const tokens = sub.original.split(/(\s+)/);
     const rng = seededRandom(lineIndex * 47 + 13);
     let wordIdx = 0;
-    const candidates = [];
 
-    words.forEach(token => {
+    tokens.forEach(token => {
       if (/^\s+$/.test(token)) return;
-      const clean = token.toLowerCase().replace(/[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g, '');
-      if (!clean || clean.length <= diff.minWordLen) { wordIdx++; return; }
-      if (STOP_WORDS.has(clean)) { wordIdx++; return; }
+      const clean = token.toLowerCase().replace(STRIP, '');
+      if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
 
       const inVocab = vocabWords.has(clean);
-      const score = (inVocab ? 100 : 0) + clean.length + rng() * 3;
-      candidates.push({ wordIdx, clean, original: token, score });
+      const score = (inVocab ? diff.vocabBoost : 0) + clean.length * 2 + rng() * 3;
+      allCandidates.push({ lineIndex, wordIdx, clean, original: token, score });
       wordIdx++;
     });
-
-    // Skip lines without enough candidates for this difficulty
-    if (candidates.length < diff.richThreshold) return;
-
-    candidates.sort((a, b) => b.score - a.score);
-    const maxBlanks = Math.min(diff.maxBlanks, candidates.length);
-    const blanks = candidates.slice(0, maxBlanks);
-
-    map[lineIndex] = blanks;
   });
+
+  // Sort by score (vocab first) and pick greedily with per-line cap
+  allCandidates.sort((a, b) => b.score - a.score);
+  const map = {};
+  const lineCounts = {};
+  let picked = 0;
+
+  for (const c of allCandidates) {
+    if (picked >= totalCap) break;
+    const lc = lineCounts[c.lineIndex] || 0;
+    if (lc >= diff.maxPerLine) continue;
+
+    if (!map[c.lineIndex]) map[c.lineIndex] = [];
+    map[c.lineIndex].push({ wordIdx: c.wordIdx, clean: c.clean, original: c.original });
+    lineCounts[c.lineIndex] = lc + 1;
+    picked++;
+  }
+
   return map;
 }
 
@@ -2036,7 +2200,7 @@ function renderListeningLine(text, lineIndex) {
           data-line="${lineIndex}"
           data-answer="${b.clean}"
           data-original="${b.original}"
-          style="width:${Math.max(b.clean.length, 3) + 1}ch"
+          style="width:${Math.max(b.clean.length, 3) + 2}ch"
           maxlength="${b.clean.length + 5}"
           placeholder="${'·'.repeat(b.clean.length)}"
           autocomplete="off"
@@ -2582,6 +2746,15 @@ window.addEventListener('pagehide', () => {
 
 initUnifiedNavigation();
 renderAppHeader();
+
+// Hide CSS tooltips on click (they persist on touch/hover otherwise)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tooltip]');
+  if (btn) {
+    btn.classList.add('tooltip-hidden');
+    btn.addEventListener('pointerleave', () => btn.classList.remove('tooltip-hidden'), { once: true });
+  }
+}, true);
 
 const songParam = new URLSearchParams(location.search).get('song');
 const isSessionReturn = sessionStorage.getItem('lyricflow_active');
