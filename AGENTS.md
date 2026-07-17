@@ -60,6 +60,51 @@ Al crear nuevos scripts de QA, guardarlos en `scripts/qa-<nombre>.js`.
 
 - (ninguno documentado)
 
+## Fill-in-the-Blanks — Sistema de dificultad
+
+El algoritmo de blanks es **pedagógico, no mecánico**. No blanquea palabras al azar ni
+1 por línea — selecciona las palabras más relevantes de toda la canción con un cap global.
+
+### Principios
+
+1. **Vocab-first**: las palabras del `vocab.js` de la canción tienen prioridad absoluta
+   (boost de score 200/150/100 según nivel). Si hay 12 vocab words y el cap es 8,
+   se eligen las 8 que aparecen en mejores posiciones.
+2. **Cap global por canción**: no importa si tiene 15 o 50 líneas, el total de blanks
+   está acotado. Nunca satura.
+3. **Ajuste por CEFR**: el `level` de `data.js` modifica el cap. A1 reduce 40%, A2 25%.
+   Principiantes ven menos blanks pero todos son vocabulario clave.
+4. **maxPerLine**: nunca más de 1-2 blanks en la misma línea. Evita líneas ilegibles.
+5. **Spread natural**: el greedy pick distribuye blanks a lo largo de la canción
+   (no se acumulan arriba).
+
+### Configuración actual (`DIFFICULTY` en player.js)
+
+| Nivel | totalCap | vocabBoost | minWordLen | maxPerLine |
+|-------|----------|------------|------------|------------|
+| easy | 8 | 200 | 3 | 1 |
+| normal | 16 | 150 | 2 | 1 |
+| hard | 30 | 100 | 1 | 2 |
+
+### LEVEL_FACTOR (multiplicador CEFR)
+
+| Level | Factor | Resultado easy/normal/hard |
+|-------|--------|---------------------------|
+| A1 | 0.6 | 5 / 10 / 18 |
+| A2 | 0.75 | 6 / 12 / 22 |
+| B1+ | 1.0 | 8 / 16 / 30 |
+| C1 | 1.1 | 9 / 18 / 33 |
+
+### Reglas (no negociables)
+
+- **Nunca volver a "1 blank por línea en toda la canción"** — eso es testing, no learning.
+- **Vocab words siempre priorizadas** — si no hay vocab.js, funciona con content words
+  pero el resultado pedagógico es inferior.
+- **El cap es ceiling, no floor** — si la canción tiene pocas palabras elegibles, habrá
+  menos blanks que el cap. Nunca se fuerzan blanks en palabras cortas/stop-words.
+- **Listening mode usa la misma lógica** — `buildListeningBlanks()` comparte DIFFICULTY
+  y LEVEL_FACTOR.
+
 ## Button system — NO migrar a .lp-btn
 
 Los botones de LyricFlow usan clases propias (`play-btn`, `back-btn`, `volume-btn`,

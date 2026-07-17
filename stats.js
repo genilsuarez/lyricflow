@@ -106,7 +106,7 @@ function svgRing(percent, size = 64) {
   `;
 }
 
-function svgRingLarge(percent, size = 120) {
+function svgRingLarge(percent, size = 140) {
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
@@ -213,7 +213,10 @@ export function renderDashboard(onSongClick, onShowSongs) {
         <div class="dash-hero__body">
           <div class="dash-hero__headline">
             <span class="dash-hero__kicker">Tu progreso</span>
-            <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
+            <div class="dash-hero__title-row">
+              <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
+              <button type="button" class="dash-hero__browse" id="dashSongsCta">Ver todas →</button>
+            </div>
           </div>
           <div class="dash-hero__metrics">
             <div class="dash-metric"><strong>${streak.current}</strong><span>racha</span></div>
@@ -223,14 +226,13 @@ export function renderDashboard(onSongClick, onShowSongs) {
           </div>
           ${recommendation ? `
           <button type="button" class="dash-hero__cta" id="dashHeroCta">
-            <span class="dash-hero__cta-label">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>
-            <span class="dash-hero__cta-song">${recommendation.song.icon || '🎵'} ${recommendation.song.title} — ${recommendation.song.artist}</span>
-            <span class="dash-hero__cta-play" aria-hidden="true">▶</span>
+            <span class="dash-hero__cta-song"><span class="dash-hero__cta-icon">${recommendation.song.icon || '🎵'}</span><span class="dash-hero__cta-info"><span class="dash-hero__cta-title">${recommendation.song.title}</span><span class="dash-hero__cta-artist">${recommendation.song.artist}</span></span></span>
+            <span class="dash-hero__cta-play"><span class="dash-hero__cta-play-label">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>▶</span>
           </button>
           ` : `
           <button type="button" class="dash-hero__cta dash-hero__cta--browse" id="dashBrowseCta">
-            <span class="dash-hero__cta-label">Explorar canciones</span>
-            <span class="dash-hero__cta-play" aria-hidden="true">→</span>
+            <span class="dash-hero__cta-song">Explorar canciones</span>
+            <span class="dash-hero__cta-play"><span class="dash-hero__cta-play-label">Ver</span>→</span>
           </button>
           `}
         </div>
@@ -261,10 +263,14 @@ export function renderDashboard(onSongClick, onShowSongs) {
             const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
             const scoreStr = event.scorePct != null ? `${Math.round(event.scorePct)}%` : '';
             const passedStr = event.passed === true ? '✓' : event.passed === false ? '✗' : '';
+            const songData = pickerSongs.find(s => s.id === event.contentId);
+            const displayTitle = songData?.title || event.title || event.contentId;
+            const displayArtist = songData?.artist || '';
             return `
               <div class="dash-recent__row">
                 <span class="dash-recent__icon">${meta.icon}</span>
-                <span class="dash-recent__title">${event.title || event.contentId}</span>
+                <span class="dash-recent__title">${displayTitle}${displayArtist ? `<span class="dash-recent__artist">${displayArtist}</span>` : ''}</span>
+                <span class="dash-recent__activity">${meta.label}</span>
                 <span class="dash-recent__score">${scoreStr}${passedStr ? ' ' + passedStr : ''}</span>
                 <time class="dash-recent__time">${timeAgo(event.occurredAt)}</time>
               </div>`;
@@ -274,9 +280,6 @@ export function renderDashboard(onSongClick, onShowSongs) {
       </section>
 
       <!-- Songs CTA -->
-      <button type="button" class="dash-songs-cta" id="dashSongsCta">
-        Ver todas las canciones <span aria-hidden="true">→</span>
-      </button>
     </div>
   `;
 
@@ -391,10 +394,14 @@ export function renderStats() {
               const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
               const scoreStr = event.scorePct != null ? `${Math.round(event.scorePct)}%` : '';
               const passedStr = event.passed === true ? '✓' : event.passed === false ? '✗' : '';
+              const songData = pickerSongs.find(s => s.id === event.contentId);
+              const displayTitle = songData?.title || event.title || event.contentId;
+              const displayArtist = songData?.artist || '';
               return `
                 <div class="sv-recent-row">
                   <span class="sv-recent-icon">${meta.icon}</span>
-                  <span class="sv-recent-title">${event.title || event.contentId}</span>
+                  <span class="sv-recent-title">${displayTitle}${displayArtist ? `<span class="sv-recent-artist">${displayArtist}</span>` : ''}</span>
+                  <span class="sv-recent-activity">${meta.label}</span>
                   <span class="sv-recent-score">${scoreStr}${passedStr ? ' ' + passedStr : ''}</span>
                   <time class="sv-recent-time">${timeAgo(event.occurredAt)}</time>
                 </div>`;
