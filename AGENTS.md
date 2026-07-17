@@ -60,6 +60,25 @@ Al crear nuevos scripts de QA, guardarlos en `scripts/qa-<nombre>.js`.
 
 - (ninguno documentado)
 
+## Button system — NO migrar a .lp-btn
+
+Los botones de LyricFlow usan clases propias (`play-btn`, `back-btn`, `volume-btn`,
+`speed-btn`, `loop-btn`, `toggle-*-btn`, `blanks-check-btn`, `blanks-reveal-btn`).
+**No son candidatos a migración** al sistema `.lp-btn` / `.lp-icon-btn` canónico.
+
+Razones:
+- **Tamaños custom**: toggles de estudio a 34px, loop/speed a 36px, play a 42px, back a 32px.
+  La spec canónica exige 44px mínimo o hit-area extendida vía `::after`, pero estos
+  toggles ya usan `::after` para sus tooltips — hay conflicto directo.
+- **Estilos custom**: play-btn tiene gradient, blanks-*-btn tienen border-radius 18px y
+  padding no estándar, volume-btn es transparente sin dimensiones fijas.
+- **Layout denso**: el player acomoda 5-6 toggles + controles de audio en espacio reducido.
+  Subir a 44px rompe la composición.
+
+Están visualmente alineados con la identidad (usan tokens `--lp-*`, transitions, hover
+states), pero mantienen naming y sizing propios. Esta decisión es intencional y permanente
+salvo rediseño completo de la zona del player.
+
 ## Notas
 
 - `.player-wrapper` tiene `overflow: hidden` — tooltips/popovers con `position: absolute` se clippean si salen del contenedor. Usar `position: fixed` para elementos que necesitan salir del wrapper.
