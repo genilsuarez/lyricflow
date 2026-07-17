@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// LyricFlow — Stats View
-// Full-page statistics view (inline, not modal) accessible from the picker.
+// LyricFlow — Dashboard & Stats
+// Dashboard: motivational landing with hero + compact stats.
+// Stats: full-page detailed statistics (songs table, per-level breakdown).
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import pickerSongs from './songs/picker-data.js';
@@ -16,6 +17,8 @@ const ACTIVITY_META = {
   dictation: { icon: '📝', label: 'Dictado' },
   quiz: { icon: '🧠', label: 'Quiz' },
 };
+
+const LEVEL_ORDER = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -88,16 +91,6 @@ function computeStreak(events) {
   return { current, best, lastDate: sortedDays[0] };
 }
 
-function groupByLevel(songs) {
-  const groups = {};
-  songs.forEach(song => {
-    const level = song.level || 'Other';
-    if (!groups[level]) groups[level] = [];
-    groups[level].push(song);
-  });
-  return groups;
-}
-
 function svgRing(percent, size = 64) {
   const radius = 27;
   const circumference = 2 * Math.PI * radius;
@@ -113,14 +106,22 @@ function svgRing(percent, size = 64) {
   `;
 }
 
-// ─── Render ────────────────────────────────────────────────────────────────────
-
-export function cleanupStats() {
-  const shell = document.querySelector('.app-shell--fullscreen');
-  if (shell) shell.classList.remove('app-shell--fullscreen');
+function svgRingLarge(percent, size = 120) {
+  const radius = 50;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+  return `
+    <svg class="stats-ring stats-ring--lg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">
+      <circle class="stats-ring__bg" cx="${size / 2}" cy="${size / 2}" r="${radius}" />
+      <circle class="stats-ring__fill" cx="${size / 2}" cy="${size / 2}" r="${radius}"
+        stroke-dasharray="${circumference}"
+        stroke-dashoffset="${offset}"
+        style="--target-offset: ${offset}" />
+    </svg>
+  `;
 }
 
-export function renderStats() {
+function getComputedData() {
   const progress = getProgress();
   const events = readActivityLedger();
   const streak = computeStreak(events);
@@ -129,8 +130,6 @@ export function renderStats() {
     progress: getSongProgress(song.id),
   }));
 
-  // Sort by CEFR level
-  const LEVEL_ORDER = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
   songDetails.sort((a, b) => {
     const la = LEVEL_ORDER.indexOf((a.level || '').toLowerCase());
     const lb = LEVEL_ORDER.indexOf((b.level || '').toLowerCase());
@@ -138,10 +137,6 @@ export function renderStats() {
     const ib = lb === -1 ? LEVEL_ORDER.length : lb;
     return ia - ib || a.title.localeCompare(b.title);
   });
-
-  const shell = app.closest('.app-shell');
-  if (shell) shell.classList.add('app-shell--fullscreen');
-  const byLevel = groupByLevel(pickerSongs);
 
   const activityCounts = {};
   ACTIVITY_IDS.forEach(act => {
@@ -153,23 +148,180 @@ export function renderStats() {
     });
   });
 
-  const levelStats = Object.entries(byLevel).map(([level, songs]) => {
-    const completed = songs.filter(s => {
-      const sp = songDetails.find(d => d.id === s.id);
-      return sp?.progress.completed;
-    }).length;
-    return { level, completed, total: songs.length };
-  }).sort((a, b) => {
-    const ia = LEVEL_ORDER.indexOf(a.level.toLowerCase());
-    const ib = LEVEL_ORDER.indexOf(b.level.toLowerCase());
-    return (ia === -1 ? LEVEL_ORDER.length : ia) - (ib === -1 ? LEVEL_ORDER.length : ib);
-  });
-
   const totalAttempts = songDetails.reduce((sum, s) => sum + (s.progress.attempts || 0), 0);
   const allScores = songDetails.map(s => s.progress.bestScorePct).filter(s => s !== null && s !== undefined);
   const bestScore = allScores.length ? Math.max(...allScores) : null;
-  const recentEvents = events.slice(0, 6);
   const pct = Math.round(progress.summary.progressPct);
+
+  return { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct };
+}
+
+// Recommendation engine (same logic as picker had)
+const PICKER_ACTIVITY_ORDER = ['listen', 'challenge', 'dictation', 'quiz'];
+const ACTIVITY_LABELS = { listen: 'Escucha', challenge: 'Challenge', dictation: 'Dictado', quiz: 'Quiz' };
+
+function pickRecommendation(songDetails) {
+  const withProgress = songDetails.map(song => ({ song, progress: song.progress }));
+
+  const inProgress = withProgress
+    .filter(({ progress }) => progress.progressPct > 0 && !progress.completed)
+    .map(({ song, progress }) => {
+      const lastAttemptAt = Math.max(0, ...PICKER_ACTIVITY_ORDER.map(activity => {
+        const at = progress.activities[activity].lastAttemptAt;
+        return at ? new Date(at).getTime() : 0;
+      }));
+      return { song, progress, lastAttemptAt };
+    })
+    .sort((a, b) => b.lastAttemptAt - a.lastAttemptAt);
+
+  if (inProgress.length) {
+    const { song, progress } = inProgress[0];
+    const nextActivity = PICKER_ACTIVITY_ORDER.find(activity => !progress.activities[activity].completed);
+    return { type: 'continue', song, progress, nextLabel: ACTIVITY_LABELS[nextActivity] };
+  }
+
+  const untouched = withProgress.find(({ progress }) => progress.attempts === 0 && progress.progressPct === 0);
+  if (untouched) return { type: 'start', song: untouched.song, progress: untouched.progress };
+
+  return null;
+}
+
+// ─── Dashboard (Home) ──────────────────────────────────────────────────────────
+
+export function cleanupDashboard() {
+  const shell = document.querySelector('.app-shell--fullscreen');
+  if (shell) shell.classList.remove('app-shell--fullscreen');
+}
+
+export function renderDashboard(onSongClick, onShowSongs) {
+  const { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct } = getComputedData();
+  const recommendation = pickRecommendation(songDetails);
+  const recentEvents = events.slice(0, 5);
+
+  const shell = app.closest('.app-shell');
+  if (shell) shell.classList.add('app-shell--fullscreen');
+
+  app.innerHTML = `
+    <div class="dashboard-view">
+
+      <!-- Hero: motivational banner with large ring + CTA -->
+      <div class="dash-hero">
+        <div class="dash-hero__ring">
+          ${svgRingLarge(pct)}
+          <div class="dash-hero__pct"><strong>${pct}%</strong><span>completado</span></div>
+        </div>
+        <div class="dash-hero__body">
+          <div class="dash-hero__headline">
+            <span class="dash-hero__kicker">Tu progreso</span>
+            <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
+          </div>
+          <div class="dash-hero__metrics">
+            <div class="dash-metric"><strong>${streak.current}</strong><span>racha</span></div>
+            <div class="dash-metric"><strong>${progress.summary.completedActivities}</strong><span>actividades</span></div>
+            <div class="dash-metric"><strong>${totalAttempts}</strong><span>intentos</span></div>
+            ${bestScore !== null ? `<div class="dash-metric"><strong>${Math.round(bestScore)}%</strong><span>mejor</span></div>` : ''}
+          </div>
+          ${recommendation ? `
+          <button type="button" class="dash-hero__cta" id="dashHeroCta">
+            <span class="dash-hero__cta-label">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>
+            <span class="dash-hero__cta-song">${recommendation.song.icon || '🎵'} ${recommendation.song.title} — ${recommendation.song.artist}</span>
+            <span class="dash-hero__cta-play" aria-hidden="true">▶</span>
+          </button>
+          ` : `
+          <button type="button" class="dash-hero__cta dash-hero__cta--browse" id="dashBrowseCta">
+            <span class="dash-hero__cta-label">Explorar canciones</span>
+            <span class="dash-hero__cta-play" aria-hidden="true">→</span>
+          </button>
+          `}
+        </div>
+      </div>
+
+      <!-- Activity cards row -->
+      <div class="dash-activities">
+        ${ACTIVITY_IDS.map(act => {
+          const { completed, total } = activityCounts[act];
+          const p = total ? (completed / total) * 100 : 0;
+          const meta = ACTIVITY_META[act];
+          return `
+            <div class="dash-act-card">
+              <span class="dash-act-icon">${meta.icon}</span>
+              <span class="dash-act-label">${meta.label}</span>
+              <div class="dash-act-bar"><div class="dash-act-bar__fill" style="width:${p}%"></div></div>
+              <span class="dash-act-count">${completed}/${total}</span>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Recent activity -->
+      <section class="dash-recent" aria-labelledby="dashRecentTitle">
+        <h3 id="dashRecentTitle">Actividad reciente</h3>
+        ${recentEvents.length ? `
+        <div class="dash-recent__list">
+          ${recentEvents.map(event => {
+            const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
+            const scoreStr = event.scorePct != null ? `${Math.round(event.scorePct)}%` : '';
+            const passedStr = event.passed === true ? '✓' : event.passed === false ? '✗' : '';
+            return `
+              <div class="dash-recent__row">
+                <span class="dash-recent__icon">${meta.icon}</span>
+                <span class="dash-recent__title">${event.title || event.contentId}</span>
+                <span class="dash-recent__score">${scoreStr}${passedStr ? ' ' + passedStr : ''}</span>
+                <time class="dash-recent__time">${timeAgo(event.occurredAt)}</time>
+              </div>`;
+          }).join('')}
+        </div>
+        ` : '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>'}
+      </section>
+
+      <!-- Songs CTA -->
+      <button type="button" class="dash-songs-cta" id="dashSongsCta">
+        Ver todas las canciones <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  `;
+
+  // Bind CTA
+  if (recommendation) {
+    document.getElementById('dashHeroCta')?.addEventListener('click', () => onSongClick(recommendation.song));
+  } else {
+    document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
+  }
+  document.getElementById('dashSongsCta')?.addEventListener('click', onShowSongs);
+}
+
+// ─── Stats (detailed) ──────────────────────────────────────────────────────────
+
+export function cleanupStats() {
+  const shell = document.querySelector('.app-shell--fullscreen');
+  if (shell) shell.classList.remove('app-shell--fullscreen');
+}
+
+export function renderStats() {
+  const { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct } = getComputedData();
+  const recentEvents = events.slice(0, 6);
+
+  const shell = app.closest('.app-shell');
+  if (shell) shell.classList.add('app-shell--fullscreen');
+
+  const levelStats = (() => {
+    const groups = {};
+    pickerSongs.forEach(song => {
+      const level = song.level || 'Other';
+      if (!groups[level]) groups[level] = [];
+      groups[level].push(song);
+    });
+    return Object.entries(groups).map(([level, songs]) => {
+      const completed = songs.filter(s => {
+        const sp = songDetails.find(d => d.id === s.id);
+        return sp?.progress.completed;
+      }).length;
+      return { level, completed, total: songs.length };
+    }).sort((a, b) => {
+      const ia = LEVEL_ORDER.indexOf(a.level.toLowerCase());
+      const ib = LEVEL_ORDER.indexOf(b.level.toLowerCase());
+      return (ia === -1 ? LEVEL_ORDER.length : ia) - (ib === -1 ? LEVEL_ORDER.length : ib);
+    });
+  })();
 
   app.innerHTML = `
     <div class="stats-view">
@@ -182,8 +334,8 @@ export function renderStats() {
         </div>
         <div class="sv-top__info">
           <div class="sv-top__title">
-            <span class="sv-kicker">Tus métricas</span>
-            <h2>Estadísticas</h2>
+            <span class="sv-kicker">Tus metricas</span>
+            <h2>Estadisticas</h2>
           </div>
           <div class="sv-top__numbers">
             <div class="sv-stat"><strong>${progress.summary.completedContent}</strong><span>/ ${progress.summary.totalContent} canciones</span></div>
@@ -248,7 +400,7 @@ export function renderStats() {
                 </div>`;
             }).join('')}
           </div>
-          ` : '<p class="sv-empty">Sin actividad aún</p>'}
+          ` : '<p class="sv-empty">Sin actividad aun</p>'}
         </section>
       </div>
 
