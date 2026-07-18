@@ -142,18 +142,18 @@
   --lp-ink-faint: rgba(237, 232, 224, 0.12);
   --lp-ink-inverse: #1A1714;
 
-  --lp-accent-soft: #2E2018;
+  --lp-accent-soft: #3A2820;
   --lp-accent-glow: color-mix(in srgb, var(--lp-accent) 25%, transparent);
   --lp-accent-text: #E8A080;
 
   --lp-success: #4FB07A;
   --lp-success-soft: #16301F;
 
-  --lp-cat-blue-soft: #1A2A3D;
-  --lp-cat-amber-soft: #2D2510;
-  --lp-cat-green-soft: #1A2D20;
-  --lp-cat-purple-soft: #221A30;
-  --lp-cat-teal-soft: #1A2D2D;
+  --lp-cat-blue-soft: #1E3350;
+  --lp-cat-amber-soft: #3D3018;
+  --lp-cat-green-soft: #1F3D28;
+  --lp-cat-purple-soft: #2E2240;
+  --lp-cat-teal-soft: #1F3838;
 
   --lp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15);
   --lp-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.18);
