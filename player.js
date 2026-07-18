@@ -89,6 +89,7 @@ export const state = {
   listeningWaiting: false,
   listeningCurrentBlank: null,
   listeningTimerId: null,
+  listeningResumeTimers: [], // setTimeout IDs from resumeListeningAfterDelay
   listeningScore: { correct: 0, wrong: 0 },
   listeningBlanksMap: {}, // lineIndex -> [{wordIdx, clean, original}]
   listeningPauseAt: null,   // audio time (s) to pause and activate blank
@@ -1697,8 +1698,10 @@ function buildBlanksMap() {
   allCandidates.sort((a, b) => b.score - a.score);
 
   // Pass 3: greedily pick up to totalCap, respecting maxPerLine
+  // Also avoid repeating the same word on consecutive lines (boring for the player)
   const lineCounts = {};  // lineIndex -> count of blanks assigned
   const map = {};         // lineIndex -> Set of wordIdx
+  const lineWord = {};    // lineIndex -> word picked (to check consecutive repetition)
 
   let picked = 0;
   for (const c of allCandidates) {
@@ -1706,9 +1709,15 @@ function buildBlanksMap() {
     const lc = lineCounts[c.lineIndex] || 0;
     if (lc >= diff.maxPerLine) continue;
 
+    // Skip if adjacent line already blanks the same word
+    const prevWord = lineWord[c.lineIndex - 1];
+    const nextWord = lineWord[c.lineIndex + 1];
+    if (prevWord === c.clean || nextWord === c.clean) continue;
+
     if (!map[c.lineIndex]) map[c.lineIndex] = new Set();
     map[c.lineIndex].add(c.wordIdx);
     lineCounts[c.lineIndex] = lc + 1;
+    lineWord[c.lineIndex] = c.clean;
     picked++;
   }
 
@@ -2123,6 +2132,9 @@ function toggleListeningMode() {
     document.getElementById('toggleListeningBtn').classList.remove('active');
     document.getElementById('togglePlayerBtn')?.classList.add('active');
     clearListeningTimer();
+    // Cancel any pending resume timeouts
+    state.listeningResumeTimers.forEach(tid => clearTimeout(tid));
+    state.listeningResumeTimers = [];
     state.listeningWaiting = false;
     state.listeningCurrentBlank = null;
     state.listeningPauseAt = null;
@@ -2153,6 +2165,10 @@ function toggleListeningMode() {
     state.dictationRunId = createRunId('dictation');
     state.listeningBlanksMap = buildListeningBlanks();
     if (state.showTranslation) toggleTranslation();
+
+    // Clear any leftover resume timers from prior session
+    state.listeningResumeTimers.forEach(tid => clearTimeout(tid));
+    state.listeningResumeTimers = [];
 
     // Restart from beginning
     if (state.audio) {
@@ -2213,9 +2229,11 @@ function buildListeningBlanks() {
   });
 
   // Sort by score (vocab first) and pick greedily with per-line cap
+  // Avoid repeating the same word on consecutive lines
   allCandidates.sort((a, b) => b.score - a.score);
   const map = {};
   const lineCounts = {};
+  const lineWord = {};
   let picked = 0;
 
   for (const c of allCandidates) {
@@ -2223,9 +2241,15 @@ function buildListeningBlanks() {
     const lc = lineCounts[c.lineIndex] || 0;
     if (lc >= diff.maxPerLine) continue;
 
+    // Skip if adjacent line already blanks the same word
+    const prevWord = lineWord[c.lineIndex - 1];
+    const nextWord = lineWord[c.lineIndex + 1];
+    if (prevWord === c.clean || nextWord === c.clean) continue;
+
     if (!map[c.lineIndex]) map[c.lineIndex] = [];
     map[c.lineIndex].push({ wordIdx: c.wordIdx, clean: c.clean, original: c.original });
     lineCounts[c.lineIndex] = lc + 1;
+    lineWord[c.lineIndex] = c.clean;
     picked++;
   }
 
@@ -2399,13 +2423,15 @@ function resumeListeningAfterDelay() {
       `.listening-input[data-line="${answeredLineIdx}"]:not(.lc-correct):not(.lc-wrong):not(.lc-timeout)`
     );
     if (nextBlank) {
-      setTimeout(() => {
+      const tid = setTimeout(() => {
+        if (!state.listeningMode) return;
         state.listeningWaiting = true;
         state.listeningCurrentBlank = nextBlank;
         nextBlank.focus();
         nextBlank.classList.add('lc-active');
         startListeningTimer(nextBlank);
       }, 400);
+      state.listeningResumeTimers.push(tid);
       return;
     }
   }
@@ -2413,9 +2439,10 @@ function resumeListeningAfterDelay() {
   // Resume state.audio — reset state.currentSubIndex so updateSubtitles re-evaluates
   // the current line and can schedule state.listeningPauseAt for it
   state.currentSubIndex = -1;
-  setTimeout(() => {
+  const tid = setTimeout(() => {
     if (state.audio && state.listeningMode) playAudio();
   }, 600);
+  state.listeningResumeTimers.push(tid);
 }
 
 // ─── Song End ──────────────────────────────────────────────────────────────────
