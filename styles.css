@@ -2314,6 +2314,17 @@ body {
 .blanks-score.score-mid  { color: var(--lp-warning); }
 .blanks-score.score-low  { color: var(--lp-error); }
 
+.blanks-progress {
+  font-family: var(--lp-font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--lp-muted);
+  background: var(--lp-border-subtle);
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
 /* ─── Difficulty Picker ─────────────────────────────────────────────────────── */
 
 .difficulty-picker {
@@ -3820,6 +3831,12 @@ a:focus-visible,
   pointer-events: none;
   opacity: 0.6;
   box-shadow: none;
+}
+
+.toolbar-done-dot--visited {
+  background: var(--lp-accent);
+  font-size: 0.45rem;
+  line-height: 15px;
 }
 
 .ctrl-group--study button {

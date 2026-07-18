@@ -229,6 +229,16 @@ function onOptionClick(e) {
   });
   nextBtn.focus({ preventScroll: true });
 
+  // Enter key advances to next question
+  quizKeyHandler = (e) => {
+    if (e.key === 'Enter') {
+      document.removeEventListener('keydown', quizKeyHandler);
+      quizKeyHandler = null;
+      nextBtn.click();
+    }
+  };
+  document.addEventListener('keydown', quizKeyHandler);
+
   // Restore scroll after DOM settles
   requestAnimationFrame(() => {
     quizBody.scrollTop = scrollTop;
