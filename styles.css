@@ -3137,26 +3137,16 @@ body {
 
 /* ─── Song Fin Card ─────────────────────────────────────────────────────────── */
 
-.song-fin-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 20px 16px 16px;
-  margin: 12px 6px 0;
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--lp-shadow) 12%, transparent);
-  animation: fadeUp 0.4s var(--lp-ease) both;
-}
-
-
 .song-fin-actions {
   display: flex;
   gap: 6px;
   justify-content: center;
-  margin-top: 4px;
+  padding: 8px 0;
+  animation: fadeUp 0.3s var(--lp-ease) both;
+}
+
+.song-fin-actions.hidden {
+  display: none;
 }
 
 .song-fin-actions .lr-btn {
