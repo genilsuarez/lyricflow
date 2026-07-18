@@ -148,7 +148,7 @@ function markSectionVisited(songId, section) {
   const btn = document.getElementById(btnMap[section]);
   if (btn && !btn.querySelector('.toolbar-done-dot')) {
     btn.classList.add('is-activity-done');
-    btn.insertAdjacentHTML('beforeend', '<span class="toolbar-done-dot" aria-label="completada">✓</span>');
+    btn.insertAdjacentHTML('beforeend', '<span class="toolbar-done-dot toolbar-done-dot--visited" aria-label="visitado">👁</span>');
     const tooltip = btn.dataset.tooltip;
     if (tooltip && !tooltip.includes('✓')) btn.dataset.tooltip = tooltip + ' ✓';
   }
@@ -162,15 +162,16 @@ export function modeToolbarHtml(song, activeMode = '') {
   const done = (act) => sp.activities[act]?.completed;
   const visited = (section) => getSectionVisited(song.id, section);
   const check = (show) => show ? '<span class="toolbar-done-dot" aria-label="completada">✓</span>' : '';
+  const eye = (show) => show ? '<span class="toolbar-done-dot toolbar-done-dot--visited" aria-label="visitado">👁</span>' : '';
   return `
     <div class="mode-toolbar">
       <div class="ctrl-group ctrl-group--study">
         <button class="toggle-player-btn${activeMode === '' ? ' active' : ''}${done('listen') ? ' is-activity-done' : ''}" id="togglePlayerBtn" aria-label="Volver al reproductor" data-tooltip="Escucha${done('listen') ? ' ✓' : ''}">🎵${check(done('listen'))}</button>
-        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}${visited('vocab') ? ' is-activity-done' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario${visited('vocab') ? ' ✓' : ''}">📖${check(visited('vocab'))}</button>
+        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}${visited('vocab') ? ' is-activity-done' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario${visited('vocab') ? ' ✓' : ''}">📖${eye(visited('vocab'))}</button>
         <button class="toggle-listening-btn${activeMode === 'listening' ? ' active' : ''}${done('dictation') ? ' is-activity-done' : ''}" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado${done('dictation') ? ' ✓' : ''}">🎧${check(done('dictation'))}</button>
         <button class="toggle-blanks-btn${activeMode === 'blanks' ? ' active' : ''}${done('challenge') ? ' is-activity-done' : ''}" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos${done('challenge') ? ' ✓' : ''}">✎${check(done('challenge'))}</button>
         <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}${done('quiz') ? ' is-activity-done' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Quiz${done('quiz') ? ' ✓' : ''}">🧠${check(done('quiz'))}</button>
-        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${check(visited('culture'))}</button>` : ''}
+        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${eye(visited('culture'))}</button>` : ''}
       </div>
       <span class="ctrl-divider${showDisplay ? '' : ' hidden'}" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--display">
@@ -1602,12 +1603,14 @@ function toggleBlanksMode() {
     toolbar.innerHTML = `
       <button class="blanks-check-btn" id="blanksCheckBtn">✓ Verificar</button>
       <button class="blanks-reveal-btn" id="blanksRevealBtn">👁 Revelar</button>
+      <span class="blanks-progress" id="blanksProgress"></span>
       <span class="blanks-score" id="blanksScore"></span>
     `;
     const container = document.getElementById('subContainer');
     container.parentNode.insertBefore(toolbar, container);
     document.getElementById('blanksCheckBtn').addEventListener('click', checkBlanks);
     document.getElementById('blanksRevealBtn').addEventListener('click', revealBlanks);
+    updateBlanksProgress();
   });
 }
 
@@ -1842,6 +1845,16 @@ function checkBlanks() {
   });
   state.challengeRunId = createRunId('challenge');
   updateSongProgressUi(state.currentSong.id);
+  updateBlanksProgress();
+}
+
+function updateBlanksProgress() {
+  const el = document.getElementById('blanksProgress');
+  if (!el) return;
+  const inputs = document.querySelectorAll('.blank-input');
+  const total = inputs.length;
+  const answered = [...inputs].filter(i => i.value.trim() !== '').length;
+  el.textContent = `${answered}/${total} palabras`;
 }
 
 let blanksRevealed = false;
@@ -1901,6 +1914,7 @@ function onBlankInput(e) {
   if (!input) return;
   // Just save the value, no auto-correction
   state.blanksAnswers[input.dataset.key] = input.value.trim();
+  updateBlanksProgress();
 }
 
 function onWordTap(e) {
