@@ -157,8 +157,8 @@ function getComputedData() {
 }
 
 // Recommendation engine (same logic as picker had)
-const PICKER_ACTIVITY_ORDER = ['listen', 'challenge', 'dictation', 'quiz'];
-const ACTIVITY_LABELS = { listen: 'Escucha', challenge: 'Challenge', dictation: 'Dictado', quiz: 'Quiz' };
+const PICKER_ACTIVITY_ORDER = ['listen', 'dictation', 'challenge', 'quiz'];
+const ACTIVITY_LABELS = { listen: 'Escucha', dictation: 'Dictado', challenge: 'Challenge', quiz: 'Quiz' };
 
 function pickRecommendation(songDetails) {
   const withProgress = songDetails.map(song => ({ song, progress: song.progress }));

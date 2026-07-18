@@ -6,18 +6,17 @@
 // vuelve al player vía loadSong.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState } from './player.js';
-import { createRunId, recordActivityResult } from './progress.js';
+import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState, updateSongProgressUi, showLessonCompleteModal } from './player.js';
+import { createRunId, recordActivityResult, getSongProgress } from './progress.js';
 
-const TARGET_QUESTIONS = 10;
-const MIN_QUESTIONS = 4; // también: mínimo de entradas de vocab para poder armar 3 distractores
+const TARGET_QUESTIONS = 5;
+const MIN_QUESTIONS = 4; // mínimo de entradas de vocab para poder armar 3 distractores
 
 const TYPE_LABEL = {
   translation: 'Traducción',
   synonym: 'Sinónimo',
   antonym: 'Antónimo',
   formal: 'Registro formal',
-  context: 'Contexto',
 };
 
 let quizQuestions = [];
@@ -25,6 +24,7 @@ let quizIndex = 0;
 let quizScore = 0;
 let quizAnswered = false;
 let quizRunId = null;
+let quizKeyHandler = null;
 
 export function toggleQuizMode() {
   if (!state.currentSong) return;
@@ -88,15 +88,6 @@ function makeQuestion(type, word, prompt, answer, distractors) {
   return { type, word, prompt, answer, options: shuffle([answer, ...distractors]) };
 }
 
-// Tacha la palabra dentro de la línea de ejemplo (para preguntas de contexto).
-// Si la palabra no aparece literalmente (formas conjugadas: "rise up" -> "Rising up"),
-// no hay línea válida y esa entrada simplemente no genera pregunta de contexto.
-function blankLine(line, word) {
-  const idx = line.toLowerCase().indexOf(word.toLowerCase());
-  if (idx === -1) return null;
-  return `${line.slice(0, idx)}____${line.slice(idx + word.length)}`;
-}
-
 function buildPool(vocabData) {
   if (!vocabData || vocabData.length < MIN_QUESTIONS) return [];
 
@@ -134,16 +125,6 @@ function buildPool(vocabData) {
         pool.push(makeQuestion('formal', entry.word, `¿Cuál es el equivalente formal de "${entry.word}"?`, entry.formalEquivalent, distractors));
       }
     }
-
-    if (entry.examples?.length) {
-      const blanked = blankLine(entry.examples[0].original, entry.word);
-      if (blanked) {
-        const distractors = pickDistractors(allWords, entry.word, 3);
-        if (distractors.length === 3) {
-          pool.push(makeQuestion('context', entry.word, blanked, entry.word, distractors));
-        }
-      }
-    }
   });
 
   return pool;
@@ -168,8 +149,6 @@ function renderQuizQuestion() {
   quizAnswered = false;
   const q = quizQuestions[quizIndex];
   const total = quizQuestions.length;
-  const letters = ['A', 'B', 'C', 'D'];
-
   document.getElementById('quizProgress').textContent = `Pregunta ${quizIndex + 1} / ${total}`;
   const progressFill = document.getElementById('quizProgressFill');
   if (progressFill) progressFill.style.width = `${((quizIndex) / total) * 100}%`;
@@ -180,16 +159,48 @@ function renderQuizQuestion() {
       <p class="quiz-prompt">${q.prompt}</p>
     </div>
     <div class="quiz-options" id="quizOptions">
-      ${q.options.map((opt, i) => `<button class="quiz-option" data-index="${i}" data-letter="${letters[i] || ''}">${opt}</button>`).join('')}
+      ${q.options.map((opt, i) => `<button class="quiz-option" data-index="${i}" data-letter="${i + 1}">${opt}</button>`).join('')}
     </div>
   `;
+  // Render next button outside the scrollable quiz-body so it never gets clipped
+  let nextBtnContainer = document.getElementById('quizNextBtnContainer');
+  if (!nextBtnContainer) {
+    nextBtnContainer = document.createElement('div');
+    nextBtnContainer.id = 'quizNextBtnContainer';
+    nextBtnContainer.className = 'quiz-next-container';
+    document.getElementById('quizBody').after(nextBtnContainer);
+  }
+  nextBtnContainer.innerHTML = `<button class="lp-btn lp-btn--primary quiz-next-btn quiz-next-btn--hidden" id="quizNextBtn">Siguiente →</button>`;
+  document.getElementById('quizBody').scrollTop = 0;
 
   document.querySelectorAll('.quiz-option').forEach(btn => btn.addEventListener('click', onOptionClick));
+
+  // Keyboard shortcut: 1–4 selects option
+  quizKeyHandler = (e) => {
+    if (quizAnswered) return;
+    const num = parseInt(e.key, 10);
+    if (num >= 1 && num <= q.options.length) {
+      const btn = document.querySelector(`.quiz-option[data-index="${num - 1}"]`);
+      if (btn) btn.click();
+    }
+  };
+  document.addEventListener('keydown', quizKeyHandler);
 }
 
 function onOptionClick(e) {
   if (quizAnswered) return;
   quizAnswered = true;
+
+  // Remove keyboard shortcut listener
+  if (quizKeyHandler) {
+    document.removeEventListener('keydown', quizKeyHandler);
+    quizKeyHandler = null;
+  }
+
+  // Lock scroll position to prevent jump on DOM mutations
+  const quizBody = document.getElementById('quizBody');
+  const scrollTop = quizBody.scrollTop;
+  quizBody.style.overflow = 'hidden';
 
   const q = quizQuestions[quizIndex];
   const chosenIdx = Number(e.currentTarget.dataset.index);
@@ -208,16 +219,21 @@ function onOptionClick(e) {
   });
 
   const isLast = quizIndex === quizQuestions.length - 1;
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'lp-btn lp-btn--primary quiz-next-btn';
+  const nextBtn = document.getElementById('quizNextBtn');
   nextBtn.textContent = isLast ? 'Ver resultado →' : 'Siguiente →';
+  nextBtn.classList.remove('quiz-next-btn--hidden');
   nextBtn.addEventListener('click', () => {
     quizIndex++;
     if (quizIndex < quizQuestions.length) renderQuizQuestion();
     else renderQuizResults();
   });
-  optionsEl.after(nextBtn);
-  nextBtn.focus();
+  nextBtn.focus({ preventScroll: true });
+
+  // Restore scroll after DOM settles
+  requestAnimationFrame(() => {
+    quizBody.scrollTop = scrollTop;
+    quizBody.style.overflow = '';
+  });
 }
 
 function renderQuizResults() {
@@ -233,6 +249,14 @@ function renderQuizResults() {
     total,
     runId: quizRunId,
   });
+  updateSongProgressUi(state.currentSong.id);
+
+  // Check if this completed the entire song
+  const songProgress = getSongProgress(state.currentSong.id);
+  if (songProgress.completed) {
+    showLessonCompleteModal('quizResultsModal', pct, quizScore, total);
+    return;
+  }
 
   let emoji, message;
   if (pct >= 80) { emoji = '🏆'; message = 'Dominas este vocabulario'; }
@@ -243,7 +267,13 @@ function renderQuizResults() {
   const circumference = 251.2;
   const offset = circumference - (circumference * pct / 100);
 
+  // Determine next action label based on pending activities
+  const nextLabel = getQuizNextLabel(songProgress);
+
   document.getElementById('quizProgress').textContent = 'Resultado';
+  // Remove external next-btn container (results have their own buttons)
+  const nextBtnContainer = document.getElementById('quizNextBtnContainer');
+  if (nextBtnContainer) nextBtnContainer.remove();
   document.getElementById('quizBody').innerHTML = `
     <div class="quiz-results">
       <div class="quiz-score-ring">
@@ -257,8 +287,8 @@ function renderQuizResults() {
       <div class="quiz-results-pct">${pct}% correcto</div>
       <p class="quiz-results-message">${message}</p>
       <div class="quiz-results-actions">
-        <button class="lp-btn lp-btn--primary" id="quizRetryBtn">↻ Otra ronda</button>
-        <button class="lp-btn lp-btn--ghost" id="quizBackBtn2">← Volver</button>
+        <button class="lp-btn lp-btn--ghost" id="quizRetryBtn">↻ Otra ronda</button>
+        <button class="lp-btn lp-btn--primary" id="quizNextBtn">${nextLabel}</button>
       </div>
     </div>
   `;
@@ -270,5 +300,18 @@ function renderQuizResults() {
   });
 
   document.getElementById('quizRetryBtn').addEventListener('click', () => showQuizView(state.currentSong));
-  document.getElementById('quizBackBtn2').addEventListener('click', () => loadSong(state.currentSong));
+  document.getElementById('quizNextBtn').addEventListener('click', () => loadSong(state.currentSong));
+}
+
+function getQuizNextLabel(songProgress) {
+  // If only listen is pending and the 3 challenges are done, just say "Reproductor"
+  const pending = ['listen', 'dictation', 'challenge'].filter(
+    a => !songProgress.activities[a].completed
+  );
+  if (pending.length === 0 || (pending.length === 1 && pending[0] === 'listen')) {
+    return 'Reproductor →';
+  }
+  if (pending.includes('dictation')) return '🎧 Dictado →';
+  if (pending.includes('challenge')) return '✎ Huecos →';
+  return 'Reproductor →';
 }
