@@ -1,3 +1,7 @@
 .venv
 
 vite.config.js
+
+# Backups de canciones recortadas
+*.original.mp3
+*.original.js

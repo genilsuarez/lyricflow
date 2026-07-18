@@ -124,6 +124,68 @@ Están visualmente alineados con la identidad (usan tokens `--lp-*`, transitions
 states), pero mantienen naming y sizing propios. Esta decisión es intencional y permanente
 salvo rediseño completo de la zona del player.
 
+## Recortar canción (trim MP3 + ajustar subtítulos)
+
+Procedimiento para eliminar un segmento de audio (ej: solo instrumental) y mantener
+los subtítulos sincronizados. Se conserva siempre la versión original como respaldo.
+
+### Pasos
+
+1. **Respaldar originales**:
+   ```bash
+   cd songs/<Carpeta>/
+   cp <archivo>.mp3 <archivo>.original.mp3
+   cp data.js data.original.js
+   ```
+
+2. **Cortar el MP3** con ffmpeg (concatenar antes y después del corte):
+   ```bash
+   ffmpeg -y -i <archivo>.original.mp3 \
+     -filter_complex "[0:a]atrim=0:<inicio_corte>,asetpts=PTS-STARTPTS[a1];[0:a]atrim=<fin_corte>,asetpts=PTS-STARTPTS[a2];[a1][a2]concat=n=2:v=0:a=1[out]" \
+     -map "[out]" -b:a 192k <archivo>.mp3
+   ```
+   - `<inicio_corte>`: segundo donde empieza el segmento a eliminar
+   - `<fin_corte>`: segundo donde termina el segmento a eliminar
+
+3. **Identificar índice de corte** en subtítulos:
+   ```bash
+   node scripts/shift-subtitles.js <Carpeta> --list
+   ```
+   Buscar el primer subtítulo cuyo `start` sea >= `<fin_corte>`. Ese es el `<desde-índice>`.
+
+4. **Calcular delta**: `-(fin_corte - inicio_corte)`
+   Ejemplo: corte de 90s a 133s → delta = -43
+
+5. **Desplazar subtítulos**:
+   ```bash
+   node scripts/shift-subtitles.js <Carpeta> <desde-índice> <delta>
+   ```
+
+### Ejemplo completo (Let It Be, cortar solo de 90s a 133s):
+
+```bash
+cd songs/Let_It_Be/
+cp let_it_be.mp3 let_it_be.original.mp3
+cp data.js data.original.js
+
+ffmpeg -y -i let_it_be.original.mp3 \
+  -filter_complex "[0:a]atrim=0:90,asetpts=PTS-STARTPTS[a1];[0:a]atrim=133,asetpts=PTS-STARTPTS[a2];[a1][a2]concat=n=2:v=0:a=1[out]" \
+  -map "[out]" -b:a 192k let_it_be.mp3
+
+# Ver índices:
+node scripts/shift-subtitles.js Let_It_Be --list
+# Índice 28 es el primero con start >= 133
+
+node scripts/shift-subtitles.js Let_It_Be 28 -43
+```
+
+### Notas
+
+- El archivo `data.js` no debe tener líneas dentro del rango cortado (si las tiene,
+  eliminarlas manualmente antes del shift).
+- Verificar con `--list` después del shift que los timestamps son coherentes.
+- Los archivos `.original.*` no se commitean (están en `.gitignore`).
+
 ## Notas
 
 - `.player-wrapper` tiene `overflow: hidden` — tooltips/popovers con `position: absolute` se clippean si salen del contenedor. Usar `position: fixed` para elementos que necesitan salir del wrapper.
