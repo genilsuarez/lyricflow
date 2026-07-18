@@ -675,6 +675,10 @@ export async function loadSong(song) {
   }
   setModeContent(`
     <div class="subtitle-container" id="subContainer"></div>
+    <div class="song-fin-actions hidden" id="songFinActions">
+      <button class="lr-btn lr-btn--retry" id="finRepeatBtn" aria-label="Repetir canción">↻</button>
+      <button class="lr-btn lr-btn--next" id="finNextBtn"></button>
+    </div>
     <div class="sr-live" id="srLive" aria-live="polite" aria-atomic="true"></div>
 
     <div class="bottom-bar">
@@ -1137,6 +1141,8 @@ function playAudio() {
   if (state.listeningMode) state.listeningStarted = true;
   startUpdateLoop();
   document.querySelector('.artwork')?.classList.add('playing');
+  // Hide fin actions if visible (replaying after song ended)
+  document.getElementById('songFinActions')?.classList.add('hidden');
 }
 
 function pauseAudio() {
@@ -2479,9 +2485,6 @@ function showSongEnd() {
   const container = document.getElementById('subContainer');
   if (!container) return;
 
-  // Remove previous fin card if any
-  container.querySelector('.song-fin-card')?.remove();
-
   // Listening mode → show results modal overlay
   if (state.listeningMode) {
     showListeningResults();
@@ -2498,38 +2501,36 @@ function showSongEnd() {
   const songProgress = getSongProgress(state.currentSong.id);
   const nextActivity = getNextPendingActivity(songProgress, 'listen');
 
-  const fin = document.createElement('div');
-  fin.className = 'song-fin-card';
+  const actions = document.getElementById('songFinActions');
+  if (!actions) return;
 
-  const actions = document.createElement('div');
-  actions.className = 'song-fin-actions';
+  const nextBtn = document.getElementById('finNextBtn');
+  nextBtn.textContent = nextActivity.label;
 
-  const repeatBtn = document.createElement('button');
-  repeatBtn.className = 'lr-btn lr-btn--retry';
-  repeatBtn.setAttribute('aria-label', 'Repetir canción');
-  repeatBtn.textContent = '↻';
-  repeatBtn.addEventListener('click', () => {
-    fin.remove();
+  // Bind actions (replace to avoid stale closures)
+  const repeatBtn = document.getElementById('finRepeatBtn');
+  const newRepeat = repeatBtn.cloneNode(true);
+  repeatBtn.replaceWith(newRepeat);
+  newRepeat.addEventListener('click', () => {
+    actions.classList.add('hidden');
     if (state.audio) {
       state.audio.currentTime = 0;
       playAudio();
     }
   });
-  actions.appendChild(repeatBtn);
 
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'lr-btn lr-btn--next';
-  nextBtn.textContent = nextActivity.label;
-  nextBtn.addEventListener('click', () => {
-    fin.remove();
+  const newNext = nextBtn.cloneNode(true);
+  nextBtn.replaceWith(newNext);
+  newNext.addEventListener('click', () => {
+    actions.classList.add('hidden');
     nextActivity.action();
   });
-  actions.appendChild(nextBtn);
 
-  fin.appendChild(actions);
-
-  container.appendChild(fin);
-  fin.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Show and scroll to bottom
+  actions.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  });
 }
 
 // ─── Smart Next Activity + Lesson Complete Modal ─────────────────────────────

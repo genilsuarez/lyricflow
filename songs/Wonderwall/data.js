@@ -14,16 +14,18 @@ export default {
       'Más de 1.6 mil millones de reproducciones en Spotify.'
     ]
   },
+  
+  
   subtitles: [
     { start: 2.5, duration: 2.2, original: "Today is gonna be the day", translation: "Hoy va a ser el día" },
     { start: 4.7, duration: 2.8, original: "That they're gonna throw it back to you", translation: "En que te lo van a devolver" },
     { start: 7.5, duration: 2.7, original: "By now you should've somehow", translation: "A estas alturas ya deberías de algún modo" },
     { start: 10.2, duration: 2.8, original: "Realized what you gotta do", translation: "Haberte dado cuenta de lo que tienes que hacer" },
     { start: 13.0, duration: 2.8, original: "I don't believe that anybody", translation: "No creo que nadie" },
-    { start: 15.8, duration: 3.7, original: "Feels the way I do about you now", translation: "Sienta lo que yo siento por ti ahora" },
-    { start: 24.0, duration: 2.2, original: "Backbeat, the word is on the street", translation: "Ritmo, la voz corre por la calle" },
-    { start: 26.2, duration: 2.8, original: "That the fire in your heart is out", translation: "Que el fuego en tu corazón se apagó" },
-    { start: 29.0, duration: 2.4, original: "I'm sure you've heard it all before", translation: "Estoy seguro de que ya lo has oído todo antes" },
+    { start: 15.8, duration: 5.7, original: "Feels the way I do about you now", translation: "Sienta lo que yo siento por ti ahora" },
+    { start: 23.0, duration: 2.2, original: "Backbeat, the word is on the street", translation: "Ritmo, la voz corre por la calle" },
+    { start: 26.2, duration: 3.8, original: "That the fire in your heart is out", translation: "Que el fuego en tu corazón se apagó" },
+    { start: 30.0, duration: 2.4, original: "I'm sure you've heard it all before", translation: "Estoy seguro de que ya lo has oído todo antes" },
     { start: 31.5, duration: 2.5, original: "But you never really had a doubt", translation: "Pero nunca realmente tuviste una duda" },
     { start: 34.0, duration: 3.0, original: "I don't believe that anybody", translation: "No creo que nadie" },
     { start: 37.0, duration: 4.5, original: "Feels the way I do about you now", translation: "Sienta lo que yo siento por ti ahora" },
