@@ -3878,7 +3878,7 @@ a:focus-visible,
   width: min(100%, 480px);
   max-height: min(720px, calc(100svh - 40px));
   overflow-y: auto;
-  padding: 34px;
+  padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius-xl);
   background: var(--lp-surface);
@@ -3886,80 +3886,45 @@ a:focus-visible,
   color: var(--lp-ink-soft);
 }
 
-.about-modal h2 {
-  margin: 4px 44px 12px 0;
-  font-family: var(--lp-font-display);
-  font-size: 1.65rem;
-  font-weight: var(--lp-weight-normal);
-  color: var(--lp-ink);
+.about-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.about-identity {
+  width: 40px; height: 40px; flex: 0 0 40px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--lp-accent); color: var(--lp-ink-inverse);
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--lp-accent) 22%, transparent);
 }
-
-.about-modal > p:not(.about-eyebrow) {
-  font-size: 0.82rem;
-  line-height: 1.65;
-}
-
-.about-eyebrow {
-  color: var(--lp-accent-text);
-  font-size: 0.62rem;
-  font-weight: var(--lp-weight-extrabold);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
+.about-header .about-eyebrow { margin-bottom: 2px; }
+.about-header h2 { margin: 0; font-size: 1.5rem; line-height: 1; font-family: var(--lp-font-display); font-weight: var(--lp-weight-normal); color: var(--lp-ink); }
+.about-eyebrow { color: var(--lp-accent); font-size: 0.62rem; font-weight: var(--lp-weight-extrabold); letter-spacing: 0.14em; text-transform: uppercase; }
 .about-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--lp-border);
-  border-radius: 50%;
-  background: var(--lp-surface-sunken);
-  color: var(--lp-muted);
-  cursor: pointer;
+  position: static; flex: 0 0 44px; width: 44px; height: 44px;
+  display: grid; place-items: center; margin-left: auto;
+  border: 1px solid var(--lp-border); border-radius: 50%;
+  background: var(--lp-surface-sunken); color: var(--lp-muted); cursor: pointer;
+  transition: border-color 160ms, color 160ms, transform 160ms;
 }
-
-.about-close:hover {
-  border-color: var(--lp-accent);
-  color: var(--lp-accent-text);
-}
-
-.about-modules {
-  display: grid;
-  gap: 8px;
-  margin: 20px 0;
-}
-
+.about-close:hover { border-color: var(--lp-accent); color: var(--lp-accent); transform: scale(1.05); }
+.about-close:active { transform: scale(0.97); }
+.about-close:focus-visible { outline: 3px solid var(--lp-accent); outline-offset: 2px; }
+.about-description { color: var(--lp-ink-soft); font-size: 0.82rem; line-height: 1.65; }
+.about-modules { display: grid; gap: 6px; margin: 14px 0; }
 .about-modules a {
-  min-height: 52px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 10px 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-sunken);
-  color: var(--lp-ink);
-  text-decoration: none;
+  min-height: 52px; padding: 10px 14px; display: flex; flex-direction: column;
+  justify-content: center; gap: 2px; border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-md); background: var(--lp-surface-sunken);
+  color: var(--lp-ink); text-decoration: none;
   transition: border-color 0.2s var(--lp-ease), transform 0.2s var(--lp-ease);
 }
-
-.about-modules a:hover {
-  border-color: var(--lp-accent);
-  transform: translateY(-2px);
-}
-
-.about-modules strong {
-  font-size: 0.78rem;
-}
-
-.about-modules span,
-.about-privacy {
-  color: var(--lp-muted);
-  font-size: 0.68rem;
-}
+[data-theme="dark"] .about-modules a { background: #151210; }
+.about-modules a:hover { border-color: var(--lp-accent); transform: translateY(-2px); }
+.about-modules a:focus-visible { outline: 3px solid var(--lp-accent); outline-offset: 2px; }
+.about-modules strong { font-size: 0.78rem; }
+.about-modules span { color: var(--lp-muted); font-size: 0.68rem; }
+.about-footer { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--lp-border); }
+.about-footer p { display: flex; justify-content: space-between; gap: 16px; color: var(--lp-muted); font-size: 0.68rem; line-height: 1.5; margin: 0; }
+.about-footer strong { color: var(--lp-ink-soft); }
+.about-footer span { text-align: right; }
 
 @media (max-width: 580px) {
   .app-header {
@@ -4032,12 +3997,15 @@ a:focus-visible,
   }
 
   .about-modal {
-    padding: 28px 22px;
+    padding: 22px;
   }
 
-  .about-modal h2 {
+  .about-header h2 {
     font-size: 1.35rem;
   }
+
+  .about-footer p { flex-direction: column; gap: 2px; }
+  .about-footer span { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4078,8 +4046,7 @@ body {
   min-width: 0;
 }
 
-.unified-nav-mark,
-.about-identity {
+.unified-nav-mark {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
@@ -4295,80 +4262,6 @@ body {
   }
 }
 
-/* Minimal About dialog, shared visual language with FluentFlow. */
-.about-modal {
-  width: min(100%, 460px);
-  padding: 28px;
-}
-
-.about-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.about-header .about-eyebrow {
-  margin-bottom: 2px;
-}
-
-.about-header h2,
-.about-modal .about-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.about-close {
-  position: static;
-  flex: 0 0 44px;
-  display: grid;
-  place-items: center;
-  margin-left: auto;
-}
-
-.about-description {
-  color: var(--lp-ink-soft);
-}
-
-.about-footer {
-  display: grid;
-  gap: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--lp-border);
-}
-
-.about-footer p {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  color: var(--lp-muted);
-  font-size: 0.68rem;
-  line-height: 1.5;
-}
-
-.about-footer strong {
-  color: var(--lp-ink-soft);
-}
-
-.about-footer span {
-  text-align: right;
-}
-
-@media (max-width: 580px) {
-  .about-modal {
-    padding: 22px;
-  }
-
-  .about-footer p {
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .about-footer span {
-    text-align: left;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .unified-nav,

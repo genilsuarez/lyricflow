@@ -840,18 +840,19 @@ function showAboutLearnFlow(event) {
   overlay.innerHTML = `
     <section class="about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutLearnFlowTitle" aria-describedby="aboutLearnFlowDescription">
       <header class="about-header">
-        <div class="about-identity" aria-hidden="true">LF</div>
+        <div class="about-identity" aria-hidden="true">L</div>
         <div>
-          <p class="about-eyebrow">LyricFlow · Parte de LearnFlow</p>
+          <p class="about-eyebrow">LearnFlow · Plataforma</p>
           <h2 id="aboutLearnFlowTitle">About LearnFlow</h2>
         </div>
         <button class="about-close" id="aboutCloseBtn" type="button" aria-label="Cerrar About LearnFlow">✕</button>
       </header>
-      <p id="aboutLearnFlowDescription" class="about-description">Aprende idiomas con música mediante letras sincronizadas, vocabulario y actividades de escucha.</p>
+      <p id="aboutLearnFlowDescription" class="about-description">Una plataforma para aprender idiomas con estructura, práctica y música.</p>
       <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
-        <a href="${themedAppHref('/deskflow/', 3000)}"><strong>LearnFlow</strong><span>Portal y progreso global</span></a>
+        <a href="${themedAppHref('/deskflow/', 3000)}"><strong>LearnFlow</strong><span>Portal</span></a>
         <a href="${themedAppHref('/fluentflow/', 3001)}"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></a>
         <a href="${themedAppHref('/hubflow/', 3002)}"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></a>
+        <a href="${themedAppHref('/lyricflow/', 3003)}"><strong>LyricFlow</strong><span>Aprender con música</span></a>
       </nav>
       <footer class="about-footer">
         <p><strong>Progreso local</strong><span>Guardado únicamente en este navegador.</span></p>
@@ -1128,6 +1129,8 @@ function initAudio(song) {
 
 function playAudio() {
   if (!state.audio) return;
+  // Block play while difficulty picker is open
+  if (document.getElementById('difficultyPicker')) return;
   state.audio.play().catch(() => {});
   document.getElementById('playBtn').textContent = '⏸';
   document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
@@ -1147,6 +1150,8 @@ function pauseAudio() {
 
 function togglePlay() {
   if (!state.audio) return;
+  // Block play while difficulty picker is open
+  if (document.getElementById('difficultyPicker')) return;
 
   // In listening mode: don't resume while waiting for blank input (timer already running)
   if (state.listeningMode && state.listeningWaiting && state.audio.paused && state.listeningCurrentBlank?.classList.contains('lc-active')) {
@@ -2187,15 +2192,12 @@ function toggleListeningMode() {
     // Restart from beginning
     if (state.audio) {
       state.audio.currentTime = 0;
-      state.audio.pause();
     }
     state.currentSubIndex = -1;
     state.listeningWaiting = false;
     state.listeningStarted = false;
     state.listeningCurrentBlank = null;
     state.listeningPauseAt = null;
-    document.getElementById('playBtn').textContent = '▶';
-    stopUpdateLoop();
 
     renderSubtitles(state.currentSong.subtitles);
 
@@ -2204,6 +2206,9 @@ function toggleListeningMode() {
     if (subContainer) subContainer.scrollTop = 0;
 
     updateListeningToolbar();
+
+    // Auto-play after setup
+    playAudio();
   });
 }
 
@@ -2358,7 +2363,7 @@ function updateListeningScore() {
 
 function startListeningTimer(input) {
   clearListeningTimer();
-  const TIMEOUT = 13; // seconds
+  const TIMEOUT = 15; // seconds
   // Create timer bar
   let timerBar = document.getElementById('lcTimerBar');
   if (timerBar) timerBar.remove();
@@ -2377,13 +2382,22 @@ function startListeningTimer(input) {
     if (fill) fill.style.width = `${pct}%`;
 
     if (elapsed >= TIMEOUT * 1000) {
-      // Timeout — fail
+      // Timeout — validate what's in the field before failing
       clearListeningTimer();
-      state.listeningScore.wrong++;
-      input.value = input.dataset.original;
-      input.size = Math.max(input.dataset.original.length + 1, 4);
+      const value = normalizeForCompare(input.value);
+      const answer = normalizeForCompare(input.dataset.answer);
       input.classList.remove('lc-active');
-      input.classList.add('lc-timeout');
+
+      if (value && value === answer) {
+        input.classList.add('lc-correct');
+        state.listeningScore.correct++;
+      } else {
+        state.listeningScore.wrong++;
+        input.value = input.dataset.original;
+        input.size = Math.max(input.dataset.original.length + 1, 4);
+        input.classList.add('lc-timeout');
+      }
+
       input.readOnly = true;
       updateListeningScore();
       resumeListeningAfterDelay();
@@ -2964,6 +2978,14 @@ function onKeydown(e) {
 document.addEventListener('input', (e) => {
   if (e.target.classList.contains('blank-input')) {
     onBlankInput(e);
+  }
+  // Listening mode: auto-submit when typed value matches the answer
+  if (e.target.classList.contains('listening-input') && state.listeningWaiting && state.listeningCurrentBlank === e.target) {
+    const value = normalizeForCompare(e.target.value);
+    const answer = normalizeForCompare(e.target.dataset.answer);
+    if (value && value === answer) {
+      submitListeningAnswer();
+    }
   }
 });
 
