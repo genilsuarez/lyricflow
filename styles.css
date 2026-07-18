@@ -3167,6 +3167,18 @@ body {
   border-radius: var(--lp-radius-md);
 }
 
+.song-fin-actions .lr-btn--retry {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .lr-btn--next {
   background: var(--lp-accent);
   color: var(--lp-accent-contrast, #fff);

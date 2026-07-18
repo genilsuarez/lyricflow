@@ -2480,33 +2480,20 @@ function showSongEnd() {
     return;
   }
 
-  // Determine next song in catalog order
-  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-  const sorted = [...pickerSongs].sort((a, b) => {
-    const la = levelOrder.indexOf((a.level || '').toLowerCase());
-    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
-    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
-  });
-  const curIdx = sorted.findIndex(s => s.folder === state.currentSong?.folder);
-  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
+  // Determine next activity for this song
+  const songProgress = getSongProgress(state.currentSong.id);
+  const nextActivity = getNextPendingActivity(songProgress, 'listen');
 
   const fin = document.createElement('div');
   fin.className = 'song-fin-card';
 
-
-
   const actions = document.createElement('div');
   actions.className = 'song-fin-actions';
 
-  const backBtn = document.createElement('button');
-  backBtn.className = 'lr-btn lr-btn--catalog';
-  backBtn.textContent = '← Catálogo';
-  backBtn.addEventListener('click', () => showPicker(true));
-  actions.appendChild(backBtn);
-
   const repeatBtn = document.createElement('button');
   repeatBtn.className = 'lr-btn lr-btn--retry';
-  repeatBtn.textContent = '↻ Repetir';
+  repeatBtn.setAttribute('aria-label', 'Repetir canción');
+  repeatBtn.textContent = '↻';
   repeatBtn.addEventListener('click', () => {
     fin.remove();
     if (state.audio) {
@@ -2516,16 +2503,14 @@ function showSongEnd() {
   });
   actions.appendChild(repeatBtn);
 
-  if (nextSong) {
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'lr-btn lr-btn--next';
-    nextBtn.textContent = 'Siguiente →';
-    nextBtn.addEventListener('click', () => {
-      fin.remove();
-      loadSong(nextSong);
-    });
-    actions.appendChild(nextBtn);
-  }
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'lr-btn lr-btn--next';
+  nextBtn.textContent = nextActivity.label;
+  nextBtn.addEventListener('click', () => {
+    fin.remove();
+    nextActivity.action();
+  });
+  actions.appendChild(nextBtn);
 
   fin.appendChild(actions);
 
@@ -2573,8 +2558,19 @@ function getNextPendingActivity(songProgress, currentActivity) {
       return { label: labels[activity], action: actions[activity] };
     }
   }
-  // All complete (shouldn't reach here since we check songProgress.completed above)
-  return { label: '← Catálogo', action: () => showPicker(true) };
+  // All complete — suggest next song in catalog order
+  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+  const sorted = [...pickerSongs].sort((a, b) => {
+    const la = levelOrder.indexOf((a.level || '').toLowerCase());
+    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
+    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
+  });
+  const curIdx = sorted.findIndex(s => s.folder === state.currentSong?.folder);
+  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
+  if (nextSong) {
+    return { label: 'Siguiente canción →', action: () => loadSong(nextSong) };
+  }
+  return { label: 'Inicio', action: () => showDashboard() };
 }
 
 /**
