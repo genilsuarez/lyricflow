@@ -1183,6 +1183,26 @@ function cycleSpeed() {
 
 // ─── A-B Loop ──────────────────────────────────────────────────────────────────
 
+function disableLoopBtn() {
+  const btn = document.getElementById('loopBtn');
+  if (!btn) return;
+  // Reset any active/partial loop
+  state.loopA = null;
+  state.loopB = null;
+  state.loopActive = false;
+  btn.classList.remove('active', 'setting');
+  btn.textContent = '⟳';
+  btn.disabled = true;
+  const indicator = document.getElementById('loopIndicator');
+  if (indicator) indicator.textContent = '';
+  updateLoopRegion();
+}
+
+function enableLoopBtn() {
+  const btn = document.getElementById('loopBtn');
+  if (btn) btn.disabled = false;
+}
+
 function onLoopClick() {
   const btn = document.getElementById('loopBtn');
   const indicator = document.getElementById('loopIndicator');
@@ -1532,6 +1552,8 @@ function showDifficultyPicker(mode, onSelect) {
     if (e.key === 'Escape' && document.getElementById('difficultyPicker')) {
       picker.remove();
       document.removeEventListener('keydown', onPickerEsc);
+      // Re-enable loop if mode was not activated (picker dismissed)
+      if (!state.blanksMode && !state.listeningMode) enableLoopBtn();
     }
   };
   document.addEventListener('keydown', onPickerEsc);
@@ -1548,6 +1570,9 @@ function returnToPlayer() {
     toggleBlanksMode(); // deactivates blanks
   } else if (state.listeningMode) {
     toggleListeningMode(); // deactivates listening
+  } else {
+    // Picker was open but mode not yet activated
+    enableLoopBtn();
   }
 }
 
@@ -1565,6 +1590,7 @@ function toggleBlanksMode() {
     state.blanksMode = false;
     document.getElementById('toggleBlanksBtn').classList.remove('active');
     document.getElementById('togglePlayerBtn')?.classList.add('active');
+    enableLoopBtn();
     renderSubtitles(state.currentSong.subtitles);
     const toolbar = document.getElementById('blanksToolbar');
     if (toolbar) toolbar.remove();
@@ -1574,6 +1600,7 @@ function toggleBlanksMode() {
   }
 
   // Show difficulty picker
+  disableLoopBtn();
   showDifficultyPicker('blanks', (diff) => {
     state.blanksDifficulty = diff;
     state.blanksMode = true;
@@ -2156,6 +2183,7 @@ function toggleListeningMode() {
     state.listeningStarted = false;
     document.getElementById('toggleListeningBtn').classList.remove('active');
     document.getElementById('togglePlayerBtn')?.classList.add('active');
+    enableLoopBtn();
     clearListeningTimer();
     // Cancel any pending resume timeouts
     state.listeningResumeTimers.forEach(tid => clearTimeout(tid));
@@ -2171,6 +2199,7 @@ function toggleListeningMode() {
   }
 
   // Show difficulty picker
+  disableLoopBtn();
   showDifficultyPicker('listening', (diff) => {
     state.listeningDifficulty = diff;
     state.listeningMode = true;
