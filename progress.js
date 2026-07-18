@@ -5,7 +5,7 @@ const APP_ID = 'lyricflow';
 const PASS_SCORE_PCT = 60;
 const LISTEN_COMPLETION_PCT = 90;
 const MAX_EVENTS = 200;
-const ACTIVITY_IDS = ['listen', 'challenge', 'dictation', 'quiz'];
+const ACTIVITY_IDS = ['listen', 'dictation', 'challenge', 'quiz'];
 
 let catalogIds = [];
 
@@ -125,7 +125,13 @@ function ensureSong(document, contentId) {
 function deriveSong(song) {
   const completedCount = ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length;
   song.progressPct = completedCount * 25;
-  song.completed = completedCount === ACTIVITY_IDS.length;
+
+  // Song is complete if all 4 activities done, OR if the 3 scored challenges are done
+  // (listening is not mandatory if the user completed dictation + challenge + quiz)
+  const challengesDone = ['dictation', 'challenge', 'quiz'].every(
+    activity => song.activities[activity].completed
+  );
+  song.completed = completedCount === ACTIVITY_IDS.length || challengesDone;
   if (!song.completed) song.completedAt = null;
 
   const scored = ACTIVITY_IDS

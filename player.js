@@ -171,14 +171,12 @@ export function modeToolbarHtml(song, activeMode = '') {
         <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}${done('quiz') ? ' is-activity-done' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Quiz${done('quiz') ? ' ✓' : ''}">🧠${check(done('quiz'))}</button>
         ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${check(visited('culture'))}</button>` : ''}
       </div>
-      ${showDisplay ? `
-      <span class="ctrl-divider" aria-hidden="true"></span>
+      <span class="ctrl-divider${showDisplay ? '' : ' hidden'}" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--display">
-        <button class="toggle-trans-btn" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
-        <button class="toggle-select-btn" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
+        <button class="toggle-trans-btn${showDisplay ? '' : ' hidden'}" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
+        <button class="toggle-select-btn${showDisplay ? '' : ' hidden'}" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
         <button class="toggle-theater-btn" id="toggleTheaterBtn" aria-label="Modo teatro" data-tooltip="Maximizar reproductor">⛶</button>
       </div>
-      ` : ''}
     </div>
   `;
 }
@@ -201,12 +199,20 @@ export function updateToolbarActiveState(activeMode) {
   const activeId = map[activeMode];
   if (activeId) document.getElementById(activeId)?.classList.add('active');
 
-  // Show/hide display group
+  // Reset scroll to top on mode switch
+  const modeContent = document.getElementById('modeContent');
+  if (modeContent) modeContent.scrollTop = 0;
+  const subContainer = document.getElementById('subContainer');
+  if (subContainer) subContainer.scrollTop = 0;
+
+  // Show/hide display group (translation + select only — theater stays visible)
   const showDisplay = activeMode === '' || activeMode === 'blanks' || activeMode === 'listening';
   const divider = document.querySelector('.mode-toolbar .ctrl-divider');
-  const displayGroup = document.querySelector('.mode-toolbar .ctrl-group--display');
-  if (divider) divider.style.display = showDisplay ? '' : 'none';
-  if (displayGroup) displayGroup.style.display = showDisplay ? '' : 'none';
+  const transBtn = document.getElementById('toggleTransBtn');
+  const selectBtn = document.getElementById('toggleSelectBtn');
+  if (divider) divider.classList.toggle('hidden', !showDisplay);
+  if (transBtn) transBtn.classList.toggle('hidden', !showDisplay);
+  if (selectBtn) selectBtn.classList.toggle('hidden', !showDisplay);
 }
 
 // Render toolbar into persistent container (only if not already there)
@@ -280,6 +286,8 @@ export function bindModeToolbarNav(song) {
       showCultureView(song);
     });
   }
+  // Theater button — always available regardless of mode
+  document.getElementById('toggleTheaterBtn')?.addEventListener('click', toggleTheaterMode);
 }
 
 // Pause audio when switching between study modes
@@ -308,8 +316,8 @@ function formatTime(seconds) {
 
 const PROGRESS_ACTIVITY_LABELS = {
   listen: 'Escucha',
-  challenge: 'Challenge',
   dictation: 'Dictado',
+  challenge: 'Challenge',
   quiz: 'Quiz',
 };
 
@@ -338,12 +346,34 @@ function songProgressHtml(contentId, className = '') {
   return `<div class="song-learning-progress ${className}" data-song-progress="${contentId}" role="status" aria-label="Progreso de la canción: ${songProgress.progressPct}%">${progressInnerHtml(songProgress)}</div>`;
 }
 
-function updateSongProgressUi(contentId) {
+function updateToolbarDoneStates(contentId) {
+  const songProgress = getSongProgress(contentId);
+  const btnMap = {
+    listen: 'togglePlayerBtn',
+    dictation: 'toggleListeningBtn',
+    challenge: 'toggleBlanksBtn',
+    quiz: 'toggleQuizBtn',
+  };
+  Object.entries(btnMap).forEach(([activity, btnId]) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const done = songProgress.activities[activity]?.completed;
+    if (done && !btn.classList.contains('is-activity-done')) {
+      btn.classList.add('is-activity-done');
+      btn.insertAdjacentHTML('beforeend', '<span class="toolbar-done-dot" aria-label="completada">✓</span>');
+      const tooltip = btn.dataset.tooltip;
+      if (tooltip && !tooltip.includes('✓')) btn.dataset.tooltip = tooltip + ' ✓';
+    }
+  });
+}
+
+export function updateSongProgressUi(contentId) {
   const songProgress = getSongProgress(contentId);
   document.querySelectorAll(`[data-song-progress="${contentId}"]`).forEach(element => {
     element.innerHTML = progressInnerHtml(songProgress);
     element.setAttribute('aria-label', `Progreso de la canción: ${songProgress.progressPct}%`);
   });
+  updateToolbarDoneStates(contentId);
   updateAppHeaderProgress();
 }
 
@@ -1391,6 +1421,16 @@ function renderSubtitles(subtitles) {
       if (e.target.closest('.blank-input')) return;
       if (e.target.closest('.listening-input')) return;
       if (state.listeningMode) return;
+
+      // In blanks mode, focus the first empty input (or first input) on the clicked line
+      if (state.blanksMode) {
+        const inputs = line.querySelectorAll('.blank-input');
+        if (inputs.length) {
+          const firstEmpty = [...inputs].find(inp => !inp.value.trim()) || inputs[0];
+          firstEmpty.focus();
+        }
+      }
+
       if (!state.audio) return;
       const offset = state.currentSong.offset || 0;
       state.audio.currentTime = sub.start + offset;
@@ -1501,10 +1541,9 @@ function returnToPlayer() {
 // ─── Fill-in-the-Blanks ────────────────────────────────────────────────────────
 
 function toggleBlanksMode() {
-  // If the picker is open but no difficulty was chosen yet → cancel it
+  // If the picker is already open for this mode, ignore repeated clicks
   const openPicker = document.getElementById('difficultyPicker');
   if (openPicker && openPicker.dataset.mode === 'blanks') {
-    openPicker.remove();
     return;
   }
 
@@ -1547,6 +1586,10 @@ function toggleBlanksMode() {
 
     state.blanksBlanksMap = buildBlanksMap();
     renderSubtitles(state.currentSong.subtitles);
+
+    // Reset scroll to top
+    const subContainer = document.getElementById('subContainer');
+    if (subContainer) subContainer.scrollTop = 0;
 
     // Add blanks toolbar
     const existing = document.getElementById('blanksToolbar');
@@ -1726,10 +1769,9 @@ function focusNextBlank(current) {
 function checkBlanks() {
   const inputs = document.querySelectorAll('.blank-input');
   let correct = 0;
-  let total = inputs.length;
+  let total = 0;
 
   inputs.forEach(input => {
-    const answer = normalizeForCompare(input.dataset.answer);
     const original = input.dataset.original;
     const value = normalizeForCompare(input.value);
     const valueTrimmed = input.value.trim().toLowerCase();
@@ -1743,11 +1785,14 @@ function checkBlanks() {
     wrapper.removeAttribute('data-correction');
 
     if (!value) {
-      // Empty answers remain part of the denominator and count as incorrect.
-      input.classList.add('blank-wrong');
-      wrapper.classList.add('blank-wrong');
-      wrapper.dataset.correction = original.replace(/[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g, '');
-    } else if (valueTrimmed === input.dataset.answer) {
+      // Empty — skip validation, don't count toward score
+      return;
+    }
+
+    total++;
+    const answer = normalizeForCompare(input.dataset.answer);
+
+    if (valueTrimmed === input.dataset.answer) {
       // Exact match including accents
       input.classList.add('blank-correct');
       wrapper.classList.add('blank-correct');
@@ -1972,6 +2017,15 @@ function updateSubtitles(time) {
     }
   }
 
+
+  // Blanks mode: auto-focus the first empty input on the newly active line
+  if (state.blanksMode && activeIndex !== -1 && lines[activeIndex]) {
+    const blankInput = lines[activeIndex].querySelector('.blank-input:not(.blanks-correct)');
+    if (blankInput && !blankInput.value.trim()) {
+      blankInput.focus();
+    }
+  }
+
   // Announce current line to screen readers
   const srLive = document.getElementById('srLive');
   if (srLive && activeIndex !== -1) {
@@ -2056,10 +2110,9 @@ function toggleHighlight() {
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
 
 function toggleListeningMode() {
-  // If the picker is open but no difficulty was chosen yet → cancel it
+  // If the picker is already open for this mode, ignore repeated clicks
   const openPicker = document.getElementById('difficultyPicker');
   if (openPicker && openPicker.dataset.mode === 'listening') {
-    openPicker.remove();
     return;
   }
 
@@ -2115,6 +2168,11 @@ function toggleListeningMode() {
     stopUpdateLoop();
 
     renderSubtitles(state.currentSong.subtitles);
+
+    // Reset scroll to top
+    const subContainer = document.getElementById('subContainer');
+    if (subContainer) subContainer.scrollTop = 0;
+
     updateListeningToolbar();
   });
 }
@@ -2434,6 +2492,116 @@ function showSongEnd() {
   fin.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// ─── Smart Next Activity + Lesson Complete Modal ─────────────────────────────
+
+/**
+ * Determines the next pending activity to suggest after completing one.
+ * Follows pedagogical order: listen → dictation → challenge → quiz
+ */
+function getNextPendingActivity(songProgress, currentActivity) {
+  const order = ['listen', 'dictation', 'challenge', 'quiz'];
+  const labels = {
+    listen: '🎵 Escuchar',
+    dictation: '🎧 Dictado →',
+    challenge: '✎ Huecos →',
+    quiz: 'Quiz →',
+  };
+  const actions = {
+    listen: () => {
+      // Go back to normal player mode
+      if (state.blanksMode) toggleBlanksMode();
+      if (state.listeningMode) toggleListeningMode();
+    },
+    dictation: () => toggleListeningMode(),
+    challenge: () => toggleBlanksMode(),
+    quiz: () => toggleQuizMode(),
+  };
+
+  // Find next incomplete activity after the current one in pedagogical order
+  const currentIdx = order.indexOf(currentActivity);
+  for (let i = currentIdx + 1; i < order.length; i++) {
+    const activity = order[i];
+    if (!songProgress.activities[activity].completed) {
+      return { label: labels[activity], action: actions[activity] };
+    }
+  }
+  // Wrap around — check before current
+  for (let i = 0; i < currentIdx; i++) {
+    const activity = order[i];
+    if (!songProgress.activities[activity].completed) {
+      return { label: labels[activity], action: actions[activity] };
+    }
+  }
+  // All complete (shouldn't reach here since we check songProgress.completed above)
+  return { label: '← Catálogo', action: () => showPicker(true) };
+}
+
+/**
+ * Shows a celebratory modal when all 4 activities for a song are complete.
+ */
+export function showLessonCompleteModal(existingModalId, pct, correct, total) {
+  document.getElementById(existingModalId)?.remove();
+
+  const song = state.currentSong;
+  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+  const sorted = [...pickerSongs].sort((a, b) => {
+    const la = levelOrder.indexOf((a.level || '').toLowerCase());
+    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
+    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
+  });
+  const curIdx = sorted.findIndex(s => s.folder === song?.folder);
+  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'lessonCompleteModal';
+  overlay.className = 'lr-overlay';
+  overlay.innerHTML = `
+    <div class="lr-modal lr-modal--complete" role="dialog" aria-labelledby="lcTitle" aria-modal="true">
+      <button class="lr-close-btn" id="lcCloseBtn" aria-label="Cerrar">✕</button>
+      <div class="lr-emoji lr-emoji--big">🎓</div>
+      <h3 class="lr-title" id="lcTitle">Lección completada</h3>
+      <p class="lr-message">Completaste todas las actividades de <strong>${song.title}</strong></p>
+      <div class="lr-complete-checklist">
+        <span class="lr-check-item is-done">✓ Escucha</span>
+        <span class="lr-check-item is-done">✓ Dictado</span>
+        <span class="lr-check-item is-done">✓ Completar huecos</span>
+        <span class="lr-check-item is-done">✓ Quiz</span>
+      </div>
+      <div class="lr-actions">
+        <button class="lr-btn lr-btn--ghost" id="lcCatalogBtn">← Catálogo</button>
+        ${nextSong ? `<button class="lr-btn lr-btn--primary" id="lcNextSongBtn">Siguiente canción →</button>` : `<button class="lr-btn lr-btn--primary" id="lcDashBtn">Inicio</button>`}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const closeBtn = overlay.querySelector('#lcCloseBtn');
+  const catalogBtn = overlay.querySelector('#lcCatalogBtn');
+  const nextSongBtn = overlay.querySelector('#lcNextSongBtn');
+  const dashBtn = overlay.querySelector('#lcDashBtn');
+
+  setTimeout(() => (nextSongBtn || dashBtn).focus(), 100);
+
+  catalogBtn.addEventListener('click', () => { overlay.remove(); showPicker(true); });
+  if (nextSongBtn) {
+    nextSongBtn.addEventListener('click', () => { overlay.remove(); loadSong(nextSong); });
+  }
+  if (dashBtn) {
+    dashBtn.addEventListener('click', () => { overlay.remove(); showDashboard(); });
+  }
+  closeBtn.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const onEsc = (e) => {
+    if (e.key === 'Escape' && document.getElementById('lessonCompleteModal')) {
+      overlay.remove();
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
 function showBlanksResults() {
   // Remove existing modal if any
   document.getElementById('blanksResultsModal')?.remove();
@@ -2451,6 +2619,26 @@ function showBlanksResults() {
 
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
 
+  // Record progress (mirrors showListeningResults pattern)
+  recordActivityResult({
+    contentId: state.currentSong.id,
+    title: state.currentSong.title,
+    activity: 'challenge',
+    scorePct: pct,
+    correct,
+    total,
+    runId: state.challengeRunId,
+  });
+  state.challengeRunId = createRunId('challenge');
+  updateSongProgressUi(state.currentSong.id);
+
+  // Check if this completed the entire song
+  const songProgress = getSongProgress(state.currentSong.id);
+  if (songProgress.completed) {
+    showLessonCompleteModal('blanksResultsModal', pct, correct, total);
+    return;
+  }
+
   let emoji, grade, message;
   if (pct >= 90) {
     emoji = '🏆'; grade = 'Excelente'; message = 'Dominio sólido del vocabulario';
@@ -2465,11 +2653,15 @@ function showBlanksResults() {
   const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
   const diffLabel = diffLabels[state.blanksDifficulty] || 'Normal';
 
+  // Determine next action based on pending activities
+  const nextActivity = getNextPendingActivity(songProgress, 'challenge');
+
   const overlay = document.createElement('div');
   overlay.id = 'blanksResultsModal';
   overlay.className = 'lr-overlay';
   overlay.innerHTML = `
     <div class="lr-modal" role="dialog" aria-labelledby="brTitle" aria-modal="true">
+      <button class="lr-close-btn" id="brCloseBtn" aria-label="Cerrar">✕</button>
       <div class="lr-emoji">${emoji}</div>
       <h3 class="lr-title" id="brTitle">${grade}</h3>
       <p class="lr-message">${message}</p>
@@ -2489,8 +2681,8 @@ function showBlanksResults() {
       </div>
       <p class="lr-meta">✎ Completar huecos · ${diffLabel}</p>
       <div class="lr-actions">
-        <button class="lr-btn lr-btn--retry" id="brRetryBtn">↻ Reintentar</button>
-        <button class="lr-btn lr-btn--catalog" id="brCatalogBtn">← Catálogo</button>
+        <button class="lr-btn lr-btn--ghost" id="brRetryBtn">↻ Reintentar</button>
+        <button class="lr-btn lr-btn--primary" id="brNextBtn">${nextActivity.label}</button>
       </div>
     </div>
   `;
@@ -2498,8 +2690,9 @@ function showBlanksResults() {
   document.body.appendChild(overlay);
 
   const retryBtn = overlay.querySelector('#brRetryBtn');
-  const catalogBtn = overlay.querySelector('#brCatalogBtn');
-  setTimeout(() => retryBtn.focus(), 100);
+  const nextBtn = overlay.querySelector('#brNextBtn');
+  const closeBtn = overlay.querySelector('#brCloseBtn');
+  setTimeout(() => nextBtn.focus(), 100);
 
   retryBtn.addEventListener('click', () => {
     overlay.remove();
@@ -2516,9 +2709,13 @@ function showBlanksResults() {
     }
   });
 
-  catalogBtn.addEventListener('click', () => {
+  nextBtn.addEventListener('click', () => {
     overlay.remove();
-    showPicker(true);
+    nextActivity.action();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    overlay.remove();
   });
 
   overlay.addEventListener('click', (e) => {
@@ -2553,6 +2750,13 @@ function showListeningResults() {
   });
   updateSongProgressUi(state.currentSong.id);
 
+  // Check if this completed the entire song
+  const songProgress = getSongProgress(state.currentSong.id);
+  if (songProgress.completed) {
+    showLessonCompleteModal('listeningResultsModal', pct, correct, total);
+    return;
+  }
+
   // Determine grade/feedback
   let emoji, grade, message;
   if (pct >= 90) {
@@ -2568,11 +2772,15 @@ function showListeningResults() {
   const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
   const diffLabel = diffLabels[state.listeningDifficulty] || 'Normal';
 
+  // Determine next action based on pending activities
+  const nextActivity = getNextPendingActivity(songProgress, 'dictation');
+
   const overlay = document.createElement('div');
   overlay.id = 'listeningResultsModal';
   overlay.className = 'lr-overlay';
   overlay.innerHTML = `
     <div class="lr-modal" role="dialog" aria-labelledby="lrTitle" aria-modal="true">
+      <button class="lr-close-btn" id="lrCloseBtn" aria-label="Cerrar">✕</button>
       <div class="lr-emoji">${emoji}</div>
       <h3 class="lr-title" id="lrTitle">${grade}</h3>
       <p class="lr-message">${message}</p>
@@ -2592,18 +2800,19 @@ function showListeningResults() {
       </div>
       <p class="lr-meta">🎧 Dictado · ${diffLabel}</p>
       <div class="lr-actions">
-        <button class="lr-btn lr-btn--retry" id="lrRetryBtn">↻ Reintentar</button>
-        <button class="lr-btn lr-btn--catalog" id="lrCatalogBtn">← Catálogo</button>
+        <button class="lr-btn lr-btn--ghost" id="lrRetryBtn">↻ Reintentar</button>
+        <button class="lr-btn lr-btn--primary" id="lrNextBtn">${nextActivity.label}</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
 
-  // Focus trap — focus first button
+  // Focus trap — focus next-challenge button (positive action)
   const retryBtn = overlay.querySelector('#lrRetryBtn');
-  const catalogBtn = overlay.querySelector('#lrCatalogBtn');
-  setTimeout(() => retryBtn.focus(), 100);
+  const nextBtn = overlay.querySelector('#lrNextBtn');
+  const closeBtn = overlay.querySelector('#lrCloseBtn');
+  setTimeout(() => nextBtn.focus(), 100);
 
   retryBtn.addEventListener('click', () => {
     overlay.remove();
@@ -2625,9 +2834,13 @@ function showListeningResults() {
     }
   });
 
-  catalogBtn.addEventListener('click', () => {
+  nextBtn.addEventListener('click', () => {
     overlay.remove();
-    showPicker(true);
+    nextActivity.action();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    overlay.remove();
   });
 
   // Close on overlay click (outside modal)

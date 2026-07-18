@@ -2607,8 +2607,8 @@ body {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 2px 40px;
+  gap: 10px;
+  padding: 12px 2px 24px;
   scrollbar-width: none;
 }
 
@@ -2637,13 +2637,15 @@ body {
 
 /* Question card — elevated, modern feel */
 .quiz-card {
-  padding: 24px 20px;
+  padding: 18px 16px;
+  margin-bottom: 6px;
   border-radius: var(--lp-radius-lg);
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
   box-shadow: var(--lp-shadow-sm);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .quiz-card::before {
@@ -2686,7 +2688,7 @@ body {
 .quiz-options {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .quiz-option {
@@ -2694,8 +2696,8 @@ body {
   font-size: 0.85rem;
   color: var(--lp-ink-soft);
   text-align: left;
-  min-height: 48px;
-  padding: 12px 16px 12px 44px;
+  min-height: 44px;
+  padding: 10px 16px 10px 44px;
   border-radius: var(--lp-radius-md);
   background: var(--lp-surface);
   border: 1.5px solid var(--lp-border);
@@ -2791,10 +2793,17 @@ body {
 }
 
 /* Next button */
+.quiz-next-container {
+  flex-shrink: 0;
+  padding: 8px 2px 4px;
+}
 .quiz-next-btn {
-  align-self: flex-start;
-  margin-top: 8px;
   animation: fadeUp 0.25s var(--lp-ease) both;
+}
+.quiz-next-btn--hidden {
+  visibility: hidden;
+  pointer-events: none;
+  animation: none;
 }
 
 /* Results screen */
@@ -3175,6 +3184,7 @@ body {
 }
 
 .lr-modal {
+  position: relative;
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius-lg);
@@ -3255,47 +3265,132 @@ body {
 
 .lr-actions {
   display: flex;
-  gap: 6px;
+  gap: 10px;
   justify-content: center;
+  margin-top: 4px;
 }
 
 .lr-btn {
-  flex: 0 1 auto;
-  padding: 6px 14px;
+  flex: 1;
+  padding: 10px 18px;
   border-radius: var(--lp-radius-md);
   font-family: var(--lp-font-body);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s var(--lp-ease);
   border: 1px solid var(--lp-border);
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  min-height: 38px;
 }
 
-.lr-btn--retry {
+.lr-btn--primary {
   background: var(--lp-accent);
   color: var(--lp-accent-contrast, #fff);
   border-color: var(--lp-accent);
 }
 
-.lr-btn--retry:hover {
+.lr-btn--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--lp-accent) 30%, transparent);
 }
 
-.lr-btn--catalog {
-  background: var(--lp-surface-sunken);
+.lr-btn--ghost {
+  background: transparent;
   color: var(--lp-muted);
+  border-color: var(--lp-border);
 }
 
-.lr-btn--catalog:hover {
-  border-color: color-mix(in srgb, var(--lp-accent) 25%, transparent);
-  color: var(--lp-accent-text);
+.lr-btn--ghost:hover {
+  border-color: color-mix(in srgb, var(--lp-accent) 40%, transparent);
+  color: var(--lp-text);
 }
 
 .lr-btn:focus-visible {
   outline: 2px solid var(--lp-accent);
   outline-offset: 2px;
+}
+
+/* Close button — top-right of modal */
+.lr-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--lp-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s var(--lp-ease), color 0.2s var(--lp-ease);
+}
+
+.lr-close-btn:hover {
+  background: color-mix(in srgb, var(--lp-border) 40%, transparent);
+  color: var(--lp-text);
+}
+
+.lr-close-btn:focus-visible {
+  outline: 2px solid var(--lp-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Lesson Complete Modal ─────────────────────────────────────────────────── */
+
+.lr-modal--complete {
+  max-width: 380px;
+  padding: 40px 32px 32px;
+  text-align: center;
+}
+
+.lr-emoji--big {
+  font-size: 3.4rem;
+  margin-bottom: 8px;
+}
+
+.lr-modal--complete .lr-title {
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, var(--lp-accent), var(--lp-success));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lr-modal--complete .lr-message {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.lr-modal--complete .lr-message strong {
+  color: var(--lp-text);
+}
+
+.lr-complete-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin: 14px 0 16px;
+  font-family: var(--lp-font-body);
+  font-size: 0.75rem;
+}
+
+.lr-check-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--lp-muted);
+  padding: 4px 0;
+}
+
+.lr-check-item.is-done {
+  color: var(--lp-success);
+  font-weight: 600;
 }
 
 @keyframes fadeIn {
@@ -5111,3 +5206,6 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── Utility ─── */
+.hidden { display: none !important; }
