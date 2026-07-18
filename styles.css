@@ -952,6 +952,12 @@ body {
   transform: scale(1.06);
 }
 
+.loop-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Active — generic */
 .toggle-trans-btn.active,
 .toggle-select-btn.active,
