@@ -4973,21 +4973,57 @@ body {
 
 /* ─── Activity rows ─── */
 
-.sv-acts {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.sv-act-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--lp-font-body);
+  font-size: var(--lp-text-xs);
 }
 
-.sv-act-row {
-  display: grid;
-  grid-template-columns: 20px auto 1fr 32px;
-  align-items: center;
-  gap: 6px;
+.sv-act-table__th {
+  font-size: 0.62rem;
+  font-weight: var(--lp-weight-semibold);
+  color: var(--lp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--lp-border-subtle);
 }
 
-.sv-act-icon { font-size: 0.85rem; text-align: center; }
-.sv-act-name { font-size: var(--lp-text-xs); font-weight: var(--lp-weight-medium); color: var(--lp-ink); }
+.sv-act-table__th--num { text-align: right; }
+
+.sv-act-table__row td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--lp-border-subtle);
+}
+
+.sv-act-table__row:last-child td { border-bottom: none; }
+
+.sv-act-table__icon {
+  width: 22px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.sv-act-table__name {
+  font-weight: var(--lp-weight-medium);
+  color: var(--lp-ink);
+}
+
+.sv-act-table__num {
+  text-align: right;
+  font-family: var(--lp-font-mono);
+  font-weight: var(--lp-weight-semibold);
+  color: var(--lp-muted);
+  font-size: 0.7rem;
+}
+
+.sv-act-table__pct {
+  color: var(--lp-accent);
+}
+
+/* ─── Shared progress bars (levels) ─── */
 
 .sv-bar {
   height: var(--lp-progress-height);
@@ -5008,14 +5044,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .sv-bar__fill { transition: none; }
-}
-
-.sv-act-count {
-  font-size: 0.7rem;
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-muted);
-  text-align: right;
-  font-family: var(--lp-font-mono);
 }
 
 /* ─── Levels ─── */

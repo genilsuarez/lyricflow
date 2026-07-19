@@ -287,85 +287,6 @@ export function recordActivityResult({
   return clone(song);
 }
 
-function normalizeRanges(ranges) {
-  const sorted = ranges
-    .filter(range => Array.isArray(range) && Number.isFinite(range[0]) && Number.isFinite(range[1]) && range[1] > range[0])
-    .map(([start, end]) => [Math.max(0, start), Math.max(0, end)])
-    .sort((a, b) => a[0] - b[0]);
-  const merged = [];
-
-  sorted.forEach(([start, end]) => {
-    const previous = merged[merged.length - 1];
-    if (!previous || start > previous[1] + 0.05) merged.push([start, end]);
-    else previous[1] = Math.max(previous[1], end);
-  });
-  return merged;
-}
-
-function rangeDuration(ranges) {
-  return ranges.reduce((sum, [start, end]) => sum + end - start, 0);
-}
-
-function compactRanges(ranges) {
-  return ranges.map(([start, end]) => [Number(start.toFixed(2)), Number(end.toFixed(2))]);
-}
-
-function saveListenCoverage({ contentId, title, ranges, eligibleDurationSec, runId }) {
-  const document = readJson(PROGRESS_KEY, emptyProgress);
-  const song = ensureSong(document, contentId);
-  const listen = song.activities.listen;
-  const combined = normalizeRanges([...(listen.coverageRanges || []), ...ranges]);
-  const coveredDurationSec = Math.min(eligibleDurationSec, rangeDuration(combined));
-  const coveragePct = eligibleDurationSec > 0
-    ? clampPct((coveredDurationSec / eligibleDurationSec) * 100)
-    : 0;
-  const timestamp = nowIso();
-  const justCompleted = coveragePct >= LISTEN_COMPLETION_PCT && !listen.completed;
-
-  listen.coverageRanges = compactRanges(combined);
-  listen.eligibleDurationSec = Number(eligibleDurationSec.toFixed(2));
-  listen.coveredDurationSec = Number(coveredDurationSec.toFixed(2));
-  listen.coveragePct = Number(coveragePct.toFixed(2));
-  listen.lastScorePct = listen.coveragePct;
-  listen.bestScorePct = listen.bestScorePct === null
-    ? listen.coveragePct
-    : Math.max(listen.bestScorePct, listen.coveragePct);
-
-  if (justCompleted) {
-    listen.completed = true;
-    listen.completedAt = timestamp;
-    listen.attempts += 1;
-    listen.lastAttemptAt = timestamp;
-    listen.lastRunId = runId;
-    song.attempts += 1;
-    song.lastScorePct = listen.coveragePct;
-  }
-
-  const wasCompleted = song.completed;
-  deriveSong(song);
-  if (song.completed && !wasCompleted && !song.completedAt) song.completedAt = timestamp;
-  writeProgress(document);
-
-  if (justCompleted) {
-    appendEvent(eventFor({
-      contentId,
-      title,
-      activity: 'listen',
-      runId,
-      scorePct: listen.coveragePct,
-      passed: true,
-      durationMs: Math.round(coveredDurationSec * 1000),
-      metrics: {
-        coveragePct: listen.coveragePct,
-        coveredDurationSec: listen.coveredDurationSec,
-        eligibleDurationSec: listen.eligibleDurationSec,
-      },
-    }));
-  }
-
-  return clone(song);
-}
-
 export function createListenTracker({
   contentId,
   title,
@@ -373,84 +294,56 @@ export function createListenTracker({
   eligibleEndSec = null,
   onProgress = null,
 }) {
-  const stored = getSongProgress(contentId).activities.listen;
-  let ranges = normalizeRanges(stored.coverageRanges || []);
-  let lastTime = null;
-  let duration = stored.eligibleDurationSec || 0;
-  let lastPersistedCovered = rangeDuration(ranges);
-  let thresholdPersisted = stored.completed || stored.coveragePct >= LISTEN_COMPLETION_PCT;
-  let seeking = false;
+  // Simplified: no coverage tracking. Completion is triggered by the 'ended' event.
+  return {
+    play() {},
+    sample() {},
+    pause() {},
+    seeking() {},
+    seeked() {},
+    destroy() {},
+  };
+}
+
+export function markListenCompleted({ contentId, title }) {
+  const document = readJson(PROGRESS_KEY, emptyProgress);
+  const song = ensureSong(document, contentId);
+  const listen = song.activities.listen;
+
+  if (listen.completed) return clone(song);
+
+  const timestamp = nowIso();
   const runId = createRunId('listen');
 
-  function eligibleDuration(mediaDuration) {
-    const end = Number.isFinite(eligibleEndSec) ? Math.min(eligibleEndSec, mediaDuration) : mediaDuration;
-    return Math.max(0, end - eligibleStartSec);
-  }
+  listen.completed = true;
+  listen.completedAt = timestamp;
+  listen.attempts += 1;
+  listen.lastAttemptAt = timestamp;
+  listen.lastRunId = runId;
+  listen.coveragePct = 100;
+  listen.lastScorePct = 100;
+  listen.bestScorePct = 100;
 
-  function sample(currentTime, mediaDuration) {
-    if (!Number.isFinite(currentTime) || !Number.isFinite(mediaDuration) || mediaDuration <= 0 || seeking) return;
-    duration = eligibleDuration(mediaDuration);
-    if (lastTime === null) {
-      lastTime = currentTime;
-      return;
-    }
+  song.attempts += 1;
+  song.lastScorePct = 100;
 
-    const delta = currentTime - lastTime;
-    if (delta > 0 && delta <= 1.5) {
-      const start = Math.max(eligibleStartSec, lastTime);
-      const endLimit = Number.isFinite(eligibleEndSec) ? Math.min(eligibleEndSec, mediaDuration) : mediaDuration;
-      const end = Math.min(endLimit, currentTime);
-      if (end > start) ranges = normalizeRanges([...ranges, [start - eligibleStartSec, end - eligibleStartSec]]);
-    }
-    lastTime = currentTime;
+  const wasCompleted = song.completed;
+  deriveSong(song);
+  if (song.completed && !wasCompleted && !song.completedAt) song.completedAt = timestamp;
+  writeProgress(document);
 
-    const covered = rangeDuration(ranges);
-    const coveragePct = duration > 0 ? (covered / duration) * 100 : 0;
-    const crossedCompletionThreshold = !thresholdPersisted && coveragePct >= LISTEN_COMPLETION_PCT;
-    if (covered - lastPersistedCovered >= 1 || crossedCompletionThreshold) {
-      const persisted = flush();
-      if (persisted?.activities.listen.completed) thresholdPersisted = true;
-    }
-  }
+  appendEvent(eventFor({
+    contentId,
+    title,
+    activity: 'listen',
+    runId,
+    scorePct: 100,
+    passed: true,
+    durationMs: null,
+    metrics: {},
+  }));
 
-  function flush() {
-    if (duration <= 0) return null;
-    const covered = rangeDuration(ranges);
-    if (covered <= lastPersistedCovered + 0.001) return getSongProgress(contentId);
-    const song = saveListenCoverage({ contentId, title, ranges, eligibleDurationSec: duration, runId });
-    ranges = normalizeRanges(song.activities.listen.coverageRanges || []);
-    lastPersistedCovered = rangeDuration(ranges);
-    onProgress?.(song);
-    return song;
-  }
-
-  return {
-    play(currentTime, mediaDuration) {
-      duration = eligibleDuration(mediaDuration);
-      lastTime = currentTime;
-      seeking = false;
-    },
-    sample,
-    pause(currentTime, mediaDuration) {
-      sample(currentTime, mediaDuration);
-      flush();
-      lastTime = null;
-    },
-    seeking() {
-      flush();
-      seeking = true;
-      lastTime = null;
-    },
-    seeked(currentTime, mediaDuration) {
-      duration = eligibleDuration(mediaDuration);
-      seeking = false;
-      lastTime = currentTime;
-    },
-    destroy() {
-      flush();
-      lastTime = null;
-    },
-  };
+  return clone(song);
 }
 
 export const progressConfig = Object.freeze({
