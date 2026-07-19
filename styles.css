@@ -1549,37 +1549,57 @@ body {
 /* Word Tooltip */
 .word-tooltip {
   position: fixed;
-  transform: translate(-50%, -100%);
-  background: rgba(26, 23, 20, 0.96);
-  border: 1px solid rgba(237, 232, 224, 0.12);
-  border-radius: 10px;
-  padding: 7px 12px;
+  transform: translateX(-50%);
+  background: rgba(26, 23, 20, 0.94);
+  border: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
+  border-radius: var(--lp-radius-full);
+  padding: 5px 14px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   z-index: 9999;
   pointer-events: none;
   animation: wtReveal 0.18s var(--lp-ease) both;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  max-width: min(360px, calc(100vw - 32px));
 }
 
 .word-tooltip::after {
   content: '';
   position: absolute;
-  bottom: -4px;
-  left: 50%;
+  top: -4px;
+  left: calc(50% + var(--wt-arrow, 0px));
   transform: translateX(-50%) rotate(45deg);
   width: 7px;
   height: 7px;
-  background: rgba(26, 23, 20, 0.96);
-  border-right: 1px solid color-mix(in srgb, var(--lp-accent) 22%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--lp-accent) 22%, transparent);
+  background: rgba(26, 23, 20, 0.94);
+  border-left: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
+}
+
+/* When tooltip flips above the word */
+.word-tooltip.wt-above::after {
+  top: auto;
+  bottom: -4px;
+  border-left: none;
+  border-top: none;
+  border-right: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--lp-accent) 18%, transparent);
 }
 
 @keyframes wtReveal {
-  from { opacity: 0; transform: translate(-50%, -100%) translateY(5px) scale(0.95); }
-  to   { opacity: 1; transform: translate(-50%, -100%) translateY(0) scale(1); }
+  from { opacity: 0; transform: translateX(-50%) translateY(3px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.word-tooltip.wt-above {
+  animation-name: wtRevealAbove;
+}
+
+@keyframes wtRevealAbove {
+  from { opacity: 0; transform: translateX(-50%) translateY(-3px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
 .word-tooltip.wt-fade {
@@ -1589,8 +1609,8 @@ body {
 
 .wt-word {
   font-family: var(--lp-font-display);
-  font-size: 0.85rem;
-  font-weight: 400;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: #EDE8E0;
 }
 
@@ -2018,15 +2038,6 @@ body {
   color: var(--lp-accent-text);
   font-size: 0.95rem;
   letter-spacing: 0.01em;
-}
-
-.wt-alt {
-  display: block;
-  font-family: var(--lp-font-display);
-  font-size: 0.68rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--lp-muted);
 }
 
 /* ─── Speed Control Button ──────────────────────────────────────────────────── */

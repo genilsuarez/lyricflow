@@ -173,7 +173,7 @@ export function modeToolbarHtml(song, activeMode = '') {
         <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}${done('quiz') ? ' is-activity-done' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Quiz${done('quiz') ? ' ✓' : ''}">🧠${check(done('quiz'))}</button>
         ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${eye(visited('culture'))}</button>` : ''}
       </div>
-      <span class="ctrl-divider${showDisplay ? '' : ' hidden'}" aria-hidden="true"></span>
+      <span class="ctrl-divider${showDisplay ? '' : ' hidden'}${isLocalHost() ? ' hidden' : ''}" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--display">
         ${isLocalHost() ? '<button class="toggle-shortcuts-btn" id="shortcutsBtnToolbar" aria-label="Atajos de teclado" data-tooltip="Atajos de teclado">⚙</button>' : ''}
         <button class="toggle-trans-btn${showDisplay ? '' : ' hidden'}" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
@@ -1994,26 +1994,22 @@ function onWordTap(e) {
   if (!word) return;
 
   let translation = '';
-  let altMeaning = '';
   if (state.vocabData) {
     const entry = state.vocabData.find(v => v.word === word);
     if (entry && entry.translation) {
       translation = entry.translation;
     }
-    if (entry && entry.altMeaning) {
-      altMeaning = entry.altMeaning;
-    }
   }
 
   if (!translation) return; // No tooltip for words without vocab entry
 
-  showWordTooltip(wordEl, word, translation, altMeaning);
+  showWordTooltip(wordEl, word, translation);
 }
 
 // Tooltip cleanup controller (single active tooltip at a time)
 let tooltipCleanup = null;
 
-function showWordTooltip(anchor, word, translation, altMeaning = '') {
+function showWordTooltip(anchor, word, translation) {
   // Clean up previous tooltip and its listeners
   if (tooltipCleanup) { tooltipCleanup(); tooltipCleanup = null; }
 
@@ -2026,18 +2022,29 @@ function showWordTooltip(anchor, word, translation, altMeaning = '') {
   tip.innerHTML = `
     <span class="wt-word">${word}</span>
     <span class="wt-trans">${translation}</span>
-    ${altMeaning ? `<span class="wt-alt">${altMeaning}</span>` : ''}
   `;
   document.body.appendChild(tip);
 
   const anchorRect = anchor.getBoundingClientRect();
-  let left = anchorRect.left + anchorRect.width / 2;
-  let top = anchorRect.top - 8;
-
   const tipWidth = tip.offsetWidth;
+  const tipHeight = tip.offsetHeight;
+  const wordCenter = anchorRect.left + anchorRect.width / 2;
+
+  // Clamp tooltip so it stays on screen
   const minLeft = tipWidth / 2 + 8;
   const maxLeft = window.innerWidth - tipWidth / 2 - 8;
-  left = Math.max(minLeft, Math.min(left, maxLeft));
+  const left = Math.max(minLeft, Math.min(wordCenter, maxLeft));
+
+  // Arrow offset: how far from tooltip center the arrow should shift
+  const arrowOffset = wordCenter - left;
+  tip.style.setProperty('--wt-arrow', `${arrowOffset}px`);
+
+  // Position below the word
+  let top = anchorRect.bottom + 6;
+  if (top + tipHeight > window.innerHeight - 8) {
+    top = anchorRect.top - tipHeight - 6;
+    tip.classList.add('wt-above');
+  }
 
   tip.style.left = `${left}px`;
   tip.style.top = `${top}px`;
