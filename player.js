@@ -14,6 +14,7 @@ import {
   createRunId,
   getProgress,
   getSongProgress,
+  markListenCompleted,
   recordActivityResult,
 } from './progress.js';
 
@@ -1138,6 +1139,9 @@ function initAudio(song) {
 
   state.audio.addEventListener('ended', () => {
     state.listenTracker?.pause(state.audio.currentTime, state.audio.duration);
+    // Mark listen activity as completed when song reaches the end
+    markListenCompleted({ contentId: song.id, title: song.title });
+    updateSongProgressUi(song.id);
     document.getElementById('playBtn').textContent = '▶';
     stopUpdateLoop();
     document.getElementById('progressFill').style.width = '100%';

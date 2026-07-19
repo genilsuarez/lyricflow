@@ -355,20 +355,31 @@ export function renderStats() {
       <div class="sv-mid">
         <section class="sv-card" aria-labelledby="svActTitle">
           <h3 id="svActTitle">Actividades</h3>
-          <div class="sv-acts">
-            ${ACTIVITY_IDS.map(act => {
-              const { completed, total } = activityCounts[act];
-              const p = total ? (completed / total) * 100 : 0;
-              const meta = ACTIVITY_META[act];
-              return `
-                <div class="sv-act-row">
-                  <span class="sv-act-icon">${meta.icon}</span>
-                  <span class="sv-act-name">${meta.label}</span>
-                  <div class="sv-bar"><div class="sv-bar__fill" style="width:${p}%"></div></div>
-                  <span class="sv-act-count">${completed}/${total}</span>
-                </div>`;
-            }).join('')}
-          </div>
+          <table class="sv-act-table" role="table">
+            <thead>
+              <tr>
+                <th class="sv-act-table__th" colspan="2">Actividad</th>
+                <th class="sv-act-table__th sv-act-table__th--num">Hecho</th>
+                <th class="sv-act-table__th sv-act-table__th--num">Total</th>
+                <th class="sv-act-table__th sv-act-table__th--num">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ACTIVITY_IDS.map(act => {
+                const { completed, total } = activityCounts[act];
+                const pct = total ? Math.round((completed / total) * 100) : 0;
+                const meta = ACTIVITY_META[act];
+                return `
+                <tr class="sv-act-table__row">
+                  <td class="sv-act-table__icon">${meta.icon}</td>
+                  <td class="sv-act-table__name">${meta.label}</td>
+                  <td class="sv-act-table__num">${completed}</td>
+                  <td class="sv-act-table__num">${total}</td>
+                  <td class="sv-act-table__num sv-act-table__pct">${pct}%</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </section>
 
         <section class="sv-card" aria-labelledby="svLevelsTitle">
