@@ -3167,8 +3167,8 @@ body {
 
 .shortcuts-panel {
   position: fixed;
-  bottom: 110px;
-  right: 22px;
+  bottom: 120px;
+  right: 32px;
   background: rgba(26, 23, 20, 0.97);
   border: 1px solid rgba(237, 232, 224, 0.12);
   border-radius: 12px;
