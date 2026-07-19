@@ -42,12 +42,10 @@ export default {
     { start: 109.0, duration: 7.0, original: "Consider this, consider this the hint of the century", translation: "Considera esto, considera esto la indirecta del siglo" },
     { start: 116.0, duration: 4.0, original: "Consider this the slip", translation: "Considera esto el desliz" },
     { start: 120.0, duration: 5.5, original: "That brought me to my knees, failed", translation: "Que me puso de rodillas, fracasado" },
-    { start: 126.0, duration: 5.5, original: "What if all these fantasies come flailing around?", translation: "¿Qué pasa si todas estas fantasías se desmoronan?" },
-    { start: 132.0, duration: 5.0, original: "Now I've said too much", translation: "Ahora he dicho demasiado" },
-    { start: 138.0, duration: 5.5, original: "But I thought that I heard you laughing", translation: "Pero pensé que te oí riendo" },
-    { start: 144.0, duration: 5.0, original: "I thought that I heard you sing", translation: "Pensé que te oí cantar" },
-    { start: 149.0, duration: 5.5, original: "I think I thought I saw you try", translation: "Creo que pensé que te vi intentarlo" },
-    { start: 155.0, duration: 5.5, original: "But that was just a dream", translation: "Pero eso fue solo un sueño" },
-    { start: 161.0, duration: 5.0, original: "That was just a dream", translation: "Eso fue solo un sueño" },
+    { start: 125.5, duration: 6.5, original: "What if all these fantasies come flailing around?", translation: "¿Qué pasa si todas estas fantasías se desmoronan?" },
+    { start: 132.0, duration: 6.0, original: "Now I've said too much", translation: "Ahora he dicho demasiado" },
+    { start: 138.0, duration: 3.0, original: "But I thought that I heard you laughing", translation: "Pero pensé que te oí riendo" },
+    { start: 141.0, duration: 5.5, original: "I thought that I heard you sing", translation: "Pensé que te oí cantar" },
+    { start: 146.5, duration: 7.0, original: "I think I thought I saw you try", translation: "Creo que pensé que te vi intentarlo" },
   ]
 };
