@@ -767,6 +767,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  position: relative;
 }
 
 .ctrl-group {
@@ -878,6 +879,7 @@ body {
 .toggle-trans-btn,
 .toggle-select-btn,
 .toggle-theater-btn,
+.toggle-shortcuts-btn,
 .toggle-player-btn,
 .toggle-vocab-btn,
 .toggle-blanks-btn,
@@ -939,6 +941,7 @@ body {
 .toggle-trans-btn:hover,
 .toggle-select-btn:hover,
 .toggle-theater-btn:hover,
+.toggle-shortcuts-btn:hover,
 .toggle-player-btn:hover,
 .toggle-vocab-btn:hover,
 .toggle-blanks-btn:hover,
@@ -961,7 +964,8 @@ body {
 /* Active — generic */
 .toggle-trans-btn.active,
 .toggle-select-btn.active,
-.toggle-theater-btn.active {
+.toggle-theater-btn.active,
+.toggle-shortcuts-btn.active {
   background: var(--lp-accent-soft);
   border-color: color-mix(in srgb, var(--lp-accent) 35%, transparent);
   color: var(--lp-accent-text);
@@ -1016,13 +1020,15 @@ body {
 
 .ctrl-group--display .toggle-trans-btn,
 .ctrl-group--display .toggle-select-btn,
-.ctrl-group--display .toggle-theater-btn {
+.ctrl-group--display .toggle-theater-btn,
+.ctrl-group--display .toggle-shortcuts-btn {
   width: 32px;
   height: 32px;
   font-size: 0.72rem;
   background: transparent;
   border-color: transparent;
   color: var(--lp-muted);
+  line-height: 1;
 }
 
 .ctrl-group--display .toggle-theater-btn {
@@ -1030,9 +1036,14 @@ body {
   color: var(--lp-ink-soft);
 }
 
+.ctrl-group--display .toggle-shortcuts-btn {
+  font-size: 0.82rem;
+}
+
 .ctrl-group--display .toggle-trans-btn:hover,
 .ctrl-group--display .toggle-select-btn:hover,
-.ctrl-group--display .toggle-theater-btn:hover {
+.ctrl-group--display .toggle-theater-btn:hover,
+.ctrl-group--display .toggle-shortcuts-btn:hover {
   background: var(--lp-surface-sunken);
   border-color: var(--lp-border-subtle);
   color: var(--lp-ink-soft);
@@ -3139,6 +3150,89 @@ body {
     font-size: 0.52rem;
     padding: 3px 7px;
   }
+}
+
+/* ─── Shortcuts Panel (local dev only) ──────────────────────────────────────── */
+
+.shortcuts-panel {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  background: rgba(26, 23, 20, 0.97);
+  border: 1px solid rgba(237, 232, 224, 0.12);
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  animation: shortcutsPanelIn 0.18s var(--lp-ease) both;
+}
+
+.shortcuts-panel.hidden {
+  display: none;
+}
+
+@keyframes shortcutsPanelIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.shortcuts-panel-title {
+  font-family: var(--lp-font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #EDE8E0;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.shortcuts-panel-section {
+  margin-bottom: 10px;
+}
+
+.shortcuts-panel-section:last-child {
+  margin-bottom: 0;
+}
+
+.shortcuts-panel-heading {
+  font-family: var(--lp-font-body);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--lp-accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  gap: 12px;
+}
+
+.shortcut-row span {
+  font-family: var(--lp-font-body);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(237, 232, 224, 0.8);
+  white-space: nowrap;
+}
+
+.shortcut-row kbd {
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: #EDE8E0;
+  background: rgba(237, 232, 224, 0.1);
+  border: 1px solid rgba(237, 232, 224, 0.15);
+  border-radius: 4px;
+  padding: 2px 5px;
+  line-height: 1;
 }
 
 /* ─── Song Fin Card ─────────────────────────────────────────────────────────── */

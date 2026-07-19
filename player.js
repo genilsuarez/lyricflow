@@ -175,6 +175,7 @@ export function modeToolbarHtml(song, activeMode = '') {
       </div>
       <span class="ctrl-divider${showDisplay ? '' : ' hidden'}" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--display">
+        ${isLocalHost() ? '<button class="toggle-shortcuts-btn" id="shortcutsBtnToolbar" aria-label="Atajos de teclado" data-tooltip="Atajos de teclado">⚙</button>' : ''}
         <button class="toggle-trans-btn${showDisplay ? '' : ' hidden'}" id="toggleTransBtn" aria-label="Traducción" data-tooltip="Mostrar traducción">Aa</button>
         <button class="toggle-select-btn${showDisplay ? '' : ' hidden'}" id="toggleSelectBtn" aria-label="Modo selección" data-tooltip="Seleccionar texto">⌶</button>
         <button class="toggle-theater-btn" id="toggleTheaterBtn" aria-label="Modo teatro" data-tooltip="Maximizar reproductor">⛶</button>
@@ -703,6 +704,28 @@ export async function loadSong(song) {
         <button class="loop-btn" id="loopBtn" aria-label="A-B Loop" data-tooltip="Repetir sección A→B">⟳</button>
       </div>
     </div>
+    ${isLocalHost() ? `
+    <div class="shortcuts-panel hidden" id="shortcutsPanel">
+      <div class="shortcuts-panel-title">Atajos de teclado</div>
+      <div class="shortcuts-panel-section">
+        <div class="shortcuts-panel-heading">Reproducción</div>
+        <div class="shortcut-row"><kbd>Space</kbd> / <kbd>K</kbd><span>Play / Pausa</span></div>
+        <div class="shortcut-row"><kbd>S</kbd><span>Velocidad</span></div>
+        <div class="shortcut-row"><kbd>L</kbd><span>A-B Loop</span></div>
+        <div class="shortcut-row"><kbd>←</kbd> / <kbd>→</kbd><span>Seek ±5s (en barra)</span></div>
+        <div class="shortcut-row"><kbd>Shift</kbd>+<kbd>←</kbd> / <kbd>→</kbd><span>Seek ±10s</span></div>
+      </div>
+      <div class="shortcuts-panel-section">
+        <div class="shortcuts-panel-heading">Visualización</div>
+        <div class="shortcut-row"><kbd>N</kbd><span>Números de línea</span></div>
+        <div class="shortcut-row"><kbd>T</kbd><span>Traducción</span></div>
+        <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>H</kbd><span>Highlight letras</span></div>
+      </div>
+      <div class="shortcuts-panel-section">
+        <div class="shortcuts-panel-heading">Modos</div>
+        <div class="shortcut-row"><kbd>B</kbd><span>Blanks (completar huecos)</span></div>
+      </div>
+    </div>` : ''}
   `);
 
   renderAppHeader(song);
@@ -1050,6 +1073,7 @@ function bindPlayerEvents(song) {
   document.getElementById('toggleTheaterBtn')?.addEventListener('click', toggleTheaterMode, { signal });
   document.getElementById('speedBtn').addEventListener('click', cycleSpeed, { signal });
   document.getElementById('loopBtn').addEventListener('click', onLoopClick, { signal });
+  document.getElementById('shortcutsBtnToolbar')?.addEventListener('click', toggleShortcutsPanel, { signal });
   document.getElementById('volumeBtn').addEventListener('click', toggleMute, { signal });
   document.getElementById('volumeSlider').addEventListener('input', onVolumeChange, { signal });
 
@@ -2975,6 +2999,26 @@ function updateVolumeIcon(vol) {
 }
 
 // ─── Keyboard ──────────────────────────────────────────────────────────────────
+
+// ─── Shortcuts Panel ───────────────────────────────────────────────────────────
+
+function toggleShortcutsPanel() {
+  const panel = document.getElementById('shortcutsPanel');
+  if (!panel) return;
+  const isHidden = panel.classList.toggle('hidden');
+  document.getElementById('shortcutsBtnToolbar')?.classList.toggle('active', !isHidden);
+  if (!isHidden) {
+    // Close on outside click
+    const close = (e) => {
+      if (!panel.contains(e.target) && e.target.id !== 'shortcutsBtnToolbar') {
+        panel.classList.add('hidden');
+        document.getElementById('shortcutsBtnToolbar')?.classList.remove('active');
+        document.removeEventListener('click', close);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
+}
 
 function onKeydown(e) {
   if (e.target.closest('.about-overlay, .unified-nav, .unified-nav-trigger')) return;
