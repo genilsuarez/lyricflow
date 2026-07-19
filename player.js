@@ -712,19 +712,16 @@ export async function loadSong(song) {
         <div class="shortcut-row"><kbd>Space</kbd> / <kbd>K</kbd><span>Play / Pausa</span></div>
         <div class="shortcut-row"><kbd>S</kbd><span>Velocidad</span></div>
         <div class="shortcut-row"><kbd>L</kbd><span>A-B Loop</span></div>
-        <div class="shortcut-row"><kbd>←</kbd> / <kbd>→</kbd><span>Seek ±5s (en barra)</span></div>
+        <div class="shortcut-row"><kbd>←</kbd> / <kbd>→</kbd><span>Seek ±5s</span></div>
         <div class="shortcut-row"><kbd>Shift</kbd>+<kbd>←</kbd> / <kbd>→</kbd><span>Seek ±10s</span></div>
       </div>
       <div class="shortcuts-panel-section">
         <div class="shortcuts-panel-heading">Visualización</div>
-        <div class="shortcut-row"><kbd>N</kbd><span>Números de línea</span></div>
-        <div class="shortcut-row"><kbd>T</kbd><span>Traducción</span></div>
+        <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>N</kbd><span>Números de línea</span></div>
+        <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>T</kbd><span>Traducción</span></div>
         <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>H</kbd><span>Highlight letras</span></div>
       </div>
-      <div class="shortcuts-panel-section">
-        <div class="shortcuts-panel-heading">Modos</div>
-        <div class="shortcut-row"><kbd>B</kbd><span>Blanks (completar huecos)</span></div>
-      </div>
+
     </div>` : ''}
   `);
 
@@ -3046,11 +3043,11 @@ function onKeydown(e) {
   }
 
   if (e.code === 'Space' || e.code === 'KeyK') { e.preventDefault(); togglePlay(); }
-  if (e.code === 'KeyN') toggleLineNumbers();
-  if (e.code === 'KeyT') toggleTranslation();
+  if (e.code === 'KeyN' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); toggleLineNumbers(); }
+  if (e.code === 'KeyT' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); toggleTranslation(); }
   if (e.code === 'KeyS') cycleSpeed();
   if (e.code === 'KeyL') onLoopClick();
-  if (e.code === 'KeyB') toggleBlanksMode();
+
   if (e.code === 'KeyH' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); toggleHighlight(); }
 }
 
