@@ -161,6 +161,27 @@
   --lp-navbtn-accent: #D4764E;
   --lp-navbtn-shadow: 0 1px 3px rgba(44, 36, 24, 0.04), 0 4px 10px rgba(44, 36, 24, 0.04);
   --lp-navbtn-shadow-hover: 0 4px 14px rgba(44, 36, 24, 0.08), 0 2px 6px rgba(44, 36, 24, 0.05);
+
+  /* LP HEADER layout + typography — spec v1 */
+  --lp-header-pad-y: 22px;
+  --lp-header-pad-x: clamp(16px, 3vw, 34px);
+  --lp-header-pad-y-compact: 10px;
+  --lp-header-pad-x-compact: 12px;
+  --lp-navbtn-offset-top: calc((var(--lp-header-height) - var(--lp-navbtn-size)) / 2);
+  --lp-navbtn-offset-top-compact: calc((var(--lp-header-height-compact) - var(--lp-navbtn-size)) / 2);
+  --lp-navbtn-offset-left: 16px;
+  --lp-header-floating-pad-left: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 16px);
+  --lp-header-floating-pad-left-compact: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 6px);
+  --lp-header-title-size: 1.25rem;
+  --lp-header-title-weight: 500;
+  --lp-header-title-tracking: -0.02em;
+  --lp-header-title-line-height: 1.1;
+  --lp-header-sub-size: 0.68rem;
+  --lp-header-sub-weight: 400;
+  --lp-header-sub-line-height: 1.35;
+  --lp-header-tag-size: 10px;
+  --lp-header-tag-weight: 600;
+  --lp-header-tag-tracking: 0.06em;
 }
 
 /* ─── DARK MODE ─── */
@@ -1382,7 +1403,7 @@ body {
   gap: 6px 12px;
   height: var(--lp-header-height);
   min-height: var(--lp-header-height);
-  padding: 22px clamp(16px, 3vw, 34px);
+  padding: var(--lp-header-pad-y) var(--lp-header-pad-x);
   border-bottom: 1.5px solid var(--lp-border);
   background: var(--lp-bg);
   text-align: left;
@@ -1394,7 +1415,7 @@ body {
   gap: 10px;
   height: var(--lp-header-height);
   min-height: var(--lp-header-height);
-  padding: 22px clamp(16px, 3vw, 34px);
+  padding: var(--lp-header-pad-y) var(--lp-header-pad-x);
   flex-wrap: nowrap;
   align-items: center;
   box-sizing: border-box;
@@ -1411,12 +1432,11 @@ body {
 
 .app-header--player .song-title {
   font-family: var(--lp-font-display);
-  font-size: 1.1rem;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: -0.02em;
+  font-size: var(--lp-header-title-size);
+  font-weight: var(--lp-header-title-weight);
+  letter-spacing: var(--lp-header-title-tracking);
   color: var(--lp-ink);
-  line-height: 1.1;
+  line-height: var(--lp-header-title-line-height);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1441,8 +1461,8 @@ body {
 }
 
 .app-header--player .back-btn {
-  width: 36px;
-  height: 36px;
+  width: var(--lp-navbtn-size);
+  height: var(--lp-navbtn-size);
 }
 
 .app-header-brand {
@@ -1455,21 +1475,27 @@ body {
 .app-header-brand h1 {
   margin: 0;
   font-family: var(--lp-font-display);
-  font-size: 1.3rem;
-  font-weight: 500;
-  font-style: italic;
+  font-size: var(--lp-header-title-size);
+  font-weight: var(--lp-header-title-weight);
+  font-style: normal;
   color: var(--lp-ink);
-  letter-spacing: -0.02em;
-  line-height: 1;
+  letter-spacing: var(--lp-header-title-tracking);
+  line-height: var(--lp-header-title-line-height);
   white-space: nowrap;
+}
+
+.app-header-brand h1 em {
+  font-style: italic;
+  color: var(--lp-accent);
+  font-weight: var(--lp-weight-normal);
 }
 
 .app-header-brand span {
   color: var(--lp-muted);
-  font-size: 0.6rem;
-  font-weight: 600;
+  font-size: var(--lp-header-sub-size);
+  font-weight: var(--lp-header-tag-weight);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--lp-header-tag-tracking);
   white-space: nowrap;
 }
 
@@ -1773,7 +1799,7 @@ body {
   .song-list-item .artist { font-size: 0.54rem; margin-top: 2px; }
   .song-tags { margin-top: 3px; }
   .level-badge { font-size: 0.54rem; padding: 1px 5px; }
-  .app-header-brand h1 { font-size: 1.05rem; }
+  .app-header-brand h1 { font-size: var(--lp-header-title-size); }
   .sub-line .original { font-size: 0.92rem; }
   .sub-line.active .original { font-size: 1.02rem; }
 
@@ -4108,37 +4134,25 @@ a:focus-visible,
 
 @media (max-width: 580px) {
   .app-header {
-    height: auto;
+    height: var(--lp-header-height-compact);
     min-height: var(--lp-header-height-compact);
-    padding: 10px 14px 8px;
+    padding: var(--lp-header-pad-y-compact) var(--lp-header-pad-x-compact);
   }
 
   .app-header--player {
     gap: 8px;
     height: var(--lp-header-height-compact);
     min-height: var(--lp-header-height-compact);
-    padding: 10px 12px;
+    padding: var(--lp-header-pad-y-compact) var(--lp-header-pad-x-compact);
   }
 
-  .app-header--player .song-title { font-size: 0.95rem; }
+  .app-header--player .song-title { font-size: var(--lp-header-title-size); }
   .app-header--player .artwork { width: 30px; height: 30px; font-size: 1rem; }
 
-  .lp-header-stats {
-    position: static;
-    transform: none;
-    font-size: 0.75rem;
-    padding: 0 16px;
-    height: 38px;
-    min-width: 150px;
-  }
-
-  .lp-header-stats__value {
-    font-size: 1rem;
-  }
-
-  .lp-header-stats__icon {
-    width: 14px;
-    height: 14px;
+  /* Pill de progreso global: en mobile el header menu es solo marca + ☰;
+     la pill desbordaba y empujaba el layout — el progreso sigue visible en stats/cards. */
+  .app-header:not(.app-header--player) #appHeaderProgress {
+    display: none;
   }
 
   .song-card-meta {
@@ -4370,8 +4384,8 @@ body {
 
 .unified-nav-trigger {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: var(--lp-navbtn-offset-top);
+  left: var(--lp-navbtn-offset-left);
   z-index: var(--lp-navbtn-z);
   display: none;
   font-size: 1rem;
@@ -4416,7 +4430,7 @@ body {
   }
 
   html[data-navigation-mode="floating"] .app-header {
-    padding-left: 88px;
+    padding-left: var(--lp-header-floating-pad-left);
   }
 }
 
@@ -4436,13 +4450,13 @@ body {
   }
 
   .unified-nav-trigger {
-    top: 16px;
-    left: 16px;
+    top: var(--lp-navbtn-offset-top-compact);
+    left: var(--lp-navbtn-offset-left);
     display: flex;
   }
 
   .app-header {
-    padding-left: 64px;
+    padding-left: var(--lp-header-floating-pad-left-compact);
   }
 
   .site-foot {
@@ -4583,6 +4597,14 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--lp-accent-text);
+}
+
+/* Solo mobile: el anillo se oculta y el % va inline en el kicker */
+.dash-hero__pct-inline {
+  display: none;
+  font-weight: 700;
+  color: var(--lp-accent-text);
+  letter-spacing: 0.04em;
 }
 
 .dash-hero__title {
@@ -4884,15 +4906,106 @@ body {
   .dash-hero {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
-    padding: 20px 16px;
+    gap: 10px;
+    padding: 14px 14px 12px;
   }
-  .dash-hero__ring { align-self: center; }
-  .stats-ring--lg { width: 110px; height: 110px; }
-  .dash-hero__pct strong { font-size: 1.3rem; }
-  .dash-hero__title { font-size: 1.1rem; }
-  .dash-hero__metrics { gap: 12px; }
-  .dash-activities { grid-template-columns: repeat(2, 1fr); }
+
+  /* Sin anillo en mobile: el espacio vertical se redistribuye al copy + CTA */
+  .dash-hero__ring { display: none; }
+  .dash-hero__pct-inline { display: inline; }
+
+  .dash-hero__body { gap: 8px; }
+
+  .dash-hero__title-row {
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dash-hero__title {
+    font-size: 1.05rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dash-hero__browse {
+    font-size: 0.68rem;
+    flex-shrink: 0;
+  }
+
+  .dash-hero__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 6px;
+    padding: 10px 0;
+    border-top: 1px solid color-mix(in srgb, var(--lp-border) 85%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--lp-border) 85%, transparent);
+  }
+
+  .dash-metric strong { font-size: 1rem; }
+  .dash-metric span { font-size: 0.54rem; }
+
+  .dash-hero__cta {
+    margin-top: 2px;
+    padding: 9px 12px;
+  }
+
+  .dash-hero__cta-play {
+    padding: 6px 12px;
+  }
+
+  .dashboard-view { gap: 12px; }
+
+  /* Actividades: tarjetas horizontales compactas (icono + label + count, barra abajo) */
+  .dash-activities {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .dash-act-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "icon label count"
+      "bar bar bar";
+    align-items: center;
+    column-gap: 7px;
+    row-gap: 5px;
+    padding: 8px 9px 7px;
+  }
+
+  .dash-act-icon {
+    grid-area: icon;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .dash-act-label {
+    grid-area: label;
+    font-size: 0.56rem;
+    letter-spacing: 0.03em;
+    justify-self: start;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dash-act-count {
+    grid-area: count;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--lp-ink);
+  }
+
+  .dash-act-bar {
+    grid-area: bar;
+    height: var(--lp-progress-height-compact);
+  }
+
+  /* Sin actividad reciente: ocultar bloque vacío en mobile */
+  .dash-recent:has(.dash-empty) { display: none; }
 }
 
 /* ─── Picker solo search (no hero) ─── */

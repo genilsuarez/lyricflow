@@ -432,7 +432,7 @@ function renderAppHeader(song) {
     header.classList.remove('app-header--player');
     header.innerHTML = `
       <div class="app-header-brand">
-        <h1>LyricFlow</h1>
+        <h1>Lyric<em>Flow</em></h1>
         <span>Aprende idiomas con música</span>
       </div>
       <div class="lp-header-stats" id="appHeaderProgress" role="status" aria-label="Progreso total de LyricFlow"></div>
