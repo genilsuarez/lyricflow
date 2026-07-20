@@ -4168,12 +4168,12 @@ a:focus-visible,
     display: none;
   }
 
-  .song-learning-progress--player {
-    position: static;
-    transform: none;
-  }
-
-  .song-learning-progress--player .song-progress-track {
+  /* En el header del player, título + artista + badge de nivel ya compiten por
+     espacio en una sola fila sin wrap — agregar la píldora de progreso ahí
+     la aplastaba contra el badge y la cortaba en el borde. Se prioriza que el
+     header se vea limpio sobre mostrar el progreso (visible igual dentro del
+     cuerpo de la lección). */
+  .app-header--player .song-learning-progress--player {
     display: none;
   }
 
