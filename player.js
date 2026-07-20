@@ -852,7 +852,7 @@ function setNavigationOpen(isOpen, restoreFocus = false) {
   const backdrop = document.getElementById('unifiedNavBackdrop');
   if (!navigation || !trigger || !backdrop) return;
 
-  const isPersistent = window.innerWidth > 580 && navigationMode() === 'sidebar';
+  const isPersistent = window.innerWidth >= 861 && navigationMode() === 'sidebar';
   const isInteractive = isPersistent || isOpen;
   navigation.classList.toggle('is-open', isOpen);
   navigation.inert = !isInteractive;

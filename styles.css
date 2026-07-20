@@ -139,12 +139,12 @@
   --lp-score-font-weight: 600;
   --lp-score-value-size: 1.125rem;
   --lp-score-value-weight: 700;
-  --lp-score-bg: #F0EDE7;
-  --lp-score-border: #E8E0D4;
-  --lp-score-shadow: 0 1px 3px rgba(44, 36, 24, 0.04), 0 4px 10px rgba(44, 36, 24, 0.04);
+  --lp-score-bg: #FFFFFF;
+  --lp-score-border: #E5E7EB;
+  --lp-score-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
   --lp-score-value-color: #2C2418;
   --lp-score-label-color: #9C8E7C;
-  --lp-score-icon-color: #C87D0A;
+  --lp-score-icon-color: #2563EB;
   --lp-score-success-color: #27865A;
   --lp-score-error-color: #C0392B;
 
@@ -170,8 +170,8 @@
   --lp-navbtn-offset-top: calc((var(--lp-header-height) - var(--lp-navbtn-size)) / 2);
   --lp-navbtn-offset-top-compact: calc((var(--lp-header-height-compact) - var(--lp-navbtn-size)) / 2);
   --lp-navbtn-offset-left: 16px;
-  --lp-header-floating-pad-left: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 16px);
-  --lp-header-floating-pad-left-compact: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 6px);
+  --lp-header-floating-pad-left: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 18px);
+  --lp-header-floating-pad-left-compact: calc(var(--lp-navbtn-offset-left) + var(--lp-navbtn-size) + 8px);
   --lp-header-title-size: 1.25rem;
   --lp-header-title-weight: 500;
   --lp-header-title-tracking: -0.02em;
@@ -184,30 +184,30 @@
   --lp-header-tag-tracking: 0.06em;
 }
 
-/* ─── DARK MODE ─── */
+/* ─── DARK MODE — slate suave (alineado con DeskFlow) ─── */
 [data-theme="dark"] {
-  --lp-bg: #1A1714;
-  --lp-bg-paper: #211D18;
-  --lp-surface: #282420;
-  --lp-surface-raised: rgba(255, 245, 235, 0.07);
-  --lp-surface-sunken: rgba(255, 245, 235, 0.04);
+  --lp-bg: #181B20;
+  --lp-bg-paper: #1E2228;
+  --lp-surface: #252930;
+  --lp-surface-raised: #2B3038;
+  --lp-surface-sunken: #14171C;
 
-  --lp-border: #3D362C;
-  --lp-border-strong: #504839;
-  --lp-border-subtle: #2E2820;
+  --lp-border: #353B45;
+  --lp-border-strong: #454C58;
+  --lp-border-subtle: #2A2F38;
 
-  --lp-ink: #EDE8E0;
-  --lp-ink-soft: #B5ADA2;
-  --lp-muted: #998E84;
-  --lp-ink-faint: rgba(237, 232, 224, 0.12);
-  --lp-ink-inverse: #1A1714;
+  --lp-ink: #E8EAED;
+  --lp-ink-soft: #A8B0BC;
+  --lp-muted: #7A8494;
+  --lp-ink-faint: rgba(232, 234, 237, 0.12);
+  --lp-ink-inverse: #181B20;
 
-  --lp-accent-soft: #16233D;
+  --lp-accent-soft: #1A2744;
   --lp-accent-glow: color-mix(in srgb, var(--lp-accent) 25%, transparent);
   --lp-accent-text: #60a5fa;
 
-  --lp-success: #4FB07A;
-  --lp-success-soft: #16301F;
+  --lp-success: #5EBD85;
+  --lp-success-soft: #1A2D20;
 
   --lp-cat-blue-soft: #1E3350;
   --lp-cat-amber-soft: #3D3018;
@@ -215,29 +215,29 @@
   --lp-cat-purple-soft: #2E2240;
   --lp-cat-teal-soft: #1F3838;
 
-  --lp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15);
-  --lp-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.18);
-  --lp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.22), 0 2px 4px rgba(0, 0, 0, 0.18);
-  --lp-shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.12);
-  --lp-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+  --lp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --lp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.16), 0 4px 10px rgba(0, 0, 0, 0.12);
+  --lp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.12);
+  --lp-shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.1);
+  --lp-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.12);
 
   /* ─── Score/stats pill (header, dark) — homologado entre las 4 apps ─── */
-  --lp-score-bg: #151210;
-  --lp-score-border: #3D362C;
-  --lp-score-shadow: 0 2px 4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.18);
-  --lp-score-value-color: #EDE8E0;
-  --lp-score-label-color: #998E84;
-  --lp-score-icon-color: #E6A832;
-  --lp-score-success-color: #4FB07A;
+  --lp-score-bg: #1E2228;
+  --lp-score-border: #353B45;
+  --lp-score-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.14);
+  --lp-score-value-color: #E8EAED;
+  --lp-score-label-color: #7A8494;
+  --lp-score-icon-color: #6B9FE8;
+  --lp-score-success-color: #A8B0BC;
   --lp-score-error-color: #C0392B;
 
   /* ─── Botón de navegación (dark) — homologado entre las 4 apps ─── */
-  --lp-navbtn-border: #3D362C;
-  --lp-navbtn-bg: #282420;
-  --lp-navbtn-icon-color: #B5ADA2;
-  --lp-navbtn-accent: #D4764E;
-  --lp-navbtn-shadow: 0 2px 4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.18);
-  --lp-navbtn-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.18);
+  --lp-navbtn-border: #353B45;
+  --lp-navbtn-bg: #252930;
+  --lp-navbtn-icon-color: #A8B0BC;
+  --lp-navbtn-accent: #2563EB;
+  --lp-navbtn-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.14);
+  --lp-navbtn-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.14);
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
@@ -324,7 +324,7 @@ body {
   z-index: 1;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] .grain { opacity: 0.12; }
+[data-theme="dark"] .grain { opacity: 0.06; }
 
 /* ─── App Stage (centers the floating card between the page header/footer,
    sizing driven by its own flex:1 space — no viewport arithmetic needed) ────── */
@@ -4117,7 +4117,7 @@ a:focus-visible,
   color: var(--lp-ink); text-decoration: none;
   transition: border-color 0.2s var(--lp-ease), transform 0.2s var(--lp-ease);
 }
-[data-theme="dark"] .about-modules a { background: #151210; }
+[data-theme="dark"] .about-modules a { background: var(--lp-surface-sunken); }
 .about-modules a:hover { border-color: var(--lp-accent); transform: translateY(-2px); }
 .about-modules a:focus-visible { outline: 3px solid var(--lp-accent); outline-offset: 2px; }
 .about-modules strong { font-size: 0.78rem; }
@@ -4133,12 +4133,6 @@ a:focus-visible,
 .about-author__info span { font-size: 0.68rem; color: var(--lp-muted); }
 
 @media (max-width: 580px) {
-  .app-header {
-    height: var(--lp-header-height-compact);
-    min-height: var(--lp-header-height-compact);
-    padding: var(--lp-header-pad-y-compact) var(--lp-header-pad-x-compact);
-  }
-
   .app-header--player {
     gap: 8px;
     height: var(--lp-header-height-compact);
@@ -4148,12 +4142,6 @@ a:focus-visible,
 
   .app-header--player .song-title { font-size: var(--lp-header-title-size); }
   .app-header--player .artwork { width: 30px; height: 30px; font-size: 1rem; }
-
-  /* Pill de progreso global: en mobile el header menu es solo marca + ☰;
-     la pill desbordaba y empujaba el layout — el progreso sigue visible en stats/cards. */
-  .app-header:not(.app-header--player) #appHeaderProgress {
-    display: none;
-  }
 
   .song-card-meta {
     align-items: flex-end;
@@ -4408,7 +4396,7 @@ body {
   opacity: 1;
 }
 
-@media (min-width: 581px) {
+@media (min-width: 861px) {
   html[data-navigation-mode="sidebar"] body {
     padding-left: 232px;
   }
@@ -4434,7 +4422,7 @@ body {
   }
 }
 
-@media (max-width: 580px) {
+@media (max-width: 860px) {
   .unified-nav {
     inset: 0 auto 0 0;
     width: min(232px, 86vw);
@@ -4453,10 +4441,43 @@ body {
     top: var(--lp-navbtn-offset-top-compact);
     left: var(--lp-navbtn-offset-left);
     display: flex;
+    border: none;
+    border-radius: var(--lp-radius-md);
+    background: transparent;
+    box-shadow: none;
+    color: var(--lp-ink-soft);
+    font-size: 1.0625rem;
+    font-weight: 400;
+  }
+
+  .unified-nav-trigger:hover {
+    background: color-mix(in srgb, var(--lp-ink) 5%, transparent);
+    border-color: transparent;
+    box-shadow: none;
+    transform: none;
+    color: var(--lp-ink);
+  }
+
+  .unified-nav-trigger:active {
+    background: color-mix(in srgb, var(--lp-ink) 9%, transparent);
+    transform: scale(0.97);
+  }
+
+  /* Sidebar pin es desktop-only — ocultar toggle de modo nav en mobile/tablet */
+  .unified-nav-mode-toggle {
+    display: none;
   }
 
   .app-header {
+    height: var(--lp-header-height-compact);
+    min-height: var(--lp-header-height-compact);
+    padding: var(--lp-header-pad-y-compact) var(--lp-header-pad-x-compact);
     padding-left: var(--lp-header-floating-pad-left-compact);
+  }
+
+  /* Pill global: en mobile/tablet el header es marca + ☰ (homologado HubFlow ≤860) */
+  .app-header:not(.app-header--player) #appHeaderProgress {
+    display: none;
   }
 
   .site-foot {
