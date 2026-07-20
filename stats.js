@@ -212,7 +212,7 @@ export function renderDashboard(onSongClick, onShowSongs) {
         </div>
         <div class="dash-hero__body">
           <div class="dash-hero__headline">
-            <span class="dash-hero__kicker">Tu progreso</span>
+            <span class="dash-hero__kicker">Tu progreso<span class="dash-hero__pct-inline"> · ${pct}% completado</span></span>
             <div class="dash-hero__title-row">
               <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
               <button type="button" class="dash-hero__browse" id="dashSongsCta">Ver todas →</button>
