@@ -147,6 +147,20 @@
   --lp-score-icon-color: #C87D0A;
   --lp-score-success-color: #27865A;
   --lp-score-error-color: #C0392B;
+
+  /* Botón de navegación (hamburguesa/ícono circular) — homologado entre las 4 apps.
+     Tokens dedicados, no reutilizan --lp-border/--lp-shadow-sm/etc. directamente para
+     que el botón nunca se desvíe si esos tokens generales cambian en una sola app. */
+  --lp-navbtn-size: 44px;
+  --lp-navbtn-radius: 50%;
+  --lp-navbtn-border-width: 1.5px;
+  --lp-navbtn-z: 35;
+  --lp-navbtn-border: #E8E0D4;
+  --lp-navbtn-bg: #FFFFFF;
+  --lp-navbtn-icon-color: #5E5041;
+  --lp-navbtn-accent: #D4764E;
+  --lp-navbtn-shadow: 0 1px 3px rgba(44, 36, 24, 0.04), 0 4px 10px rgba(44, 36, 24, 0.04);
+  --lp-navbtn-shadow-hover: 0 4px 14px rgba(44, 36, 24, 0.08), 0 2px 6px rgba(44, 36, 24, 0.05);
 }
 
 /* ─── DARK MODE ─── */
@@ -195,6 +209,14 @@
   --lp-score-icon-color: #E6A832;
   --lp-score-success-color: #4FB07A;
   --lp-score-error-color: #C0392B;
+
+  /* ─── Botón de navegación (dark) — homologado entre las 4 apps ─── */
+  --lp-navbtn-border: #3D362C;
+  --lp-navbtn-bg: #282420;
+  --lp-navbtn-icon-color: #B5ADA2;
+  --lp-navbtn-accent: #D4764E;
+  --lp-navbtn-shadow: 0 2px 4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.18);
+  --lp-navbtn-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
@@ -3619,21 +3641,21 @@ body {
 .lp-btn--ghost:hover { border-color: var(--lp-accent); color: var(--lp-accent); }
 
 .lp-icon-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid var(--lp-border);
-  background: var(--lp-surface);
-  color: var(--lp-ink-soft);
+  width: var(--lp-navbtn-size);
+  height: var(--lp-navbtn-size);
+  border-radius: var(--lp-navbtn-radius);
+  border: var(--lp-navbtn-border-width) solid var(--lp-navbtn-border);
+  background: var(--lp-navbtn-bg);
+  color: var(--lp-navbtn-icon-color);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 0.9rem;
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-navbtn-shadow);
   transition: border-color 0.2s, transform 0.2s, background 0.2s, box-shadow 0.2s, color 0.2s;
 }
-.lp-icon-btn:hover { border-color: var(--lp-accent); transform: scale(1.06); box-shadow: var(--lp-shadow-md); }
+.lp-icon-btn:hover { border-color: var(--lp-navbtn-accent); transform: scale(1.06); box-shadow: var(--lp-navbtn-shadow-hover); }
 .lp-icon-btn.active {
   background: var(--lp-accent-soft);
   border-color: color-mix(in srgb, var(--lp-accent) 35%, transparent);
@@ -4350,9 +4372,8 @@ body {
   position: fixed;
   top: 16px;
   left: 16px;
-  z-index: 200;
+  z-index: var(--lp-navbtn-z);
   display: none;
-  color: var(--lp-ink-soft);
   font-size: 1rem;
 }
 
@@ -4422,6 +4443,10 @@ body {
 
   .app-header {
     padding-left: 64px;
+  }
+
+  .site-foot {
+    display: none;
   }
 }
 
