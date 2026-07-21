@@ -204,7 +204,7 @@
 
   --lp-accent-soft: #1A2744;
   --lp-accent-glow: color-mix(in srgb, var(--lp-accent) 25%, transparent);
-  --lp-accent-text: #60a5fa;
+  --lp-accent-text: #93c5fd;
 
   --lp-success: #5EBD85;
   --lp-success-soft: #1A2D20;
@@ -4730,9 +4730,21 @@ body {
 }
 
 .unified-nav-item.is-active {
-  background: color-mix(in srgb, var(--lp-accent) 16%, var(--lp-surface));
+  background: var(--lp-accent-soft);
   color: var(--lp-accent-text);
   font-weight: 700;
+}
+
+[data-theme="dark"] .unified-nav-item.is-active {
+  background: color-mix(in srgb, var(--lp-accent) 20%, var(--lp-surface-raised));
+  border: 1px solid color-mix(in srgb, var(--lp-accent-text) 42%, transparent);
+  color: var(--lp-accent-text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--lp-accent-text) 10%, transparent);
+}
+
+[data-theme="dark"] .unified-nav-item:hover:not(.is-active) {
+  background: var(--lp-surface);
+  color: var(--lp-ink);
 }
 
 .unified-nav-mode-toggle {
@@ -4773,6 +4785,18 @@ body {
   color: currentColor;
 }
 
+.unified-nav-icon .lp-nav-svg,
+.lp-icon-btn .lp-nav-svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.lp-icon-btn > .lp-nav-svg {
+  width: 20px;
+  height: 20px;
+}
+
 .unified-nav-icon.nav-dot--purple { color: var(--lp-cat-purple); }
 .unified-nav-icon.nav-dot--amber { color: var(--lp-cat-amber); }
 
@@ -4785,7 +4809,7 @@ body {
 }
 
 .unified-nav-footer .unified-nav-icon {
-  color: var(--lp-accent);
+  color: var(--lp-accent-text);
 }
 
 .unified-nav-trigger {
