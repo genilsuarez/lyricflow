@@ -212,10 +212,12 @@ export function renderDashboard(onSongClick, onShowSongs) {
         </div>
         <div class="dash-hero__body">
           <div class="dash-hero__headline">
-            <span class="dash-hero__kicker">Tu progreso<span class="dash-hero__pct-inline"> · ${pct}% completado</span></span>
             <div class="dash-hero__title-row">
-              <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
-              <button type="button" class="dash-hero__browse" id="dashSongsCta">Ver todas →</button>
+              <div class="dash-hero__lead">
+                <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
+                <span class="dash-hero__pct-badge" aria-label="${pct}% completado">${pct}%</span>
+              </div>
+              <button type="button" class="dash-hero__browse" id="dashSongsCta">Ver todas</button>
             </div>
           </div>
           <div class="dash-hero__metrics">
@@ -337,7 +339,7 @@ export function renderStats() {
         </div>
         <div class="sv-top__info">
           <div class="sv-top__title">
-            <span class="sv-kicker">Tus metricas</span>
+            <span class="sv-kicker">Tus metricas<span class="sv-top__pct-inline"> · ${pct}% completado</span></span>
             <h2>Estadisticas</h2>
           </div>
           <div class="sv-top__numbers">
@@ -346,7 +348,7 @@ export function renderStats() {
             <div class="sv-stat"><strong>${totalAttempts}</strong><span>intentos</span></div>
             ${bestScore !== null ? `<div class="sv-stat"><strong>${Math.round(bestScore)}%</strong><span>mejor score</span></div>` : ''}
             <div class="sv-stat"><strong>${streak.current}</strong><span>racha actual</span></div>
-            <div class="sv-stat"><strong>${streak.best}</strong><span>mejor racha</span></div>
+            <div class="sv-stat sv-stat--hide-mobile"><strong>${streak.best}</strong><span>mejor racha</span></div>
           </div>
         </div>
       </div>
