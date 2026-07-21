@@ -847,13 +847,18 @@ function currentThemeIcon() {
 }
 
 function toggleTheme(iconEl) {
-  document.documentElement.classList.add('theme-transitioning');
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const newTheme = isDark ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : '');
-  localStorage.setItem('lp-theme', newTheme);
+  if (window.LPTheme) {
+    window.LPTheme.toggleTheme();
+  } else {
+    document.documentElement.classList.add('theme-transitioning');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    if (newTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('lp-theme', newTheme);
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
+  }
   if (iconEl) iconEl.textContent = currentThemeIcon();
-  setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
 }
 
 // Portal + theme toggle wiring shared by every view that carries the
@@ -874,6 +879,7 @@ function themedAppHref(path, localPort) {
     : isLocalHost()
       ? new URL(`http://${location.hostname}:${localPort}/`)
       : new URL(path, location.origin);
+  if (window.LPTheme) return window.LPTheme.appendThemeToHref(url.toString());
   return url.toString();
 }
 
