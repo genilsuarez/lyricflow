@@ -4705,7 +4705,9 @@ body {
   border-right: 1.5px solid var(--lp-border);
   background: var(--lp-bg-paper);
   box-shadow: var(--lp-shadow-md);
-  transition: transform 0.3s var(--lp-ease), opacity 0.2s var(--lp-ease);
+  transform: translate3d(-100%, 0, 0);
+  transition: transform 320ms cubic-bezier(0.22, 0.9, 0.36, 1);
+  backface-visibility: hidden;
 }
 
 .unified-nav-brand {
@@ -4896,15 +4898,15 @@ body {
   z-index: 201;
   visibility: hidden;
   opacity: 0;
-  background: color-mix(in srgb, var(--lp-bg) 72%, transparent);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: opacity 0.2s var(--lp-ease), visibility 0.2s var(--lp-ease);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--lp-ink) 45%, transparent);
+  transition: opacity 320ms cubic-bezier(0.22, 0.9, 0.36, 1), visibility 320ms;
 }
 
 .unified-nav-backdrop.is-open {
   visibility: visible;
   opacity: 1;
+  pointer-events: auto;
 }
 
 @media (min-width: 861px) {
@@ -4915,7 +4917,7 @@ body {
   html[data-navigation-mode="sidebar"] .unified-nav {
     opacity: 1;
     pointer-events: auto;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
 
   html[data-navigation-mode="sidebar"] .unified-nav-trigger,
@@ -4932,15 +4934,13 @@ body {
   }
 
   html[data-navigation-mode="floating"] .unified-nav {
-    opacity: 0;
     pointer-events: none;
-    transform: translateX(-102%);
+    transform: translate3d(-100%, 0, 0);
   }
 
   html[data-navigation-mode="floating"] .unified-nav.is-open {
-    opacity: 1;
     pointer-events: auto;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   html[data-navigation-mode="floating"] .unified-nav-trigger {
@@ -4966,15 +4966,13 @@ body {
   .unified-nav {
     inset: 0 auto 0 0;
     width: min(232px, 86vw);
-    opacity: 0;
     pointer-events: none;
-    transform: translateX(-102%);
+    transform: translate3d(-100%, 0, 0);
   }
 
   .unified-nav.is-open {
-    opacity: 1;
     pointer-events: auto;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   .unified-nav-trigger {
