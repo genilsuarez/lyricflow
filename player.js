@@ -467,7 +467,7 @@ function renderAppHeader(song) {
             ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
           </div>
         </div>
-        <button class="lp-icon-btn app-header__menu-btn" id="headerMenuBtn" type="button" aria-label="Abrir navegación" aria-controls="unifiedNavigation" aria-expanded="false">☰</button>
+        <button class="lp-icon-btn app-header__menu-btn" id="headerMenuBtn" type="button" aria-label="Abrir navegación" aria-controls="unifiedNavigation" aria-expanded="false">${navIcon('menu')}</button>
         ${songProgressHtml(song.id, 'song-learning-progress--player')}
       </div>
     `;
@@ -841,9 +841,13 @@ export async function loadSong(song) {
 
 // ─── Theme (shared between picker and player) ──────────────────────────────────
 
+function navIcon(name) {
+  return window.LpNavIcons ? window.LpNavIcons.svg(name) : '';
+}
+
 function currentThemeIcon() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return isDark ? '☀️' : '🌙';
+  return window.LpNavIcons ? window.LpNavIcons.themeIcon(isDark) : '';
 }
 
 function toggleTheme(iconEl) {
@@ -858,7 +862,10 @@ function toggleTheme(iconEl) {
     localStorage.setItem('lp-theme', newTheme);
     setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
   }
-  if (iconEl) iconEl.textContent = currentThemeIcon();
+  if (iconEl && window.LpNavIcons) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    window.LpNavIcons.setTheme(iconEl, isDark);
+  }
 }
 
 // Portal + theme toggle wiring shared by every view that carries the
@@ -1017,7 +1024,7 @@ function initUnifiedNavigation() {
   trigger.setAttribute('aria-label', 'Abrir navegación');
   trigger.setAttribute('aria-controls', 'unifiedNavigation');
   trigger.setAttribute('aria-expanded', 'false');
-  trigger.textContent = '☰';
+  trigger.innerHTML = navIcon('menu');
 
   const backdrop = document.createElement('div');
   backdrop.id = 'unifiedNavBackdrop';
@@ -1036,28 +1043,28 @@ function initUnifiedNavigation() {
     </div>
     <nav class="unified-nav-menu" aria-label="Navegación principal">
       <button class="unified-nav-item is-active" id="navigationHome" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Inicio</span>
       </button>
       <button class="unified-nav-item" id="navigationSongs" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">🎵</span><span>Canciones</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('music')}</span><span>Canciones</span>
       </button>
       <button class="unified-nav-item" id="navigationStats" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">📊</span><span>Estadísticas</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('chart')}</span><span>Estadísticas</span>
       </button>
 
     </nav>
     <footer class="unified-nav-footer">
       <button class="unified-nav-item" id="navigationAbout" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">ⓘ</span><span>About LearnFlow</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>About LearnFlow</span>
       </button>
       <button class="unified-nav-item" id="navigationTheme" type="button">
         <span class="unified-nav-icon" id="navigationThemeIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeLabel">Modo oscuro</span>
       </button>
       <button class="unified-nav-item" id="navigationLogin" type="button" aria-label="Iniciar sesión">
-        <span class="unified-nav-icon" aria-hidden="true">👤</span><span>Iniciar Sesión</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('user')}</span><span>Iniciar Sesión</span>
       </button>
       <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('/deskflow/', 3000)}">
-        <span class="unified-nav-icon" aria-hidden="true">⌂</span><span>Portal</span>
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
       </a>
     </footer>
   `;
