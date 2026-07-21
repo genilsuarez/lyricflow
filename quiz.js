@@ -79,13 +79,16 @@ function shuffle(arr) {
   return a;
 }
 
-function pickDistractors(values, exclude, count) {
-  const unique = [...new Set(values.filter(v => v && v !== exclude))];
+function pickDistractors(values, exclude, count, alsoExclude = null) {
+  const unique = [...new Set(values.filter(v => v && v !== exclude && v !== alsoExclude))];
   return shuffle(unique).slice(0, count);
 }
 
 function makeQuestion(type, word, prompt, answer, distractors) {
-  return { type, word, prompt, answer, options: shuffle([answer, ...distractors]) };
+  const uniqueDistractors = [...new Set(distractors.filter(d => d && d !== answer))];
+  if (uniqueDistractors.length < 3) return null;
+  const options = shuffle([answer, ...uniqueDistractors.slice(0, 3)]);
+  return { type, word, prompt, answer, options, correctIndex: options.indexOf(answer) };
 }
 
 function buildPool(vocabData) {
@@ -98,32 +101,28 @@ function buildPool(vocabData) {
   vocabData.forEach(entry => {
     if (entry.translation) {
       const distractors = pickDistractors(allTranslations, entry.translation, 3);
-      if (distractors.length === 3) {
-        pool.push(makeQuestion('translation', entry.word, `¿Qué significa "${entry.word}"?`, entry.translation, distractors));
-      }
+      const q = makeQuestion('translation', entry.word, `¿Qué significa "${entry.word}"?`, entry.translation, distractors);
+      if (q) pool.push(q);
     }
 
     if (entry.synonyms?.length) {
       const answer = entry.synonyms[Math.floor(Math.random() * entry.synonyms.length)];
-      const distractors = pickDistractors(allWords, entry.word, 3);
-      if (distractors.length === 3) {
-        pool.push(makeQuestion('synonym', entry.word, `¿Cuál es sinónimo de "${entry.word}"?`, answer, distractors));
-      }
+      const distractors = pickDistractors(allWords, entry.word, 3, answer);
+      const q = makeQuestion('synonym', entry.word, `¿Cuál es sinónimo de "${entry.word}"?`, answer, distractors);
+      if (q) pool.push(q);
     }
 
     if (entry.antonyms?.length) {
       const answer = entry.antonyms[Math.floor(Math.random() * entry.antonyms.length)];
-      const distractors = pickDistractors(allWords, entry.word, 3);
-      if (distractors.length === 3) {
-        pool.push(makeQuestion('antonym', entry.word, `¿Cuál es el opuesto de "${entry.word}"?`, answer, distractors));
-      }
+      const distractors = pickDistractors(allWords, entry.word, 3, answer);
+      const q = makeQuestion('antonym', entry.word, `¿Cuál es el opuesto de "${entry.word}"?`, answer, distractors);
+      if (q) pool.push(q);
     }
 
     if (entry.type === 'phrasal' && entry.formalEquivalent) {
-      const distractors = pickDistractors(allWords, entry.word, 3);
-      if (distractors.length === 3) {
-        pool.push(makeQuestion('formal', entry.word, `¿Cuál es el equivalente formal de "${entry.word}"?`, entry.formalEquivalent, distractors));
-      }
+      const distractors = pickDistractors(allWords, entry.word, 3, entry.formalEquivalent);
+      const q = makeQuestion('formal', entry.word, `¿Cuál es el equivalente formal de "${entry.word}"?`, entry.formalEquivalent, distractors);
+      if (q) pool.push(q);
     }
   });
 
@@ -204,7 +203,8 @@ function onOptionClick(e) {
 
   const q = quizQuestions[quizIndex];
   const chosenIdx = Number(e.currentTarget.dataset.index);
-  if (q.options[chosenIdx] === q.answer) quizScore++;
+  const correctIdx = q.correctIndex ?? q.options.indexOf(q.answer);
+  if (chosenIdx === correctIdx) quizScore++;
 
   // Update progress bar to current completed question
   const total = quizQuestions.length;
@@ -214,7 +214,7 @@ function onOptionClick(e) {
   const optionsEl = document.getElementById('quizOptions');
   optionsEl.querySelectorAll('.quiz-option').forEach((btn, i) => {
     btn.disabled = true;
-    if (q.options[i] === q.answer) btn.classList.add('quiz-option--correct');
+    if (i === correctIdx) btn.classList.add('quiz-option--correct');
     else if (i === chosenIdx) btn.classList.add('quiz-option--wrong');
   });
 
@@ -284,7 +284,8 @@ function renderQuizResults() {
   // Remove external next-btn container (results have their own buttons)
   const nextBtnContainer = document.getElementById('quizNextBtnContainer');
   if (nextBtnContainer) nextBtnContainer.remove();
-  document.getElementById('quizBody').innerHTML = `
+  const quizBody = document.getElementById('quizBody');
+  quizBody.innerHTML = `
     <div class="quiz-results">
       <div class="quiz-score-ring">
         <svg viewBox="0 0 100 100">
@@ -302,6 +303,7 @@ function renderQuizResults() {
       </div>
     </div>
   `;
+  quizBody.scrollTop = 0;
 
   // Animate ring after DOM paint
   requestAnimationFrame(() => {

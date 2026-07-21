@@ -164,15 +164,21 @@ export function modeToolbarHtml(song, activeMode = '') {
   const visited = (section) => getSectionVisited(song.id, section);
   const check = (show) => show ? '<span class="toolbar-done-dot" aria-label="completada">✓</span>' : '';
   const eye = (show) => show ? '<span class="toolbar-done-dot toolbar-done-dot--visited" aria-label="visitado">👁</span>' : '';
+  const overflowActive = activeMode === 'vocab' || activeMode === 'culture';
   return `
     <div class="mode-toolbar">
       <div class="ctrl-group ctrl-group--study">
         <button class="toggle-player-btn${activeMode === '' ? ' active' : ''}${done('listen') ? ' is-activity-done' : ''}" id="togglePlayerBtn" aria-label="Volver al reproductor" data-tooltip="Escucha${done('listen') ? ' ✓' : ''}">🎵${check(done('listen'))}</button>
-        <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}${visited('vocab') ? ' is-activity-done' : ''}" id="toggleVocabBtn" aria-label="Vocabulario" data-tooltip="Vocabulario${visited('vocab') ? ' ✓' : ''}">📖${eye(visited('vocab'))}</button>
         <button class="toggle-listening-btn${activeMode === 'listening' ? ' active' : ''}${done('dictation') ? ' is-activity-done' : ''}" id="toggleListeningBtn" aria-label="Dictado auditivo" data-tooltip="Dictado${done('dictation') ? ' ✓' : ''}">🎧${check(done('dictation'))}</button>
         <button class="toggle-blanks-btn${activeMode === 'blanks' ? ' active' : ''}${done('challenge') ? ' is-activity-done' : ''}" id="toggleBlanksBtn" aria-label="Fill in the blanks" data-tooltip="Completar huecos${done('challenge') ? ' ✓' : ''}">✎${check(done('challenge'))}</button>
         <button class="toggle-quiz-btn${activeMode === 'quiz' ? ' active' : ''}${done('quiz') ? ' is-activity-done' : ''}" id="toggleQuizBtn" aria-label="Mini Quiz" data-tooltip="Quiz${done('quiz') ? ' ✓' : ''}">🧠${check(done('quiz'))}</button>
-        ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${eye(visited('culture'))}</button>` : ''}
+        <div class="ctrl-study-more">
+          <button type="button" class="ctrl-study-more-btn${overflowActive ? ' has-active-overflow' : ''}" id="toggleStudyMoreBtn" aria-label="Más modos de estudio" aria-expanded="false" aria-haspopup="true" data-tooltip="Más">+</button>
+          <div class="ctrl-study-overflow" id="studyOverflowMenu" role="menu" aria-label="Más modos de estudio">
+            <button class="toggle-vocab-btn${activeMode === 'vocab' ? ' active' : ''}${visited('vocab') ? ' is-activity-done' : ''}" id="toggleVocabBtn" role="menuitem" aria-label="Vocabulario" data-tooltip="Vocabulario${visited('vocab') ? ' ✓' : ''}">📖${eye(visited('vocab'))}</button>
+            ${song.culture ? `<button class="toggle-culture-btn${activeMode === 'culture' ? ' active' : ''}${visited('culture') ? ' is-activity-done' : ''}" id="toggleCultureBtn" role="menuitem" aria-label="Contexto cultural" data-tooltip="Cultura${visited('culture') ? ' ✓' : ''}">🌍${eye(visited('culture'))}</button>` : ''}
+          </div>
+        </div>
       </div>
       <span class="ctrl-divider${showDisplay ? '' : ' hidden'}${isLocalHost() ? ' hidden' : ''}" aria-hidden="true"></span>
       <div class="ctrl-group ctrl-group--display">
@@ -217,6 +223,11 @@ export function updateToolbarActiveState(activeMode) {
   if (divider) divider.classList.toggle('hidden', !showDisplay);
   if (transBtn) transBtn.classList.toggle('hidden', !showDisplay);
   if (selectBtn) selectBtn.classList.toggle('hidden', !showDisplay);
+
+  const moreBtn = document.getElementById('toggleStudyMoreBtn');
+  if (moreBtn) {
+    moreBtn.classList.toggle('has-active-overflow', activeMode === 'vocab' || activeMode === 'culture');
+  }
 }
 
 // Render toolbar into persistent container (only if not already there)
@@ -292,6 +303,41 @@ export function bindModeToolbarNav(song) {
   }
   // Theater button — always available regardless of mode
   document.getElementById('toggleTheaterBtn')?.addEventListener('click', toggleTheaterMode);
+  bindStudyOverflowMenu();
+}
+
+function bindStudyOverflowMenu() {
+  const moreBtn = document.getElementById('toggleStudyMoreBtn');
+  const menu = document.getElementById('studyOverflowMenu');
+  if (!moreBtn || !menu) return;
+
+  const closeMenu = () => {
+    menu.classList.remove('is-open');
+    moreBtn.setAttribute('aria-expanded', 'false');
+    moreBtn.classList.remove('is-active');
+  };
+
+  moreBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = !menu.classList.contains('is-open');
+    if (opening) {
+      menu.classList.add('is-open');
+      moreBtn.setAttribute('aria-expanded', 'true');
+      moreBtn.classList.add('is-active');
+      requestAnimationFrame(() => {
+        document.addEventListener('click', closeMenu, { once: true });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeMenu();
+        }, { once: true });
+      });
+    } else {
+      closeMenu();
+    }
+  });
+
+  menu.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', closeMenu);
+  });
 }
 
 // Pause audio when switching between study modes
@@ -411,16 +457,19 @@ function renderAppHeader(song) {
     const backLabel = state.previousView === 'picker' ? 'Volver a canciones' : state.previousView === 'stats' ? 'Volver a estadísticas' : 'Volver al inicio';
     header.classList.add('app-header--player');
     header.innerHTML = `
-      <button class="back-btn" id="headerBackBtn" aria-label="${backLabel}" title="Volver">←</button>
-      <div class="artwork">${song.icon || '🎵'}</div>
-      <div class="song-meta">
-        <div class="song-title">${song.title}</div>
-        <div class="song-artist">
-          <span>${song.artist}</span>
-          ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+      <div class="app-header__player-bar">
+        <button class="lp-icon-btn app-header__back-btn" id="headerBackBtn" type="button" aria-label="${backLabel}" title="Volver">←</button>
+        <div class="artwork app-header__artwork">${song.icon || '🎵'}</div>
+        <div class="song-meta">
+          <div class="song-title">${song.title}</div>
+          <div class="song-artist">
+            <span>${song.artist}</span>
+            ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+          </div>
         </div>
+        <button class="lp-icon-btn app-header__menu-btn" id="headerMenuBtn" type="button" aria-label="Abrir navegación" aria-controls="unifiedNavigation" aria-expanded="false">☰</button>
+        ${songProgressHtml(song.id, 'song-learning-progress--player')}
       </div>
-      ${songProgressHtml(song.id, 'song-learning-progress--player')}
     `;
     document.getElementById('headerBackBtn').addEventListener('click', () => {
       const dest = state.previousView;
@@ -428,6 +477,7 @@ function renderAppHeader(song) {
       else if (dest === 'stats') showStats();
       else showDashboard();
     });
+    document.getElementById('headerMenuBtn')?.addEventListener('click', () => setNavigationOpen(true));
   } else {
     header.classList.remove('app-header--player');
     header.innerHTML = `
@@ -528,7 +578,7 @@ function showPicker(skipAutoLoad = false) {
     <div class="song-picker">
       <div class="picker-toprow picker-toprow--solo">
         <div class="search-bar">
-          <input type="search" id="songSearch" placeholder="Search songs..." aria-label="Search songs" autocomplete="off">
+          <input type="search" id="songSearch" placeholder="Buscar canciones…" aria-label="Buscar canciones" autocomplete="off">
         </div>
       </div>
       <div class="song-list" id="songList"></div>
@@ -549,15 +599,18 @@ function showPicker(skipAutoLoad = false) {
       item.className = 'song-list-item';
       item.setAttribute('aria-label', `Abrir ${song.title} de ${song.artist}`);
       item.innerHTML = `
-        <span class="icon">${song.icon || '🎵'}</span>
-        <span class="info">
-          <span class="title">${song.title}</span>
-          <span class="artist">${song.artist}</span>
-          <span class="song-card-meta">
-            ${song.level ? `<span class="song-tags"><span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span></span>` : ''}
-            ${songProgressHtml(song.id, 'song-learning-progress--card')}
+        <span class="song-list-item__icon" aria-hidden="true">${song.icon || '🎵'}</span>
+        <span class="song-list-item__body">
+          <span class="song-list-item__head">
+            <span class="song-list-item__copy">
+              <span class="title">${song.title}</span>
+              <span class="artist">${song.artist}</span>
+            </span>
+            ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
           </span>
+          ${songProgressHtml(song.id, 'song-learning-progress--card')}
         </span>
+        <span class="song-list-item__chevron" aria-hidden="true"></span>
       `;
       item.addEventListener('click', () => loadSong(song));
       list.appendChild(item);
@@ -849,19 +902,24 @@ function updateNavigationMode(mode, persist = false) {
 function setNavigationOpen(isOpen, restoreFocus = false) {
   const navigation = document.getElementById('unifiedNavigation');
   const trigger = document.getElementById('unifiedNavTrigger');
+  const headerMenuBtn = document.getElementById('headerMenuBtn');
   const backdrop = document.getElementById('unifiedNavBackdrop');
   if (!navigation || !trigger || !backdrop) return;
 
   const isPersistent = window.innerWidth >= 861 && navigationMode() === 'sidebar';
   const isInteractive = isPersistent || isOpen;
+  const focusTarget = headerMenuBtn && document.querySelector('.app-header--player')
+    ? headerMenuBtn
+    : trigger;
   navigation.classList.toggle('is-open', isOpen);
   navigation.inert = !isInteractive;
   navigation.setAttribute('aria-hidden', String(!isInteractive));
   backdrop.classList.toggle('is-open', isOpen && !isPersistent);
   trigger.setAttribute('aria-expanded', String(isOpen));
+  if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(isOpen));
   document.body.classList.toggle('navigation-open', isOpen && !isPersistent);
   if (isOpen) navigation.querySelector('button, a[href]')?.focus();
-  else if (restoreFocus && !isPersistent) trigger.focus();
+  else if (restoreFocus && !isPersistent) focusTarget.focus();
 }
 
 function showAboutLearnFlow(event) {
@@ -1460,6 +1518,22 @@ function onProgressTouchEnd()     { if (state.isDragging) { state.isDragging = f
 
 // ─── Subtitles ─────────────────────────────────────────────────────────────────
 
+function scrollLyricIntoView(target) {
+  const container = document.getElementById('subContainer');
+  if (!container || !target) return;
+  const pad = window.matchMedia('(max-width: 580px)').matches ? 20 : 12;
+  const containerRect = container.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const deltaTop = targetRect.top - containerRect.top;
+  const deltaBottom = targetRect.bottom - containerRect.bottom;
+
+  if (deltaTop < pad) {
+    container.scrollBy({ top: deltaTop - pad, behavior: 'smooth' });
+  } else if (deltaBottom > -pad) {
+    container.scrollBy({ top: deltaBottom + pad, behavior: 'smooth' });
+  }
+}
+
 function renderSubtitles(subtitles) {
   const container = document.getElementById('subContainer');
   container.innerHTML = '';
@@ -1547,6 +1621,11 @@ function renderSubtitles(subtitles) {
 
     container.appendChild(line);
   });
+
+  const tail = document.createElement('div');
+  tail.className = 'sub-scroll-end';
+  tail.setAttribute('aria-hidden', 'true');
+  container.appendChild(tail);
 
   // Cache nodeList for perf (avoid querySelectorAll every frame)
   state.cachedSubLines = [...container.querySelectorAll('.sub-line')];
@@ -2132,7 +2211,7 @@ function updateSubtitles(time) {
       if (state.scrollRAF) cancelAnimationFrame(state.scrollRAF);
       const target = lines[activeIndex];
       state.scrollRAF = requestAnimationFrame(() => {
-        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        scrollLyricIntoView(target);
         state.scrollRAF = null;
       });
     }
@@ -2223,7 +2302,7 @@ function toggleHighlight() {
     }
     // Scroll to current line
     if (idx !== -1 && lines[idx]) {
-      lines[idx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+      scrollLyricIntoView(lines[idx]);
     }
   }
 }
@@ -3129,12 +3208,20 @@ window.addEventListener('pagehide', () => {
 initUnifiedNavigation();
 renderAppHeader();
 
-// Hide CSS tooltips on click (they persist on touch/hover otherwise)
+// Hide CSS tooltips on tap/click (sticky :hover on touch otherwise keeps them visible)
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-tooltip]');
-  if (btn) {
-    btn.classList.add('tooltip-hidden');
-    btn.addEventListener('pointerleave', () => btn.classList.remove('tooltip-hidden'), { once: true });
+  document.querySelectorAll('[data-tooltip].tooltip-hidden').forEach(el => {
+    if (el !== btn) el.classList.remove('tooltip-hidden');
+  });
+  if (btn) btn.classList.add('tooltip-hidden');
+}, true);
+
+document.addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('[data-tooltip]')) {
+    document.querySelectorAll('[data-tooltip].tooltip-hidden').forEach(el => {
+      el.classList.remove('tooltip-hidden');
+    });
   }
 }, true);
 
