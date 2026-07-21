@@ -458,16 +458,19 @@ function renderAppHeader(song) {
     header.classList.add('app-header--player');
     header.innerHTML = `
       <div class="app-header__player-bar">
-        <button class="lp-icon-btn app-header__back-btn" id="headerBackBtn" type="button" aria-label="${backLabel}" title="Volver">←</button>
-        <div class="artwork app-header__artwork">${song.icon || '🎵'}</div>
-        <div class="song-meta">
-          <div class="song-title">${song.title}</div>
-          <div class="song-artist">
-            <span>${song.artist}</span>
-            ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+        <div class="app-header__learning-toolbar" role="group" aria-label="Navegación del reproductor">
+          <button class="app-header__toolbar-btn app-header__back-btn" id="headerBackBtn" type="button" aria-label="${backLabel}" title="Volver">${navIcon('arrow-left')}</button>
+          <div class="app-header__song-block">
+            <h2 class="app-header__song-title" title="${song.title}">${song.title}</h2>
+            <div class="app-header__song-sub">
+              <span class="app-header__song-artist">${song.artist}</span>
+              ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
+            </div>
           </div>
+          <button class="app-header__toolbar-btn app-header__menu-btn" id="headerMenuBtn" type="button" aria-label="Abrir navegación" aria-controls="unifiedNavigation" aria-expanded="false">${navIcon('menu')}</button>
         </div>
-        <button class="lp-icon-btn app-header__menu-btn" id="headerMenuBtn" type="button" aria-label="Abrir navegación" aria-controls="unifiedNavigation" aria-expanded="false">${navIcon('menu')}</button>
+      </div>
+      <div class="app-header__player-center" aria-hidden="false">
         ${songProgressHtml(song.id, 'song-learning-progress--player')}
       </div>
     `;
@@ -896,6 +899,14 @@ function navigationMode() {
   return localStorage.getItem(NAVIGATION_STORAGE_KEY) === 'floating' ? 'floating' : 'sidebar';
 }
 
+function isNavigationPersistent() {
+  return window.innerWidth >= 861 && navigationMode() === 'sidebar';
+}
+
+function syncNavigationLayout() {
+  setNavigationOpen(isNavigationPersistent());
+}
+
 function updateNavigationMode(mode, persist = false) {
   const resolvedMode = mode === 'floating' ? 'floating' : 'sidebar';
   document.documentElement.dataset.navigationMode = resolvedMode;
@@ -910,6 +921,7 @@ function updateNavigationMode(mode, persist = false) {
     const icon = toggle.querySelector('span');
     if (icon) icon.textContent = isFloating ? '▣' : '◫';
   }
+  syncNavigationLayout();
 }
 
 function setNavigationOpen(isOpen, restoreFocus = false) {
@@ -919,19 +931,19 @@ function setNavigationOpen(isOpen, restoreFocus = false) {
   const backdrop = document.getElementById('unifiedNavBackdrop');
   if (!navigation || !trigger || !backdrop) return;
 
-  const isPersistent = window.innerWidth >= 861 && navigationMode() === 'sidebar';
-  const isInteractive = isPersistent || isOpen;
+  const isPersistent = isNavigationPersistent();
+  const effectivelyOpen = isPersistent || isOpen;
   const focusTarget = headerMenuBtn && document.querySelector('.app-header--player')
     ? headerMenuBtn
     : trigger;
-  navigation.classList.toggle('is-open', isOpen);
-  navigation.inert = !isInteractive;
-  navigation.setAttribute('aria-hidden', String(!isInteractive));
+  navigation.classList.toggle('is-open', effectivelyOpen);
+  navigation.inert = !effectivelyOpen;
+  navigation.setAttribute('aria-hidden', String(!effectivelyOpen));
   backdrop.classList.toggle('is-open', isOpen && !isPersistent);
-  trigger.setAttribute('aria-expanded', String(isOpen));
-  if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(isOpen));
+  trigger.setAttribute('aria-expanded', String(effectivelyOpen));
+  if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(effectivelyOpen));
   document.body.classList.toggle('navigation-open', isOpen && !isPersistent);
-  if (isOpen) navigation.querySelector('button, a[href]')?.focus();
+  if (isOpen && !isPersistent) navigation.querySelector('button, a[href]')?.focus();
   else if (restoreFocus && !isPersistent) focusTarget.focus();
 }
 
@@ -1071,7 +1083,6 @@ function initUnifiedNavigation() {
 
   document.body.append(backdrop, navigation, trigger);
   updateNavigationMode(navigationMode());
-  setNavigationOpen(false);
 
   const modeToggle = document.getElementById('navigationModeToggle');
   const themeButton = document.getElementById('navigationTheme');
@@ -1089,7 +1100,6 @@ function initUnifiedNavigation() {
   modeToggle.addEventListener('click', () => {
     const nextMode = navigationMode() === 'sidebar' ? 'floating' : 'sidebar';
     updateNavigationMode(nextMode, true);
-    setNavigationOpen(false, true);
   });
   document.getElementById('navigationHome').addEventListener('click', () => {
     setNavigationOpen(false, true);
@@ -1131,9 +1141,8 @@ function initUnifiedNavigation() {
   window.addEventListener('storage', storageEvent => {
     if (storageEvent.key !== NAVIGATION_STORAGE_KEY) return;
     updateNavigationMode(storageEvent.newValue === 'floating' ? 'floating' : 'sidebar');
-    setNavigationOpen(false);
   });
-  window.addEventListener('resize', () => setNavigationOpen(false));
+  window.addEventListener('resize', () => syncNavigationLayout());
   document.addEventListener('keydown', navigationEvent => {
     if (!navigation.classList.contains('is-open')) return;
     if (navigationEvent.key === 'Escape') {
