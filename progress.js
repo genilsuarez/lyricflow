@@ -1,3 +1,5 @@
+import * as lpSupabase from './lp-supabase.js';
+
 const PROGRESS_KEY = 'learnflow:progress:lyricflow:v1';
 const ACTIVITY_KEY = 'learnflow:activity:lyricflow:v1';
 const SCHEMA_VERSION = 1;
@@ -183,6 +185,29 @@ function appendEvent(event) {
   try {
     localStorage.setItem(ACTIVITY_KEY, JSON.stringify(ledger));
   } catch {}
+  scheduleCloudSync();
+}
+
+// Sube progreso + eventos a Supabase cuando el usuario esta autenticado.
+// Debounced: recordActivityResult/markListenCompleted pueden dispararse
+// varias veces seguidas (una cancion tiene 4 actividades).
+let cloudSyncTimer = null;
+function scheduleCloudSync() {
+  if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(async () => {
+    cloudSyncTimer = null;
+    const authed = await lpSupabase.isAuthenticated().catch(() => false);
+    if (!authed) return;
+
+    const progressDoc = readJson(PROGRESS_KEY, emptyProgress);
+    if (progressDoc.content && Object.keys(progressDoc.content).length) {
+      await lpSupabase.syncProgress(APP_ID, { content: progressDoc.content });
+    }
+    const activityDoc = readJson(ACTIVITY_KEY, emptyActivityLedger);
+    if (activityDoc.events?.length) {
+      await lpSupabase.syncActivityEvents(APP_ID, activityDoc.events);
+    }
+  }, 500);
 }
 
 function hasRecordedRun(runId) {
