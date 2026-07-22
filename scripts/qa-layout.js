@@ -108,10 +108,10 @@ const server = createServer((req, res) => {
   // 10. Controles funcionales — click play
   await page.locator('#playBtn').click();
   await page.waitForTimeout(300);
-  const playText = await page.locator('#playBtn').textContent();
-  console.log(playText.includes('⏸') || playText.includes('❚')
+  const isPlaying = await page.locator('#playBtn').evaluate(el => el.classList.contains('is-playing'));
+  console.log(isPlaying
     ? '✅ Play button funcional (cambió a pausa)'
-    : `⚠️  Play text: "${playText}" (puede no haber audio disponible)`);
+    : '⚠️  Play button no muestra estado de pausa (puede no haber audio disponible)');
 
   // 11. Toggle traducción desde mode toolbar
   await page.locator('#toggleTransBtn').click();

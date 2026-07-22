@@ -213,18 +213,25 @@ export function renderDashboard(onSongClick, onShowSongs) {
         <div class="dash-hero__body">
           <div class="dash-hero__headline">
             <div class="dash-hero__title-row">
+              <p class="dash-hero__eyebrow">Tu biblioteca</p>
+              <button type="button" class="dash-hero__browse" id="dashSongsCta" aria-label="Ver todas las canciones">
+                <span class="dash-hero__browse-label">Ver todas</span>
+                <span class="dash-hero__browse-chevron" aria-hidden="true">›</span>
+              </button>
               <div class="dash-hero__lead">
-                <h2 class="dash-hero__title">${progress.summary.completedContent} de ${progress.summary.totalContent} canciones</h2>
+                <h2 class="dash-hero__title">
+                  <span class="dash-hero__title-value">${progress.summary.completedContent}</span>
+                  <span class="dash-hero__title-muted">de ${progress.summary.totalContent} canciones</span>
+                </h2>
                 <span class="dash-hero__pct-badge" aria-label="${pct}% completado">${pct}%</span>
               </div>
-              <button type="button" class="dash-hero__browse" id="dashSongsCta">Ver todas</button>
             </div>
           </div>
           <div class="dash-hero__metrics">
             <div class="dash-metric"><strong>${streak.current}</strong><span>racha</span></div>
             <div class="dash-metric"><strong>${progress.summary.completedActivities}</strong><span>actividades</span></div>
             <div class="dash-metric"><strong>${totalAttempts}</strong><span>intentos</span></div>
-            ${bestScore !== null ? `<div class="dash-metric"><strong>${Math.round(bestScore)}%</strong><span>mejor</span></div>` : ''}
+            <div class="dash-metric dash-metric--global"><strong>${pct}%</strong><span>avance</span></div>
           </div>
           ${recommendation ? `
           <button type="button" class="dash-hero__cta" id="dashHeroCta">
@@ -303,7 +310,7 @@ export function cleanupStats() {
 
 export function renderStats() {
   const { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct } = getComputedData();
-  const recentEvents = events.slice(0, 6);
+  const recentEvents = events.slice(0, 5);
 
   const shell = app.closest('.app-shell');
   if (shell) shell.classList.add('app-shell--fullscreen');
@@ -343,8 +350,8 @@ export function renderStats() {
             <h2>Estadisticas</h2>
           </div>
           <div class="sv-top__numbers">
-            <div class="sv-stat"><strong>${progress.summary.completedContent}</strong><span>/ ${progress.summary.totalContent} canciones</span></div>
-            <div class="sv-stat"><strong>${progress.summary.completedActivities}</strong><span>/ ${progress.summary.totalActivities} actividades</span></div>
+            <div class="sv-stat"><strong>${progress.summary.completedContent} / ${progress.summary.totalContent}</strong><span>canciones</span></div>
+            <div class="sv-stat"><strong>${progress.summary.completedActivities} / ${progress.summary.totalActivities}</strong><span>actividades</span></div>
             <div class="sv-stat"><strong>${totalAttempts}</strong><span>intentos</span></div>
             ${bestScore !== null ? `<div class="sv-stat"><strong>${Math.round(bestScore)}%</strong><span>mejor score</span></div>` : ''}
             <div class="sv-stat"><strong>${streak.current}</strong><span>racha actual</span></div>
