@@ -346,7 +346,7 @@ function pauseOnModeSwitch() {
     state.audio.pause();
     stopUpdateLoop();
     const playBtn = document.getElementById('playBtn');
-    if (playBtn) playBtn.textContent = '▶';
+    if (playBtn) setPlayButtonState(false);
     document.querySelector('.artwork')?.classList.remove('playing');
   }
 }
@@ -763,7 +763,7 @@ export async function loadSong(song) {
         </div>
       </div>
       <div class="controls-row">
-        <button class="play-btn" id="playBtn" aria-label="Reproducir/Pausar">▶</button>
+        <button class="play-btn" id="playBtn" type="button" aria-label="Reproducir"></button>
         <div class="volume-control" id="volumeControl">
           <button class="volume-btn" id="volumeBtn" aria-label="Silenciar/Volumen">🔊</button>
           <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1" aria-label="Volumen" />
@@ -960,19 +960,33 @@ function showAboutLearnFlow(event) {
     <section class="about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutLearnFlowTitle" aria-describedby="aboutLearnFlowDescription">
       <header class="about-header">
         <div class="about-identity" aria-hidden="true">L</div>
-        <div>
+        <div class="about-header__text">
           <p class="about-eyebrow">LearnFlow · Plataforma</p>
           <h2 id="aboutLearnFlowTitle">About LearnFlow</h2>
         </div>
         <button class="about-close" id="aboutCloseBtn" type="button" aria-label="Cerrar About LearnFlow">✕</button>
       </header>
-      <p id="aboutLearnFlowDescription" class="about-description">Una plataforma para aprender idiomas con estructura, práctica y música.</p>
-      <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
-        <a href="${themedAppHref('/deskflow/', 3000)}"><strong>LearnFlow</strong><span>Portal</span></a>
-        <a href="${themedAppHref('/fluentflow/', 3001)}"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></a>
-        <a href="${themedAppHref('/hubflow/', 3002)}"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></a>
-        <a href="${themedAppHref('/lyricflow/', 3003)}"><strong>LyricFlow</strong><span>Aprender con música</span></a>
-      </nav>
+      <div class="about-body">
+        <p id="aboutLearnFlowDescription" class="about-description">Una plataforma para aprender idiomas con estructura, práctica y música.</p>
+        <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
+          <a href="${themedAppHref('/deskflow/', 3000)}">
+            <span class="about-module__mark about-module__mark--portal" aria-hidden="true">L</span>
+            <span class="about-module__text"><strong>LearnFlow</strong><span>Portal</span></span>
+          </a>
+          <a href="${themedAppHref('/fluentflow/', 3001)}">
+            <span class="about-module__mark about-module__mark--fluent" aria-hidden="true">F</span>
+            <span class="about-module__text"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></span>
+          </a>
+          <a href="${themedAppHref('/hubflow/', 3002)}">
+            <span class="about-module__mark about-module__mark--hub" aria-hidden="true">H</span>
+            <span class="about-module__text"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></span>
+          </a>
+          <a href="${themedAppHref('/lyricflow/', 3003)}">
+            <span class="about-module__mark about-module__mark--lyric" aria-hidden="true">LF</span>
+            <span class="about-module__text"><strong>LyricFlow</strong><span>Aprender con música</span></span>
+          </a>
+        </nav>
+      </div>
       <footer class="about-footer">
         <div class="about-author">
           <div class="about-author__avatar" aria-hidden="true">GS</div>
@@ -1250,7 +1264,7 @@ function initAudio(song) {
     // Mark listen activity as completed when song reaches the end
     markListenCompleted({ contentId: song.id, title: song.title });
     updateSongProgressUi(song.id);
-    document.getElementById('playBtn').textContent = '▶';
+    setPlayButtonState(false);
     stopUpdateLoop();
     document.getElementById('progressFill').style.width = '100%';
     state.cachedSubLines.forEach(el => el.classList.remove('active', 'past'));
@@ -1264,13 +1278,19 @@ function initAudio(song) {
   });
 }
 
+function setPlayButtonState(isPlaying) {
+  const playBtn = document.getElementById('playBtn');
+  if (!playBtn) return;
+  playBtn.classList.toggle('is-playing', isPlaying);
+  playBtn.setAttribute('aria-label', isPlaying ? 'Pausar' : 'Reproducir');
+}
+
 function playAudio() {
   if (!state.audio) return;
   // Block play while difficulty picker is open
   if (document.getElementById('difficultyPicker')) return;
   state.audio.play().catch(() => {});
-  document.getElementById('playBtn').textContent = '⏸';
-  document.getElementById('playBtn').setAttribute('aria-label', 'Pausar');
+  setPlayButtonState(true);
   if (state.listeningMode) state.listeningStarted = true;
   startUpdateLoop();
   document.querySelector('.artwork')?.classList.add('playing');
@@ -1281,8 +1301,7 @@ function playAudio() {
 function pauseAudio() {
   if (!state.audio) return;
   state.audio.pause();
-  document.getElementById('playBtn').textContent = '▶';
-  document.getElementById('playBtn').setAttribute('aria-label', 'Reproducir');
+  setPlayButtonState(false);
   stopUpdateLoop();
   document.querySelector('.artwork')?.classList.remove('playing');
 }
@@ -1489,7 +1508,7 @@ function updateProgress() {
         // Second play done — now pause and start timer
         state.listeningPauseAt = null;
         state.audio.pause();
-        document.getElementById('playBtn').textContent = '▶';
+        setPlayButtonState(false);
         // Ensure line stays visually active
         const blankLine = state.listeningCurrentBlank.closest('.sub-line');
         if (blankLine) {
