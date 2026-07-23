@@ -352,8 +352,11 @@ export function renderStats() {
         </div>
         <div class="sv-top__info">
           <div class="sv-top__title">
-            <span class="sv-kicker">Tus metricas<span class="sv-top__pct-inline"> · ${pct}% completado</span></span>
-            <h2>Estadisticas</h2>
+            <div class="sv-top__title-row">
+              <span class="sv-kicker">Tus métricas</span>
+              <span class="sv-top__pct-badge" aria-label="${pct}% completado">${pct}%</span>
+            </div>
+            <h2>Estadísticas</h2>
           </div>
           <div class="sv-top__numbers">
             <div class="sv-stat"><strong>${progress.summary.completedActivities} / ${progress.summary.totalActivities}</strong><span>actividades</span></div>
