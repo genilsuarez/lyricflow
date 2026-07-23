@@ -17,6 +17,20 @@ Player de canciones con subtítulos sincronizados, vocabulario interactivo, y mo
 index.html          — Entry point
 player.js           — Toda la lógica del player (single file)
 styles.css          — Todos los estilos (single file)
+lp-theme.js         — Theme init (copy of scripts/)
+lp-platform-urls.js — Cross-app URLs (copy of scripts/)
+lp-nav-icons.js     — Sidebar icon SVGs (copy of scripts/)
+lp-nav-active.css   — Active nav item (copy of scripts/)
+lp-nav-helpers.js   — themedAppHref, toggleTheme, navIcon (copy of scripts/)
+lp-about.js         — About LearnFlow modal (copy of scripts/)
+lp-about.css        — About modal styles (copy of scripts/)
+lp-login.js         — Login modal + bindNavButton (copy of scripts/)
+lp-guest-reset.js   — Guest/logout (copy of scripts/)
+lp-auth-setup.js    — Supabase auth (copy of scripts/)
+lp-supabase.js      — Supabase client (copy of scripts/)
+sync-engine.js      — Cloud sync (copy of scripts/)
+lp-progress-summary.js — Progress summary (copy of scripts/)
+progress.js         — LyricFlow progress layer
 songs/              — Carpeta de canciones
   catalog.js        — Lista de folders disponibles
   <Nombre>/
@@ -25,6 +39,8 @@ songs/              — Carpeta de canciones
     *.mp4           — Archivo de audio/video
 scripts/            — Scripts de build y QA
 ```
+
+Nav/theme helpers en `player.js` delegan a `window.LpNavHelpers` — no duplicar `themedAppHref` / `toggleTheme` inline. Login: `lpLogin.bindNavButton('#navigationLogin', …)`. About: `lpAbout.open()` desde `lp-about.js`.
 
 ## Para servir en desarrollo
 
