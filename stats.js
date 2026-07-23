@@ -155,11 +155,9 @@ function getComputedData() {
   });
 
   const totalAttempts = songDetails.reduce((sum, s) => sum + (s.progress.attempts || 0), 0);
-  const allScores = songDetails.map(s => s.progress.bestScorePct).filter(s => s !== null && s !== undefined);
-  const bestScore = allScores.length ? Math.max(...allScores) : null;
   const pct = summaryDisplayPct(progress.summary);
 
-  return { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct };
+  return { progress, events, streak, songDetails, activityCounts, totalAttempts, pct };
 }
 
 // Recommendation engine (same logic as picker had)
@@ -200,7 +198,7 @@ export function cleanupDashboard() {
 }
 
 export function renderDashboard(onSongClick, onShowSongs) {
-  const { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct } = getComputedData();
+  const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
   const recommendation = pickRecommendation(songDetails);
   const recentEvents = events.slice(0, 5);
 
@@ -315,7 +313,7 @@ export function cleanupStats() {
 }
 
 export function renderStats() {
-  const { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct } = getComputedData();
+  const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
   const recentEvents = events.slice(0, 5);
 
   const shell = app.closest('.app-shell');
@@ -352,27 +350,22 @@ export function renderStats() {
         </div>
         <div class="sv-top__info">
           <div class="sv-top__title">
-            <div class="sv-top__title-row">
-              <span class="sv-kicker">Tus métricas</span>
-              <span class="sv-top__pct-badge" aria-label="${pct}% completado">${pct}%</span>
-            </div>
             <h2>Estadísticas</h2>
           </div>
           <div class="sv-top__numbers">
             <div class="sv-stat"><strong>${progress.summary.completedActivities} / ${progress.summary.totalActivities}</strong><span>actividades</span></div>
             <div class="sv-stat"><strong>${progress.summary.completedContent} / ${progress.summary.totalContent}</strong><span>canciones</span></div>
             <div class="sv-stat"><strong>${totalAttempts}</strong><span>intentos</span></div>
-            ${bestScore !== null ? `<div class="sv-stat"><strong>${Math.round(bestScore)}%</strong><span>mejor score</span></div>` : ''}
             <div class="sv-stat"><strong>${streak.current}</strong><span>racha actual</span></div>
-            <div class="sv-stat sv-stat--hide-mobile"><strong>${streak.best}</strong><span>mejor racha</span></div>
+            <div class="sv-stat"><strong>${streak.best}</strong><span>mejor racha</span></div>
+            <div class="sv-stat sv-stat--accent"><strong>${pct}%</strong><span>avance</span></div>
           </div>
         </div>
       </div>
 
       <!-- Mid: 3-column row -->
       <div class="sv-mid">
-        <section class="sv-card" aria-labelledby="svActTitle">
-          <h3 id="svActTitle">Actividades</h3>
+        <section class="sv-card" aria-label="Actividades">
           <table class="sv-act-table" role="table">
             <thead>
               <tr>

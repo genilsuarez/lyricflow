@@ -539,9 +539,9 @@ body {
   --spine: var(--lp-accent);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 11px 12px 11px 11px;
+  padding: 10px 12px 10px 11px;
   border-radius: var(--lp-radius-lg);
   background: var(--lp-surface);
   border: 1px solid color-mix(in srgb, var(--lp-border) 88%, transparent);
@@ -583,8 +583,8 @@ body {
 }
 
 .song-list-item__icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -600,7 +600,7 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 
 .song-list-item__head {
@@ -811,6 +811,21 @@ body {
   padding-top: 12px;
   margin-top: auto;
   animation: fadeUp 0.4s var(--lp-ease) 0.25s both;
+}
+
+/* Cursor IDE mobile preview clearance — see lp-cursor-detect.js.
+   --cursor-preview-chrome-bottom is the single source of truth. Confirmed
+   live in Cursor (2026-07-23) that its device-frame chrome clips the
+   controls-row (play/volume/speed/loop) without this padding — unlike the
+   FluentFlow case, this one is a real, observed cut, not a guess. If it's
+   still not enough (or is too much) once tested live in Cursor, adjust
+   only this one value.
+   Scoped to the same max-width: 580px breakpoint as the rest of this
+   file's mobile rules — Cursor's device-frame chrome is a mobile-preview
+   feature, a normal desktop-width Cursor tab doesn't have it, so this
+   must not apply there. */
+html.browser-cursor-embedded {
+  --cursor-preview-chrome-bottom: 52px;
 }
 
 /* ─── Progress Section ──────────────────────────────────────────────────────── */
@@ -2050,38 +2065,41 @@ body {
 
   .song-list {
     grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 0 0 6px;
+    gap: 4px;
+    padding: 0 0 5px;
   }
 
   .song-list-item {
-    gap: 10px;
-    padding: 10px 10px 10px 9px;
+    gap: 8px;
+    padding: 8px 9px 8px 8px;
     min-height: 0;
   }
 
   .song-list-item__icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
   }
 
-  .song-list-item__body { gap: 6px; }
+  .song-list-item__body { gap: 4px; }
 
   .song-list-item .title { font-size: 0.94rem; }
 
-  .song-list-item .artist { font-size: 0.68rem; }
+  .song-list-item .artist {
+    font-size: 0.68rem;
+    margin-top: 0;
+  }
 
   .level-badge { font-size: 0.54rem; padding: 2px 7px; }
 
   .song-list-item__chevron { display: none; }
 
   .song-learning-progress--card {
-    min-height: 8px;
+    min-height: 6px;
   }
 
   .song-learning-progress--card .song-progress-hitarea {
-    padding: 2px 0;
+    padding: 0;
   }
 
   .song-progress-track {
@@ -2094,7 +2112,7 @@ body {
 
   .song-progress-segment {
     width: auto;
-    height: 6px;
+    height: 5px;
   }
 
   .app-header-brand h1 { font-size: var(--lp-header-title-size); }
@@ -2163,6 +2181,12 @@ body {
 
   .bottom-bar {
     padding-top: 8px;
+  }
+
+  /* Cursor IDE mobile preview clearance — see the definition of
+     --cursor-preview-chrome-bottom near the base .bottom-bar rule above. */
+  html.browser-cursor-embedded .bottom-bar {
+    padding-bottom: var(--cursor-preview-chrome-bottom);
   }
 
   .ctrl-group--study {
@@ -4526,7 +4550,7 @@ a:focus-visible,
   flex: 1;
   width: 100%;
   min-width: 0;
-  padding: 4px 0;
+  padding: 3px 0;
   margin: 0;
 }
 
@@ -6171,45 +6195,7 @@ body {
 }
 
 .sv-top__title {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
-}
-
-.sv-top__title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-}
-
-.sv-kicker {
-  font-size: 0.65rem;
-  font-weight: var(--lp-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--lp-accent);
-}
-
-.sv-top__pct-badge {
-  display: none;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  font-family: var(--lp-font-body);
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--lp-accent-text);
-  background: color-mix(in srgb, var(--lp-accent) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--lp-accent) 22%, transparent);
-  border-radius: var(--lp-radius-full);
-  padding: 3px 8px;
-  line-height: 1.2;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
 }
 
 .sv-top__title h2 {
@@ -6219,6 +6205,11 @@ body {
   color: var(--lp-ink);
   letter-spacing: -0.02em;
   margin: 0;
+  min-width: 0;
+}
+
+.sv-stat--accent strong {
+  color: var(--lp-accent);
 }
 
 .sv-top__numbers {
@@ -6586,29 +6577,13 @@ body {
     display: none;
   }
 
-  .sv-top__pct-badge {
-    display: inline-flex;
-  }
-
   .sv-top__info {
     gap: 0;
     width: 100%;
   }
 
   .sv-top__title {
-    gap: 4px;
     padding-bottom: 2px;
-  }
-
-  .sv-kicker {
-    font-size: 0.56rem;
-    letter-spacing: 0.07em;
-    color: var(--lp-muted);
-  }
-
-  .sv-top__pct-badge {
-    font-size: 0.58rem;
-    padding: 2px 7px;
   }
 
   .sv-top__title h2 {

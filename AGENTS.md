@@ -60,6 +60,20 @@ Al crear nuevos scripts de QA, guardarlos en `scripts/qa-<nombre>.js`.
 
 - (ninguno documentado)
 
+## Detección de navegador embebido (Cursor IDE, preview de dispositivo)
+
+`lp-cursor-detect.js` detecta si la app corre dentro del preview de dispositivo móvil de Cursor IDE (via `navigator.userAgent` matcheando `Cursor/`) y agrega la clase `.browser-cursor-embedded` a `<html>`. Se carga en `<head>` de `index.html`, junto a `lp-theme.js`.
+
+**Por qué existe**: el preview móvil de Cursor dibuja su propio marco/bisel de dispositivo alrededor de la página. Se verificó EN VIVO dentro de Cursor (2026-07-23) que ese bisel corta la fila de controles del reproductor (play/volumen/velocidad/loop) dentro de `.bottom-bar` — el usuario confirmó que los controles no se veían completos.
+
+**El valor (52px)**: vive en un solo lugar — `html.browser-cursor-embedded { --cursor-preview-chrome-bottom: 52px; }` cerca de la definición base de `.bottom-bar` en `styles.css`. El uso real (`padding-bottom: var(--cursor-preview-chrome-bottom);`) está dentro de `@media (max-width: 580px)` — el mismo breakpoint mobile-first del resto del proyecto — porque el bisel de Cursor es una feature del preview móvil; una pestaña de Cursor a ancho de escritorio no lo tiene, así que el padding no debe aplicar ahí. Verificado con DOM real: sin el fix, `.controls-row` terminaba a 801px de un viewport de 812px (11px de margen); con el fix, sube a 749px (~63px de margen). A los 900px de ancho, con la clase igual presente, el padding-bottom computado es `0px` — confirma que el scoping funciona.
+
+**Precedente y por qué NO se asumió el valor a ciegas**: esta misma detección existe en FluentFlow (`src/utils/cursorBrowserDetection.ts`), donde el mismo tipo de hardcode (también 52px, para otro elemento) resultó estar basado en una suposición nunca verificada — no había overlay real ahí, y el hardcode solo dejaba un hueco vacío. Ese error se corrigió ahí bajando el valor a 0 tras probar en vivo. Este caso de LyricFlow es distinto: el corte SÍ se confirmó en vivo en Cursor por el usuario antes de implementar el fix, no se asumió por un comentario heredado. Regla para el futuro: cualquier hardcode ligado a un navegador/host embebido específico debe verificarse en vivo en ese entorno antes de confiarlo — ni asumir que hace falta, ni asumir que no hace falta.
+
+**No extendido a Claude Code**: el Browser pane de Claude Code (`mcp__Claude_Browser__*`) no tiene este problema (ver documentación equivalente en FluentFlow) — no agregar `Claude/` a la detección sin un overlay real confirmado ahí primero.
+
+**Otros elementos `position:fixed` anclados al borde inferior que NO se tocaron** (sin problema reportado, no asumir que lo necesitan): `.unified-nav` (sidebar, `inset: 0 auto 0 0` — su borde inferior también podría verse afectado por el mismo bisel, pero no fue verificado en vivo). Si aparece un reporte similar ahí, aplicar el mismo patrón (`html.browser-cursor-embedded .unified-nav { padding-bottom: var(--cursor-preview-chrome-bottom); }` dentro del breakpoint mobile) solo después de confirmarlo en vivo en Cursor.
+
 ## Fill-in-the-Blanks — Sistema de dificultad
 
 El algoritmo de blanks es **pedagógico, no mecánico**. No blanquea palabras al azar ni
