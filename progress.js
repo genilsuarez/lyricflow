@@ -243,7 +243,11 @@ function eventFor({ contentId, title, activity, runId, scorePct, passed, duratio
 
 export function configureProgressCatalog(songs) {
   catalogIds = [...new Set(songs.map(song => song.id).filter(Boolean))];
+  const allowed = new Set(catalogIds);
   const document = readJson(PROGRESS_KEY, emptyProgress);
+  for (const contentId of Object.keys(document.content || {})) {
+    if (!allowed.has(contentId)) delete document.content[contentId];
+  }
   catalogIds.forEach(contentId => ensureSong(document, contentId));
   writeProgress(document);
   return clone(document);
@@ -251,6 +255,12 @@ export function configureProgressCatalog(songs) {
 
 export function getProgress() {
   const document = readJson(PROGRESS_KEY, emptyProgress);
+  if (catalogIds.length) {
+    const allowed = new Set(catalogIds);
+    for (const contentId of Object.keys(document.content || {})) {
+      if (!allowed.has(contentId)) delete document.content[contentId];
+    }
+  }
   catalogIds.forEach(contentId => ensureSong(document, contentId));
   deriveSummary(document);
   return clone(document);

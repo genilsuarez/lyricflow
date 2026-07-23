@@ -23,6 +23,7 @@ configureProgressCatalog(pickerSongs);
 
 setupSupabaseAuth({
   onAfterLogin: () => {
+    configureProgressCatalog(pickerSongs);
     const dashboard = document.getElementById('dashboard');
     if (dashboard && !dashboard.hidden) renderDashboard();
   },
@@ -887,19 +888,12 @@ function isLocalHost() {
   return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
 }
 
-function isUnifiedLocalPlatform() {
-  return isLocalHost() && location.port === '3000' && location.pathname.startsWith('/lyricflow/');
-}
-
-function themedAppHref(path, localPort) {
-  const isUnifiedLocal = isUnifiedLocalPlatform();
-  const url = isUnifiedLocal
-    ? new URL(path, location.origin)
-    : isLocalHost()
-      ? new URL(`http://${location.hostname}:${localPort}/`)
-      : new URL(path, location.origin);
-  if (window.LPTheme) return window.LPTheme.appendThemeToHref(url.toString());
-  return url.toString();
+function themedAppHref(app) {
+  const href = window.LPPlatformUrls
+    ? window.LPPlatformUrls.appHref(app)
+    : `https://genilsuarez.github.io/${app}/`;
+  if (window.LPTheme) return window.LPTheme.appendThemeToHref(href);
+  return href;
 }
 
 const NAVIGATION_STORAGE_KEY = 'lp-navigation-mode';
@@ -978,19 +972,19 @@ function showAboutLearnFlow(event) {
       <div class="about-body">
         <p id="aboutLearnFlowDescription" class="about-description">Una plataforma para aprender idiomas con estructura, práctica y música.</p>
         <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
-          <a href="${themedAppHref('/deskflow/', 3000)}">
+          <a href="${themedAppHref('deskflow')}">
             <span class="about-module__mark about-module__mark--portal" aria-hidden="true">L</span>
             <span class="about-module__text"><strong>LearnFlow</strong><span>Portal</span></span>
           </a>
-          <a href="${themedAppHref('/fluentflow/', 3001)}">
+          <a href="${themedAppHref('fluentflow')}">
             <span class="about-module__mark about-module__mark--fluent" aria-hidden="true">F</span>
             <span class="about-module__text"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></span>
           </a>
-          <a href="${themedAppHref('/hubflow/', 3002)}">
+          <a href="${themedAppHref('hubflow')}">
             <span class="about-module__mark about-module__mark--hub" aria-hidden="true">H</span>
             <span class="about-module__text"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></span>
           </a>
-          <a href="${themedAppHref('/lyricflow/', 3003)}">
+          <a href="${themedAppHref('lyricflow')}">
             <span class="about-module__mark about-module__mark--lyric" aria-hidden="true">LF</span>
             <span class="about-module__text"><strong>LyricFlow</strong><span>Aprender con música</span></span>
           </a>
@@ -1098,7 +1092,7 @@ function initUnifiedNavigation() {
       <button class="unified-nav-item" id="navigationLogin" type="button" aria-label="Iniciar sesión">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('user')}</span><span>Iniciar Sesión</span>
       </button>
-      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('/deskflow/', 3000)}">
+      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('deskflow')}">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
       </a>
     </footer>
@@ -1115,7 +1109,7 @@ function initUnifiedNavigation() {
   themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   const platformLinks = [
-    ['navigationPortal', '/deskflow/', 3000],
+    ['navigationPortal', 'deskflow'],
   ];
 
   trigger.addEventListener('click', () => setNavigationOpen(true));
@@ -1155,9 +1149,9 @@ function initUnifiedNavigation() {
     themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
     themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   });
-  platformLinks.forEach(([id, path, port]) => {
+  platformLinks.forEach(([id, app]) => {
     document.getElementById(id).addEventListener('click', linkEvent => {
-      linkEvent.currentTarget.href = themedAppHref(path, port);
+      linkEvent.currentTarget.href = themedAppHref(app);
       setNavigationOpen(false);
     });
   });
