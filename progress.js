@@ -86,6 +86,7 @@ function emptyProgress() {
       attemptedContent: 0,
       completedActivities: 0,
       totalActivities: catalogIds.length * ACTIVITY_IDS.length,
+      attemptedActivities: 0,
     },
     content: {},
   };
@@ -149,6 +150,12 @@ function deriveSummary(document) {
   const completedActivities = songs.reduce((sum, song) => (
     sum + ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length
   ), 0);
+  const attemptedActivities = songs.reduce((sum, song) => (
+    sum + ACTIVITY_IDS.filter(activity => {
+      const entry = song.activities[activity];
+      return entry.attempts > 0 || entry.coveredDurationSec > 0;
+    }).length
+  ), 0);
 
   document.summary = {
     progressPct: songs.length
@@ -161,6 +168,7 @@ function deriveSummary(document) {
     )).length,
     completedActivities,
     totalActivities: songs.length * ACTIVITY_IDS.length,
+    attemptedActivities,
   };
 }
 
