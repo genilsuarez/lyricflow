@@ -5,18 +5,30 @@ window.lpSupabase = lpSupabase;
 
 let authListenerRegistered = false;
 
-async function handleLogin(session, onAfterLogin) {
+async function hydrateFromCloud(onAfterLogin, { forceDownload = false } = {}) {
+  const result = await downloadOnLogin({ force: forceDownload });
+  if (!result.hydrated) return result;
+  await runFullSync({ force: true });
+  onAfterLogin?.();
+  return result;
+}
+
+async function handleLogin(session, onAfterLogin, { forceDownload = false } = {}) {
   if (!session?.user) return;
-  const profile = await lpSupabase.fetchProfile();
+
+  let profile = null;
+  try {
+    profile = await lpSupabase.fetchProfile();
+  } catch {
+    profile = null;
+  }
   if (typeof lpLogin !== 'undefined') {
     lpLogin.setUserFromSupabase(session.user, profile);
   }
-  await downloadOnLogin();
-  await runFullSync({ force: true });
-  onAfterLogin?.();
+  await hydrateFromCloud(onAfterLogin, { forceDownload });
 }
 
-export function setupSupabaseAuth({ onAfterLogin } = {}) {
+export function setupSupabaseAuth({ onAfterLogin, onAfterLogout } = {}) {
   if (authListenerRegistered) return;
   authListenerRegistered = true;
 
@@ -24,28 +36,40 @@ export function setupSupabaseAuth({ onAfterLogin } = {}) {
     if (event === 'SIGNED_OUT' || !session?.user) {
       resetDownloadState();
       if (typeof lpLogin !== 'undefined' && lpLogin.getUser()?.isSupabaseUser) {
+        if (window.lpGuestReset?.clearGuestLocalProgress) {
+          window.lpGuestReset.clearGuestLocalProgress();
+        }
         lpLogin.setUser(null);
+        onAfterLogout?.();
       }
       return;
     }
-    handleLogin(session, onAfterLogin);
+    if (event === 'SIGNED_IN') {
+      resetDownloadState();
+    }
+    handleLogin(session, onAfterLogin, { forceDownload: event === 'SIGNED_IN' });
   });
 
   lpSupabase.isAuthenticated().then(async (authed) => {
     if (!authed) return;
-    const { data: { session } } = await lpSupabase.getSession();
+    const {
+      data: { session },
+    } = await lpSupabase.getSession();
     if (!session?.user) return;
 
     const current = typeof lpLogin !== 'undefined' ? lpLogin.getUser() : null;
     if (!current?.isSupabaseUser) {
-      const profile = await lpSupabase.fetchProfile();
+      let profile = null;
+      try {
+        profile = await lpSupabase.fetchProfile();
+      } catch {
+        profile = null;
+      }
       if (typeof lpLogin !== 'undefined') {
         lpLogin.setUserFromSupabase(session.user, profile);
       }
     }
 
-    await downloadOnLogin();
-    onAfterLogin?.();
-    await runFullSync();
+    await hydrateFromCloud(onAfterLogin);
   });
 }
