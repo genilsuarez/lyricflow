@@ -1,4 +1,6 @@
 import * as lpSupabase from './lp-supabase.js';
+import { isCloudHydrated } from './sync-engine.js';
+import { enrichLyricflowSongEntry, LYRICFLOW_ACTIVITY_IDS } from './lp-progress-summary.js';
 
 const PROGRESS_KEY = 'learnflow:progress:lyricflow:v1';
 const ACTIVITY_KEY = 'learnflow:activity:lyricflow:v1';
@@ -7,7 +9,6 @@ const APP_ID = 'lyricflow';
 const PASS_SCORE_PCT = 60;
 const LISTEN_COMPLETION_PCT = 90;
 const MAX_EVENTS = 200;
-const ACTIVITY_IDS = ['listen', 'dictation', 'challenge', 'quiz'];
 
 let catalogIds = [];
 
@@ -68,7 +69,7 @@ function emptySong(contentId) {
     bestScorePct: null,
     lastScorePct: null,
     attempts: 0,
-    activities: Object.fromEntries(ACTIVITY_IDS.map(activity => [activity, emptyActivity(activity)])),
+    activities: Object.fromEntries(LYRICFLOW_ACTIVITY_IDS.map(activity => [activity, emptyActivity(activity)])),
   };
 }
 
@@ -85,7 +86,7 @@ function emptyProgress() {
       totalContent: catalogIds.length,
       attemptedContent: 0,
       completedActivities: 0,
-      totalActivities: catalogIds.length * ACTIVITY_IDS.length,
+      totalActivities: catalogIds.length * LYRICFLOW_ACTIVITY_IDS.length,
       attemptedActivities: 0,
     },
     content: {},
@@ -119,14 +120,14 @@ function ensureSong(document, contentId) {
   song.contentId = contentId;
   song.contentType = 'song';
   if (!song.activities || typeof song.activities !== 'object') song.activities = {};
-  ACTIVITY_IDS.forEach(activity => {
+  LYRICFLOW_ACTIVITY_IDS.forEach(activity => {
     song.activities[activity] = { ...emptyActivity(activity), ...(song.activities[activity] || {}) };
   });
   return song;
 }
 
 function deriveSong(song) {
-  const completedCount = ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length;
+  const completedCount = LYRICFLOW_ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length;
   song.progressPct = completedCount * 25;
 
   // Song is complete if all 4 activities done, OR if the 3 scored challenges are done
@@ -134,10 +135,10 @@ function deriveSong(song) {
   const challengesDone = ['dictation', 'challenge', 'quiz'].every(
     activity => song.activities[activity].completed
   );
-  song.completed = completedCount === ACTIVITY_IDS.length || challengesDone;
+  song.completed = completedCount === LYRICFLOW_ACTIVITY_IDS.length || challengesDone;
   if (!song.completed) song.completedAt = null;
 
-  const scored = ACTIVITY_IDS
+  const scored = LYRICFLOW_ACTIVITY_IDS
     .map(activity => song.activities[activity].bestScorePct)
     .filter(score => Number.isFinite(score));
   song.bestScorePct = scored.length ? Math.max(...scored) : null;
@@ -145,13 +146,17 @@ function deriveSong(song) {
 
 function deriveSummary(document) {
   const ids = catalogIds.length ? catalogIds : Object.keys(document.content || {});
-  ids.forEach(contentId => deriveSong(ensureSong(document, contentId)));
-  const songs = ids.map(contentId => document.content[contentId]);
+  ids.forEach((contentId) => {
+    const song = ensureSong(document, contentId);
+    enrichLyricflowSongEntry(contentId, song);
+    deriveSong(song);
+  });
+  const songs = ids.map((contentId) => document.content[contentId]);
   const completedActivities = songs.reduce((sum, song) => (
-    sum + ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length
+    sum + LYRICFLOW_ACTIVITY_IDS.filter(activity => song.activities[activity].completed).length
   ), 0);
   const attemptedActivities = songs.reduce((sum, song) => (
-    sum + ACTIVITY_IDS.filter(activity => {
+    sum + LYRICFLOW_ACTIVITY_IDS.filter(activity => {
       const entry = song.activities[activity];
       return entry.attempts > 0 || entry.coveredDurationSec > 0;
     }).length
@@ -167,7 +172,7 @@ function deriveSummary(document) {
       song.attempts > 0 || song.activities.listen.coveredDurationSec > 0
     )).length,
     completedActivities,
-    totalActivities: songs.length * ACTIVITY_IDS.length,
+    totalActivities: songs.length * LYRICFLOW_ACTIVITY_IDS.length,
     attemptedActivities,
   };
 }
@@ -205,7 +210,7 @@ function scheduleCloudSync() {
   cloudSyncTimer = setTimeout(async () => {
     cloudSyncTimer = null;
     const authed = await lpSupabase.isAuthenticated().catch(() => false);
-    if (!authed) return;
+    if (!authed || !isCloudHydrated()) return;
 
     const progressDoc = readJson(PROGRESS_KEY, emptyProgress);
     if (progressDoc.content && Object.keys(progressDoc.content).length) {
@@ -269,6 +274,7 @@ export function getProgress() {
 export function getSongProgress(contentId) {
   const document = readJson(PROGRESS_KEY, emptyProgress);
   const song = ensureSong(document, contentId);
+  enrichLyricflowSongEntry(contentId, song);
   deriveSong(song);
   return clone(song);
 }
@@ -395,5 +401,5 @@ export const progressConfig = Object.freeze({
   passScorePct: PASS_SCORE_PCT,
   listenCompletionPct: LISTEN_COMPLETION_PCT,
   maxEvents: MAX_EVENTS,
-  activities: [...ACTIVITY_IDS],
+  activities: [...LYRICFLOW_ACTIVITY_IDS],
 });

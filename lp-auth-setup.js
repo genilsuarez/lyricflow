@@ -36,9 +36,16 @@ async function handleLogin(session, onAfterLogin, { forceDownload = false } = {}
   await hydrateFromCloud(onAfterLogin, { forceDownload });
 }
 
+function setupCrossTabLogoutListener() {
+  window.addEventListener('lp-explicit-logout', () => {
+    void clearOrphanSupabaseSession();
+  });
+}
+
 export function setupSupabaseAuth({ onAfterLogin, onAfterLogout } = {}) {
   if (authListenerRegistered) return;
   authListenerRegistered = true;
+  setupCrossTabLogoutListener();
 
   lpSupabase.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_OUT' || !session?.user) {

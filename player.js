@@ -34,6 +34,19 @@ setupSupabaseAuth({
   },
 });
 
+function refreshLyricFlowAfterGuestReset() {
+  configureProgressCatalog(pickerSongs);
+  const dashboard = document.getElementById('dashboard');
+  if (dashboard && !dashboard.hidden) renderDashboard();
+}
+
+window.addEventListener('lp-guest-reset', refreshLyricFlowAfterGuestReset);
+window.addEventListener('storage', storageEvent => {
+  if (storageEvent.key?.startsWith('learnflow:progress:') && storageEvent.newValue === null) {
+    refreshLyricFlowAfterGuestReset();
+  }
+});
+
 export const app = document.getElementById('app');
 
 // Speed control options
@@ -878,49 +891,12 @@ export async function loadSong(song) {
   }
 }
 
-// ─── Theme (shared between picker and player) ──────────────────────────────────
+// ─── Shared nav helpers (lp-nav-helpers.js) ──────────────────────────────────
+const navIcon = (name) => window.LpNavHelpers.navIcon(name);
+const currentThemeIcon = () => window.LpNavHelpers.currentThemeIcon();
+const toggleTheme = (iconEl) => window.LpNavHelpers.toggleTheme(iconEl);
+const themedAppHref = (app) => window.LpNavHelpers.themedAppHref(app);
 
-function navIcon(name) {
-  return window.LpNavIcons ? window.LpNavIcons.svg(name) : '';
-}
-
-function currentThemeIcon() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return window.LpNavIcons ? window.LpNavIcons.themeIcon(isDark) : '';
-}
-
-function toggleTheme(iconEl) {
-  if (window.LPTheme) {
-    window.LPTheme.toggleTheme();
-  } else {
-    document.documentElement.classList.add('theme-transitioning');
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const newTheme = isDark ? 'light' : 'dark';
-    if (newTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-    else document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('lp-theme', newTheme);
-    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 350);
-  }
-  if (iconEl && window.LpNavIcons) {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    window.LpNavIcons.setTheme(iconEl, isDark);
-  }
-}
-
-// Portal + theme toggle wiring shared by every view that carries the
-// [← volver][ⓘ LearnFlow][🏠][🌙] header actions.
-function isLocalHost() {
-  const host = location.hostname;
-  return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
-}
-
-function themedAppHref(app) {
-  const href = window.LPPlatformUrls
-    ? window.LPPlatformUrls.appHref(app)
-    : `https://genilsuarez.github.io/${app}/`;
-  if (window.LPTheme) return window.LPTheme.appendThemeToHref(href);
-  return href;
-}
 
 const NAVIGATION_STORAGE_KEY = 'lp-navigation-mode';
 
@@ -977,96 +953,20 @@ function setNavigationOpen(isOpen, restoreFocus = false) {
 }
 
 function showAboutLearnFlow(event) {
-  document.getElementById('aboutLearnFlow')?.remove();
-  const opener = event?.currentTarget instanceof HTMLElement ? event.currentTarget : document.activeElement;
-  const appRoot = document.getElementById('app');
-  const navigation = document.getElementById('unifiedNavigation');
-  const navigationTrigger = document.getElementById('unifiedNavTrigger');
-  const overlay = document.createElement('div');
-  overlay.id = 'aboutLearnFlow';
-  overlay.className = 'about-overlay';
-  overlay.innerHTML = `
-    <section class="about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutLearnFlowTitle" aria-describedby="aboutLearnFlowDescription">
-      <header class="about-header">
-        <div class="about-identity" aria-hidden="true">L</div>
-        <div class="about-header__text">
-          <p class="about-eyebrow">LearnFlow · Plataforma</p>
-          <h2 id="aboutLearnFlowTitle">About LearnFlow</h2>
-        </div>
-        <button class="about-close" id="aboutCloseBtn" type="button" aria-label="Cerrar About LearnFlow">✕</button>
-      </header>
-      <div class="about-body">
-        <p id="aboutLearnFlowDescription" class="about-description">Una plataforma para aprender idiomas con estructura, práctica y música.</p>
-        <nav class="about-modules" aria-label="Aplicaciones de LearnFlow">
-          <a href="${themedAppHref('deskflow')}">
-            <span class="about-module__mark about-module__mark--portal" aria-hidden="true">L</span>
-            <span class="about-module__text"><strong>LearnFlow</strong><span>Portal</span></span>
-          </a>
-          <a href="${themedAppHref('fluentflow')}">
-            <span class="about-module__mark about-module__mark--fluent" aria-hidden="true">F</span>
-            <span class="about-module__text"><strong>FluentFlow</strong><span>Ruta de inglés por niveles CEFR</span></span>
-          </a>
-          <a href="${themedAppHref('hubflow')}">
-            <span class="about-module__mark about-module__mark--hub" aria-hidden="true">H</span>
-            <span class="about-module__text"><strong>HubFlow</strong><span>Práctica flexible de gramática</span></span>
-          </a>
-          <a href="${themedAppHref('lyricflow')}">
-            <span class="about-module__mark about-module__mark--lyric" aria-hidden="true">LF</span>
-            <span class="about-module__text"><strong>LyricFlow</strong><span>Aprender con música</span></span>
-          </a>
-        </nav>
-      </div>
-      <footer class="about-footer">
-        <div class="about-author">
-          <div class="about-author__avatar" aria-hidden="true">GS</div>
-          <div class="about-author__info">
-            <strong>Genil Suárez</strong>
-            <span>Diseñado y desarrollado como proyecto personal</span>
-          </div>
-        </div>
-      </footer>
-    </section>
-  `;
-  if (navigation) navigation.inert = true;
-  if (navigationTrigger) navigationTrigger.inert = true;
-  appRoot.inert = true;
-  document.body.appendChild(overlay);
-
-  const focusable = [...overlay.querySelectorAll('button, a[href]')];
-  const close = () => {
-    overlay.remove();
-    appRoot.inert = false;
-    setNavigationOpen(false);
-    if (navigationTrigger) navigationTrigger.inert = false;
-    document.removeEventListener('keydown', onAboutKeydown);
-    const fallback = document.getElementById('unifiedNavTrigger');
-    const openerNavigation = opener instanceof HTMLElement ? opener.closest('#unifiedNavigation') : null;
-    if (opener instanceof HTMLElement && opener.isConnected && !openerNavigation?.inert) opener.focus();
-    else fallback?.focus();
-  };
-  const onAboutKeydown = keyEvent => {
-    if (keyEvent.key === 'Escape') {
-      keyEvent.preventDefault();
-      close();
-      return;
-    }
-    if (keyEvent.key !== 'Tab' || focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (keyEvent.shiftKey && document.activeElement === first) {
-      keyEvent.preventDefault();
-      last.focus();
-    } else if (!keyEvent.shiftKey && document.activeElement === last) {
-      keyEvent.preventDefault();
-      first.focus();
-    }
-  };
-
-  overlay.querySelector('#aboutCloseBtn').addEventListener('click', close);
-  overlay.addEventListener('click', clickEvent => { if (clickEvent.target === overlay) close(); });
-  document.addEventListener('keydown', onAboutKeydown);
-  overlay.querySelector('#aboutCloseBtn').focus();
+  lpAbout.open(event, {
+    inertElements: [
+      document.getElementById('app'),
+      document.getElementById('unifiedNavigation'),
+      document.getElementById('unifiedNavTrigger'),
+    ],
+    onClose() {
+      setNavigationOpen(false);
+      const navigationTrigger = document.getElementById('unifiedNavTrigger');
+      if (navigationTrigger) navigationTrigger.inert = false;
+    },
+  });
 }
+
 
 function initUnifiedNavigation() {
   // Guard against duplicate initialization (Vite HMR re-executes the module)
@@ -1160,15 +1060,10 @@ function initUnifiedNavigation() {
     setNavigationOpen(false);
     showAboutLearnFlow(aboutEvent);
   });
-  document.getElementById('navigationLogin').addEventListener('click', () => {
-    setNavigationOpen(false);
-    lpLogin.open();
+  lpLogin.bindNavButton('#navigationLogin', {
+    beforeOpen: () => setNavigationOpen(false),
+    labelSelector: 'span:last-child',
   });
-  lpLogin.onUpdate(function(user) {
-    const label = document.querySelector('#navigationLogin span:last-child');
-    if (label) label.textContent = user ? user.name : 'Iniciar Sesión';
-  });
-  (function() { const u = lpLogin.getUser(); if (u) { const l = document.querySelector('#navigationLogin span:last-child'); if (l) l.textContent = u.name; } })();
   themeButton.addEventListener('click', () => {
     toggleTheme(themeIcon);
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
