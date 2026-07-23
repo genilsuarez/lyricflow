@@ -13,6 +13,14 @@ async function hydrateFromCloud(onAfterLogin, { forceDownload = false } = {}) {
   return result;
 }
 
+async function clearOrphanSupabaseSession() {
+  try {
+    await lpSupabase.signOut();
+  } catch {
+    /* noop */
+  }
+}
+
 async function handleLogin(session, onAfterLogin, { forceDownload = false } = {}) {
   if (!session?.user) return;
 
@@ -22,7 +30,7 @@ async function handleLogin(session, onAfterLogin, { forceDownload = false } = {}
   } catch {
     profile = null;
   }
-  if (typeof lpLogin !== 'undefined') {
+  if (typeof lpLogin !== 'undefined' && !window.lpGuestReset?.hasLocalSupabaseIdentity?.()) {
     lpLogin.setUserFromSupabase(session.user, profile);
   }
   await hydrateFromCloud(onAfterLogin, { forceDownload });
@@ -32,9 +40,10 @@ export function setupSupabaseAuth({ onAfterLogin, onAfterLogout } = {}) {
   if (authListenerRegistered) return;
   authListenerRegistered = true;
 
-  lpSupabase.onAuthStateChange((event, session) => {
+  lpSupabase.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_OUT' || !session?.user) {
       resetDownloadState();
+      window.lpGuestReset?.clearExplicitLogout?.();
       if (typeof lpLogin !== 'undefined' && lpLogin.getUser()?.isSupabaseUser) {
         if (window.lpGuestReset?.clearGuestLocalProgress) {
           window.lpGuestReset.clearGuestLocalProgress();
@@ -44,29 +53,41 @@ export function setupSupabaseAuth({ onAfterLogin, onAfterLogout } = {}) {
       }
       return;
     }
-    if (event === 'SIGNED_IN') {
+
+    if (window.lpGuestReset?.shouldRejectSession?.()) {
+      await clearOrphanSupabaseSession();
+      window.lpGuestReset?.clearExplicitLogout?.();
+      return;
+    }
+
+    const forceDownload =
+      event === 'SIGNED_IN' || !!window.lpGuestReset?.shouldForceCloudDownload?.();
+
+    if (event === 'SIGNED_IN' || forceDownload) {
       resetDownloadState();
     }
-    handleLogin(session, onAfterLogin, { forceDownload: event === 'SIGNED_IN' });
+
+    await handleLogin(session, onAfterLogin, { forceDownload });
   });
 
   lpSupabase.isAuthenticated().then(async (authed) => {
     if (!authed) return;
-    const {
-      data: { session },
-    } = await lpSupabase.getSession();
-    if (!session?.user) return;
 
-    const current = typeof lpLogin !== 'undefined' ? lpLogin.getUser() : null;
-    if (!current?.isSupabaseUser) {
-      let profile = null;
-      try {
-        profile = await lpSupabase.fetchProfile();
-      } catch {
-        profile = null;
-      }
-      if (typeof lpLogin !== 'undefined') {
-        lpLogin.setUserFromSupabase(session.user, profile);
+    if (window.lpGuestReset?.shouldRejectSession?.()) {
+      await clearOrphanSupabaseSession();
+      window.lpGuestReset?.clearExplicitLogout?.();
+      return;
+    }
+
+    const forceDownload = !!window.lpGuestReset?.shouldForceCloudDownload?.();
+    if (forceDownload) {
+      resetDownloadState();
+      const {
+        data: { session },
+      } = await lpSupabase.getSession();
+      if (session?.user) {
+        await handleLogin(session, onAfterLogin, { forceDownload: true });
+        return;
       }
     }
 
