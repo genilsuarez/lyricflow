@@ -967,7 +967,6 @@ function showAboutLearnFlow(event) {
   });
 }
 
-
 function initUnifiedNavigation() {
   // Guard against duplicate initialization (Vite HMR re-executes the module)
   if (document.getElementById('unifiedNavTrigger')) return;
