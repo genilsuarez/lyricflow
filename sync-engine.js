@@ -27,6 +27,7 @@ const MAX_ACTIVITY_EVENTS = 200;
 let lastSyncAt = 0;
 let syncing = false;
 let downloaded = false;
+let cloudHydrated = false;
 
 function readRaw(key) {
   try {
@@ -182,10 +183,11 @@ async function downloadActivityApp(app) {
 // Se llama una sola vez por sesión, justo después de autenticarse.
 export function resetDownloadState() {
   downloaded = false;
+  cloudHydrated = false;
 }
 
-export async function downloadOnLogin() {
-  if (downloaded) return { downloaded: false, reason: 'already_downloaded_this_session' };
+export async function downloadOnLogin({ force = false } = {}) {
+  if (downloaded && !force) return { downloaded: false, reason: 'already_downloaded_this_session' };
 
   const authed = await lpSupabase.isAuthenticated();
   if (!authed) return { downloaded: false, reason: 'not_authenticated' };
@@ -201,8 +203,11 @@ export async function downloadOnLogin() {
     if (progress.downloaded || activity.downloaded) anyChanged = true;
   }
 
-  if (!hadFetchError) downloaded = true;
-  return { downloaded: anyChanged, perApp };
+  if (!hadFetchError) {
+    downloaded = true;
+    cloudHydrated = true;
+  }
+  return { downloaded: anyChanged, hydrated: cloudHydrated, perApp };
 }
 
 async function syncApp(app) {
@@ -234,6 +239,7 @@ export async function runFullSync({ force = false } = {}) {
 
   const authed = await lpSupabase.isAuthenticated();
   if (!authed) return { synced: false, reason: 'not_authenticated' };
+  if (!cloudHydrated) return { synced: false, reason: 'not_hydrated' };
 
   syncing = true;
   try {

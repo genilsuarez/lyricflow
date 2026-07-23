@@ -27,6 +27,11 @@ setupSupabaseAuth({
     const dashboard = document.getElementById('dashboard');
     if (dashboard && !dashboard.hidden) renderDashboard();
   },
+  onAfterLogout: () => {
+    configureProgressCatalog(pickerSongs);
+    const dashboard = document.getElementById('dashboard');
+    if (dashboard && !dashboard.hidden) renderDashboard();
+  },
 });
 
 export const app = document.getElementById('app');
