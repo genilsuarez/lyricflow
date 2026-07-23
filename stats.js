@@ -121,6 +121,12 @@ function svgRingLarge(percent, size = 140) {
   `;
 }
 
+/** % alineado con "X de Y canciones" — no summary.progressPct (promedio de avance parcial). */
+function summaryDisplayPct(summary) {
+  if (!summary?.totalContent) return 0;
+  return Math.round((summary.completedContent / summary.totalContent) * 100);
+}
+
 function getComputedData() {
   const progress = getProgress();
   const events = readActivityLedger();
@@ -151,7 +157,7 @@ function getComputedData() {
   const totalAttempts = songDetails.reduce((sum, s) => sum + (s.progress.attempts || 0), 0);
   const allScores = songDetails.map(s => s.progress.bestScorePct).filter(s => s !== null && s !== undefined);
   const bestScore = allScores.length ? Math.max(...allScores) : null;
-  const pct = Math.round(progress.summary.progressPct);
+  const pct = summaryDisplayPct(progress.summary);
 
   return { progress, events, streak, songDetails, activityCounts, totalAttempts, bestScore, pct };
 }
