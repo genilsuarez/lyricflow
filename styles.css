@@ -326,6 +326,21 @@ body {
 }
 [data-theme="dark"] .grain { opacity: 0.06; }
 
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 16px;
+  z-index: 10000;
+  padding: 10px 18px;
+  background: var(--lp-accent);
+  color: var(--lp-ink-inverse);
+  font-weight: 700;
+  font-size: 0.8rem;
+  border-radius: var(--lp-radius-md);
+  text-decoration: none;
+}
+.skip-link:focus { left: 16px; }
+
 /* ─── App Stage (centers the floating card between the page header/footer,
    sizing driven by its own flex:1 space — no viewport arithmetic needed) ────── */
 
@@ -4358,9 +4373,7 @@ a:focus-visible,
 }
 
 /* ═══ Fase F — Ergonomía móvil del player (INFORME-BOTONES §3.4 rec.4/H6) ═══
-   Los controles con tooltip (toggles/speed/loop) no pueden usar ::after para
-   hit-area (lo ocupa el sistema de tooltips). Se suben a 36px y, sobre todo,
-   los media queries móviles YA NO los encogen por debajo del tamaño desktop. */
+   Visual 36px; touch target 44px via ::after hit-area extension. */
 
 .toggle-trans-btn,
 .toggle-select-btn,
@@ -4369,7 +4382,25 @@ a:focus-visible,
 .toggle-blanks-btn,
 .toggle-culture-btn,
 .toggle-quiz-btn,
-.loop-btn { width: 36px; height: 36px; }
+.toggle-listening-btn,
+.loop-btn {
+  width: 36px;
+  height: 36px;
+}
+
+.toggle-trans-btn::after,
+.toggle-select-btn::after,
+.toggle-theater-btn::after,
+.toggle-vocab-btn::after,
+.toggle-blanks-btn::after,
+.toggle-culture-btn::after,
+.toggle-quiz-btn::after,
+.toggle-listening-btn::after,
+.loop-btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
 
 .speed-btn { height: 36px; }
 
@@ -4382,8 +4413,8 @@ a:focus-visible,
   .toggle-blanks-btn,
   .toggle-culture-btn,
   .toggle-quiz-btn,
+  .toggle-listening-btn,
   .loop-btn { width: 36px; height: 36px; font-size: 0.82rem; }
-  .toggle-listening-btn { width: 36px; height: 36px; font-size: 0.82rem; }
   .speed-btn { height: 34px; padding: 5px 8px; font-size: 0.6rem; }
 
   /* Mode toolbar: 4 modos + overflow; display comparte fila */
