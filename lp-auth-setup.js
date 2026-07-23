@@ -1,5 +1,5 @@
 import * as lpSupabase from './lp-supabase.js';
-import { downloadOnLogin, runFullSync } from './sync-engine.js';
+import { downloadOnLogin, runFullSync, resetDownloadState } from './sync-engine.js';
 
 window.lpSupabase = lpSupabase;
 
@@ -22,6 +22,7 @@ export function setupSupabaseAuth({ onAfterLogin } = {}) {
 
   lpSupabase.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT' || !session?.user) {
+      resetDownloadState();
       if (typeof lpLogin !== 'undefined' && lpLogin.getUser()?.isSupabaseUser) {
         lpLogin.setUser(null);
       }
@@ -43,8 +44,8 @@ export function setupSupabaseAuth({ onAfterLogin } = {}) {
       }
     }
 
-    const downloadResult = await downloadOnLogin();
-    if (downloadResult.downloaded) onAfterLogin?.();
+    await downloadOnLogin();
+    onAfterLogin?.();
     await runFullSync();
   });
 }
