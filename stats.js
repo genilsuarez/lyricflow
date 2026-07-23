@@ -121,10 +121,10 @@ function svgRingLarge(percent, size = 140) {
   `;
 }
 
-/** % alineado con "X de Y canciones" — no summary.progressPct (promedio de avance parcial). */
+/** % alineado con "X de Y actividades" — no summary.progressPct (promedio de avance parcial). */
 function summaryDisplayPct(summary) {
-  if (!summary?.totalContent) return 0;
-  return Math.round((summary.completedContent / summary.totalContent) * 100);
+  if (!summary?.totalActivities) return 0;
+  return Math.round((summary.completedActivities / summary.totalActivities) * 100);
 }
 
 function getComputedData() {
@@ -226,8 +226,8 @@ export function renderDashboard(onSongClick, onShowSongs) {
               </button>
               <div class="dash-hero__lead">
                 <h2 class="dash-hero__title">
-                  <span class="dash-hero__title-value">${progress.summary.completedContent}</span>
-                  <span class="dash-hero__title-muted">de ${progress.summary.totalContent} canciones</span>
+                  <span class="dash-hero__title-value">${progress.summary.completedActivities}</span>
+                  <span class="dash-hero__title-muted">de ${progress.summary.totalActivities} actividades</span>
                 </h2>
                 <span class="dash-hero__pct-badge" aria-label="${pct}% completado">${pct}%</span>
               </div>
@@ -235,7 +235,7 @@ export function renderDashboard(onSongClick, onShowSongs) {
           </div>
           <div class="dash-hero__metrics">
             <div class="dash-metric"><strong>${streak.current}</strong><span>racha</span></div>
-            <div class="dash-metric"><strong>${progress.summary.completedActivities}</strong><span>actividades</span></div>
+            <div class="dash-metric"><strong>${progress.summary.completedContent}</strong><span>canciones</span></div>
             <div class="dash-metric"><strong>${totalAttempts}</strong><span>intentos</span></div>
             <div class="dash-metric dash-metric--global"><strong>${pct}%</strong><span>avance</span></div>
           </div>
@@ -356,8 +356,8 @@ export function renderStats() {
             <h2>Estadisticas</h2>
           </div>
           <div class="sv-top__numbers">
-            <div class="sv-stat"><strong>${progress.summary.completedContent} / ${progress.summary.totalContent}</strong><span>canciones</span></div>
             <div class="sv-stat"><strong>${progress.summary.completedActivities} / ${progress.summary.totalActivities}</strong><span>actividades</span></div>
+            <div class="sv-stat"><strong>${progress.summary.completedContent} / ${progress.summary.totalContent}</strong><span>canciones</span></div>
             <div class="sv-stat"><strong>${totalAttempts}</strong><span>intentos</span></div>
             ${bestScore !== null ? `<div class="sv-stat"><strong>${Math.round(bestScore)}%</strong><span>mejor score</span></div>` : ''}
             <div class="sv-stat"><strong>${streak.current}</strong><span>racha actual</span></div>

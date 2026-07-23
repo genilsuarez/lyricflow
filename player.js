@@ -447,13 +447,14 @@ function updateAppHeaderProgress() {
   el.innerHTML = `
     <span class="lp-header-stats__group">
       ${LP_ICON_TROPHY}
-      <strong class="lp-header-stats__value">${summary.completedContent}</strong>
-      <span class="lp-header-stats__label">canciones</span>
+      <strong class="lp-header-stats__value">${summary.completedActivities}/${summary.totalActivities}</strong>
+      <span class="lp-header-stats__label">actividades</span>
     </span>
     <span class="lp-header-stats__divider" aria-hidden="true"></span>
     <span class="lp-header-stats__group">
-      <strong class="lp-header-stats__value">${summary.completedActivities}/${summary.totalActivities}</strong>
+      <strong class="lp-header-stats__value">${summary.completedContent}</strong>
       ${LP_ICON_STAR}
+      <span class="lp-header-stats__label">canciones</span>
     </span>
   `;
 }
