@@ -513,6 +513,27 @@ function seededRandom(seed) {
   };
 }
 
+// Greedily pick blank candidates: respect global cap, per-line cap, and one
+// occurrence per unique word across the whole song (avoids "goodbye" ×10 in Hello, Goodbye).
+function pickBlankCandidates(allCandidates, totalCap, maxPerLine) {
+  const lineCounts = {};
+  const usedWords = new Set();
+  const picked = [];
+
+  for (const c of allCandidates) {
+    if (picked.length >= totalCap) break;
+    const lc = lineCounts[c.lineIndex] || 0;
+    if (lc >= maxPerLine) continue;
+    if (usedWords.has(c.clean)) continue;
+
+    picked.push(c);
+    lineCounts[c.lineIndex] = lc + 1;
+    usedWords.add(c.clean);
+  }
+
+  return picked;
+}
+
 // ─── Stats View ────────────────────────────────────────────────────────────────
 
 function setActiveNavItem(id) {
@@ -1914,28 +1935,10 @@ function buildBlanksMap() {
   // Pass 2: sort by score (vocab first, then longest/most interesting)
   allCandidates.sort((a, b) => b.score - a.score);
 
-  // Pass 3: greedily pick up to totalCap, respecting maxPerLine
-  // Also avoid repeating the same word on consecutive lines (boring for the player)
-  const lineCounts = {};  // lineIndex -> count of blanks assigned
-  const map = {};         // lineIndex -> Set of wordIdx
-  const lineWord = {};    // lineIndex -> word picked (to check consecutive repetition)
-
-  let picked = 0;
-  for (const c of allCandidates) {
-    if (picked >= totalCap) break;
-    const lc = lineCounts[c.lineIndex] || 0;
-    if (lc >= diff.maxPerLine) continue;
-
-    // Skip if adjacent line already blanks the same word
-    const prevWord = lineWord[c.lineIndex - 1];
-    const nextWord = lineWord[c.lineIndex + 1];
-    if (prevWord === c.clean || nextWord === c.clean) continue;
-
+  const map = {};
+  for (const c of pickBlankCandidates(allCandidates, totalCap, diff.maxPerLine)) {
     if (!map[c.lineIndex]) map[c.lineIndex] = new Set();
     map[c.lineIndex].add(c.wordIdx);
-    lineCounts[c.lineIndex] = lc + 1;
-    lineWord[c.lineIndex] = c.clean;
-    picked++;
   }
 
   return map;
@@ -2465,29 +2468,12 @@ function buildListeningBlanks() {
     });
   });
 
-  // Sort by score (vocab first) and pick greedily with per-line cap
-  // Avoid repeating the same word on consecutive lines
   allCandidates.sort((a, b) => b.score - a.score);
+
   const map = {};
-  const lineCounts = {};
-  const lineWord = {};
-  let picked = 0;
-
-  for (const c of allCandidates) {
-    if (picked >= totalCap) break;
-    const lc = lineCounts[c.lineIndex] || 0;
-    if (lc >= diff.maxPerLine) continue;
-
-    // Skip if adjacent line already blanks the same word
-    const prevWord = lineWord[c.lineIndex - 1];
-    const nextWord = lineWord[c.lineIndex + 1];
-    if (prevWord === c.clean || nextWord === c.clean) continue;
-
+  for (const c of pickBlankCandidates(allCandidates, totalCap, diff.maxPerLine)) {
     if (!map[c.lineIndex]) map[c.lineIndex] = [];
     map[c.lineIndex].push({ wordIdx: c.wordIdx, clean: c.clean, original: c.original });
-    lineCounts[c.lineIndex] = lc + 1;
-    lineWord[c.lineIndex] = c.clean;
-    picked++;
   }
 
   return map;
