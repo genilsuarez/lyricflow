@@ -7,18 +7,12 @@
 // Descarga UNA vez al autenticarse, para poblar el caché local en un
 // dispositivo nuevo — no hay polling.
 //
-// Nota de alcance: el merge de descarga escribe en learnflow:progress:{app}:v1,
-// que es la fuente de verdad real para LyricFlow. Para HubFlow y FluentFlow esa
-// clave es una vista DERIVADA (HubFlow la recalcula desde sus score-history keys
-// en cada carga; FluentFlow la deriva de su store de Zustand) — el merge aquí
-// deja el portal de DeskFlow mostrando los datos correctos, pero no reconstruye
-// el estado interno de esas dos apps por sí solo. FluentFlow soluciona esto en
-// su propio syncEngine.ts, mezclando directo en su store. HubFlow queda
-// pendiente: reconstruir sus score-history keys individuales desde progress
-// remoto requeriría mapear cada scoreKey por módulo, fuera de alcance por ahora.
+// Nota de alcance: el merge de descarga escribe en learnflow:progress:{app}:v1.
+// LyricFlow la usa como fuente de verdad. HubFlow reconstruye score-history via
+// hydrateHubFlowFromCloud(); FluentFlow importa la proyección en syncEngine.ts.
 
 import * as lpSupabase from './lp-supabase.js';
-import { recomputeProgressDocumentSummary } from './lp-progress-summary.js';
+import { recomputeProgressDocumentSummary, inferFluentflowCefrLevel } from './lp-progress-summary.js';
 
 const APPS = ['fluentflow', 'hubflow', 'lyricflow'];
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -70,8 +64,8 @@ function normalizeIsoDate(value) {
 
 // Combina una fila remota con la entrada local existente sin retroceder
 // progreso ya alcanzado (favorece completado=true, mejor puntaje, más intentos).
-function mergeContentEntry(existing, row) {
-  return {
+function mergeContentEntry(existing, row, { app } = {}) {
+  const merged = {
     contentId: row.content_id,
     contentType: row.content_type || existing?.contentType || 'module',
     progressPct: Math.max(row.progress_pct ?? 0, existing?.progressPct ?? 0),
@@ -84,7 +78,15 @@ function mergeContentEntry(existing, row) {
     lastScorePct: row.last_score_pct ?? existing?.lastScorePct ?? null,
     attempts: Math.max(row.attempts ?? 0, existing?.attempts ?? 0),
     activities: existing?.activities || row.activities || {},
+    title: existing?.title || null,
+    cefrLevel: existing?.cefrLevel || null,
   };
+
+  if (app === 'fluentflow' && !merged.cefrLevel) {
+    merged.cefrLevel = inferFluentflowCefrLevel(row.content_id);
+  }
+
+  return merged;
 }
 
 async function downloadApp(app) {
@@ -99,7 +101,7 @@ async function downloadApp(app) {
   let changed = false;
   for (const row of remoteRows) {
     const existing = doc.content[row.content_id];
-    const merged = mergeContentEntry(existing, row);
+    const merged = mergeContentEntry(existing, row, { app });
     if (
       !existing ||
       merged.completed !== existing.completed ||
@@ -184,6 +186,10 @@ async function downloadActivityApp(app) {
 export function resetDownloadState() {
   downloaded = false;
   cloudHydrated = false;
+}
+
+export function isCloudHydrated() {
+  return cloudHydrated;
 }
 
 export async function downloadOnLogin({ force = false } = {}) {
