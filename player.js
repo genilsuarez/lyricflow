@@ -17,8 +17,16 @@ import {
   markListenCompleted,
   recordActivityResult,
 } from './progress.js';
+import { setupSupabaseAuth } from './lp-auth-setup.js';
 
 configureProgressCatalog(pickerSongs);
+
+setupSupabaseAuth({
+  onAfterLogin: () => {
+    const dashboard = document.getElementById('dashboard');
+    if (dashboard && !dashboard.hidden) renderDashboard();
+  },
+});
 
 export const app = document.getElementById('app');
 
