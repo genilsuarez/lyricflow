@@ -6,8 +6,8 @@
 
 import pickerSongs from './songs/picker-data.js';
 import { getProgress, getSongProgress, progressConfig } from './progress.js';
-import { shouldDeferStatsDisplay, consumeStatsRevealAnimation } from './sync-engine.js';
-import { animateText, animateWidth, animateValue } from './lp-stats-animate.js';
+import { shouldDeferStatsDisplay, consumeStatsRevealAnimation, readLocalActivityEvents, shouldDeferActivityDisplay } from './sync-engine.js';
+import { animateText, animateCssVar, prefersReducedMotion } from './lp-stats-animate.js';
 
 function getAppRoot() {
   return document.getElementById('app');
@@ -28,13 +28,7 @@ const LEVEL_ORDER = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function readActivityLedger() {
-  if (shouldDeferStatsDisplay()) return [];
-  try {
-    const raw = localStorage.getItem(ACTIVITY_KEY);
-    const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.events)) return parsed.events;
-  } catch {}
-  return [];
+  return readLocalActivityEvents('lyricflow');
 }
 
 function timeAgo(isoDate) {
@@ -127,6 +121,21 @@ function svgRingLarge(percent, size = 140) {
   `;
 }
 
+function buildActivityCardsMarkup(activityCounts) {
+  return ACTIVITY_IDS.map((act) => {
+    const { completed, total } = activityCounts[act];
+    const p = total ? (completed / total) * 100 : 0;
+    const meta = ACTIVITY_META[act];
+    return `
+      <div class="dash-act-card">
+        <span class="dash-act-icon">${meta.icon}</span>
+        <span class="dash-act-label">${meta.label}</span>
+        <div class="dash-act-bar"><div class="dash-act-bar__fill" style="width:${p}%"></div></div>
+        <span class="dash-act-count">${completed}/${total}</span>
+      </div>`;
+  }).join('');
+}
+
 /** % alineado con "X de Y actividades" — no summary.progressPct (promedio de avance parcial). */
 function summaryDisplayPct(summary) {
   if (!summary?.totalActivities) return 0;
@@ -196,90 +205,11 @@ function pickRecommendation(songDetails) {
   return null;
 }
 
-// ─── Dashboard (Home) ──────────────────────────────────────────────────────────
-
-export function cleanupDashboard() {
-  const shell = document.querySelector('.app-shell--fullscreen');
-  if (shell) shell.classList.remove('app-shell--fullscreen');
-}
-
-export function renderDashboard(onSongClick, onShowSongs) {
-  const animateReveal = consumeStatsRevealAnimation();
-  const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
-  const recommendation = pickRecommendation(songDetails);
-  const recentEvents = events.slice(0, 5);
-  const app = getAppRoot();
-  if (!app) return;
-
-  const shell = app.closest('.app-shell');
-  if (shell) shell.classList.add('app-shell--fullscreen');
-
-  app.innerHTML = `
-    <div class="dashboard-view" data-lp-home>
-
-      <!-- Hero: motivational banner with large ring + CTA -->
-      <div class="dash-hero">
-        <div class="dash-hero__ring">
-          ${svgRingLarge(pct)}
-          <div class="dash-hero__pct"><strong>${pct}%</strong><span>completado</span></div>
-        </div>
-        <div class="dash-hero__body">
-          <div class="dash-hero__headline">
-            <div class="dash-hero__title-row">
-              <p class="dash-hero__eyebrow">Tu biblioteca</p>
-              <button type="button" class="dash-hero__browse" id="dashSongsCta" aria-label="Ver todas las canciones">
-                <span class="dash-hero__browse-label">Ver todas</span>
-                <span class="dash-hero__browse-chevron" aria-hidden="true">›</span>
-              </button>
-              <div class="dash-hero__lead">
-                <h2 class="dash-hero__title">
-                  <span class="dash-hero__title-value">${progress.summary.completedActivities}</span>
-                  <span class="dash-hero__title-muted">de ${progress.summary.totalActivities} actividades</span>
-                </h2>
-                <span class="dash-hero__pct-badge" aria-label="${pct}% completado">${pct}%</span>
-              </div>
-            </div>
-          </div>
-          <div class="dash-hero__metrics">
-            <div class="dash-metric"><strong>${streak.current}</strong><span>racha</span></div>
-            <div class="dash-metric"><strong>${progress.summary.completedContent}</strong><span>canciones</span></div>
-            <div class="dash-metric"><strong>${totalAttempts}</strong><span>intentos</span></div>
-            <div class="dash-metric dash-metric--global"><strong>${pct}%</strong><span>avance</span></div>
-          </div>
-          ${recommendation ? `
-          <button type="button" class="dash-hero__cta" id="dashHeroCta">
-            <span class="dash-hero__cta-song"><span class="dash-hero__cta-icon">${recommendation.song.icon || '🎵'}</span><span class="dash-hero__cta-info"><span class="dash-hero__cta-title">${recommendation.song.title}</span><span class="dash-hero__cta-artist">${recommendation.song.artist}</span></span></span>
-            <span class="dash-hero__cta-play"><span class="dash-hero__cta-play-label">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>▶</span>
-          </button>
-          ` : `
-          <button type="button" class="dash-hero__cta dash-hero__cta--browse" id="dashBrowseCta">
-            <span class="dash-hero__cta-song">Explorar canciones</span>
-            <span class="dash-hero__cta-play"><span class="dash-hero__cta-play-label">Ver</span>→</span>
-          </button>
-          `}
-        </div>
-      </div>
-
-      <!-- Activity cards row -->
-      <div class="dash-activities">
-        ${ACTIVITY_IDS.map(act => {
-          const { completed, total } = activityCounts[act];
-          const p = total ? (completed / total) * 100 : 0;
-          const meta = ACTIVITY_META[act];
-          return `
-            <div class="dash-act-card">
-              <span class="dash-act-icon">${meta.icon}</span>
-              <span class="dash-act-label">${meta.label}</span>
-              <div class="dash-act-bar"><div class="dash-act-bar__fill" style="width:${p}%"></div></div>
-              <span class="dash-act-count">${completed}/${total}</span>
-            </div>`;
-        }).join('')}
-      </div>
-
-      <!-- Recent activity -->
-      <section class="dash-recent" aria-labelledby="dashRecentTitle">
-        <h3 id="dashRecentTitle">Actividad reciente</h3>
-        ${recentEvents.length ? `
+function buildRecentRowsMarkup(recentEvents) {
+  if (!recentEvents.length) {
+    return '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>';
+  }
+  return `
         <div class="dash-recent__list">
           ${recentEvents.map(event => {
             const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
@@ -297,50 +227,211 @@ export function renderDashboard(onSongClick, onShowSongs) {
                 <time class="dash-recent__time">${timeAgo(event.occurredAt)}</time>
               </div>`;
           }).join('')}
+        </div>`;
+}
+
+function revealRecentSection(recentSection, shouldAnimateRecent) {
+  if (!recentSection) return;
+  const revealRecent = () => {
+    recentSection.classList.remove('dash-recent--pending', 'dash-recent--deferred');
+    recentSection.classList.add('dash-recent--revealed');
+  };
+  if (shouldAnimateRecent) {
+    if (prefersReducedMotion()) {
+      revealRecent();
+    } else {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(revealRecent);
+      });
+    }
+  } else {
+    revealRecent();
+  }
+}
+
+/** Patch only the recent-activity block — avoids wiping the rest of the dashboard. */
+export function patchDashboardRecentActivity() {
+  const app = getAppRoot();
+  const recentSection = app?.querySelector('.dash-recent');
+  if (!recentSection) return false;
+
+  const deferRecent = shouldDeferActivityDisplay('lyricflow');
+  if (deferRecent) return false;
+
+  const events = readActivityLedger();
+  const recentEvents = events.slice(0, 5);
+  if (!recentEvents.length) return false;
+
+  const hadRecentPainted = isRecentActivityPainted();
+  const shouldAnimateRecent = !hadRecentPainted && recentEvents.length > 0;
+
+  recentSection.className = shouldAnimateRecent
+    ? 'dash-recent dash-recent--pending'
+    : 'dash-recent dash-recent--revealed';
+
+  const title = recentSection.querySelector('h3');
+  recentSection.innerHTML = '';
+  if (title) recentSection.appendChild(title);
+  else {
+    const heading = document.createElement('h3');
+    heading.id = 'dashRecentTitle';
+    heading.textContent = 'Actividad reciente';
+    recentSection.appendChild(heading);
+  }
+  recentSection.insertAdjacentHTML('beforeend', buildRecentRowsMarkup(recentEvents));
+  revealRecentSection(recentSection, shouldAnimateRecent);
+  return true;
+}
+
+export function isRecentActivityPainted() {
+  const app = getAppRoot();
+  return Boolean(app?.querySelector('.dash-recent__row'));
+}
+
+export function cleanupDashboard() {
+  const shell = document.querySelector('.app-shell--fullscreen');
+  if (shell) shell.classList.remove('app-shell--fullscreen');
+}
+
+function applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal) {
+  const snapshotDetail = `${streak.current} racha · ${progress.summary.completedContent} canciones · ${totalAttempts} intentos`;
+  const metaEl = app.querySelector('.dash-snapshot-meta');
+  if (metaEl) metaEl.textContent = snapshotDetail;
+
+  const ring = app.querySelector('.dash-snapshot-ring');
+  const pctEl = app.querySelector('.dash-snapshot-pct');
+  const statEl = app.querySelector('.dash-snapshot-stat');
+  const snapshot = app.querySelector('#dashProgressSnapshot');
+
+  if (snapshot) {
+    snapshot.setAttribute(
+      'aria-label',
+      `Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades, ${snapshotDetail}`
+    );
+  }
+
+  if (animateReveal && !shouldDeferStatsDisplay()) {
+    animateCssVar(ring, '--progress', pct);
+    animateText(pctEl, 0, pct, (v) => `${v}%`);
+    animateText(statEl, 0, progress.summary.completedActivities, (v) => `${v}/${progress.summary.totalActivities}`);
+  } else {
+    if (ring) ring.style.setProperty('--progress', String(pct));
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (statEl) statEl.textContent = `${progress.summary.completedActivities}/${progress.summary.totalActivities}`;
+  }
+}
+
+/** Patch progress snapshot only — leaves dash-recent untouched. */
+export function refreshDashboardStats(onSongClick, onShowSongs, onShowStats) {
+  const app = getAppRoot();
+  if (!app?.querySelector('.dashboard-view')) {
+    renderDashboard(onSongClick, onShowSongs, onShowStats);
+    return;
+  }
+
+  const animateReveal = consumeStatsRevealAnimation();
+  const data = getComputedData();
+  applyDashboardSnapshotStats(app, data, animateReveal);
+  const snapshot = document.getElementById('dashProgressSnapshot');
+  if (snapshot) snapshot.onclick = onShowStats;
+}
+
+export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
+  const animateReveal = consumeStatsRevealAnimation();
+  const hadRecentPainted = isRecentActivityPainted();
+  const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
+  const recommendation = pickRecommendation(songDetails);
+  const deferStats = shouldDeferStatsDisplay();
+  const deferRecent = shouldDeferActivityDisplay('lyricflow');
+  const recentEvents = deferRecent ? [] : events.slice(0, 5);
+  const shouldAnimateRecent = animateReveal && !deferRecent && recentEvents.length > 0 && !hadRecentPainted;
+  const recentSectionClass = deferRecent
+    ? 'dash-recent dash-recent--deferred'
+    : shouldAnimateRecent
+      ? 'dash-recent dash-recent--pending'
+      : recentEvents.length
+        ? 'dash-recent dash-recent--revealed'
+        : 'dash-recent';
+  const app = getAppRoot();
+  if (!app) return;
+
+  const shell = app.closest('.app-shell');
+  if (shell) shell.classList.add('app-shell--fullscreen');
+
+  const heroCardMarkup = recommendation ? `
+        <div class="hero-card" id="dashHeroCard">
+          <button type="button" class="hero-card__launch" id="dashHeroCta" aria-label="${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}: ${recommendation.song.title}">
+            <span class="hero-card__icon" aria-hidden="true">${recommendation.song.icon || '🎵'}</span>
+            <span class="hero-card__body">
+              <span class="hero-card__context">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>
+              <span class="hero-card__title">${recommendation.song.title}</span>
+              <span class="hero-card__meta">${recommendation.song.artist}</span>
+            </span>
+            <span class="hero-card__chev" aria-hidden="true">›</span>
+          </button>
         </div>
-        ` : '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>'}
+      ` : `
+        <div class="hero-card hero-card--welcome" id="dashHeroCard">
+          <button type="button" class="hero-card__launch" id="dashBrowseCta" aria-label="Explorar canciones">
+            <span class="hero-card__icon" aria-hidden="true">🎵</span>
+            <span class="hero-card__body">
+              <span class="hero-card__context">Tu biblioteca</span>
+              <span class="hero-card__title">Explorar canciones</span>
+              <span class="hero-card__meta">Elige una canción para empezar</span>
+            </span>
+            <span class="hero-card__chev" aria-hidden="true">›</span>
+          </button>
+        </div>
+      `;
+
+  const snapshotDetail = `${streak.current} racha · ${progress.summary.completedContent} canciones · ${totalAttempts} intentos`;
+
+  app.innerHTML = `
+    <div class="dashboard-view" data-lp-home>
+
+      <div class="resumen-hero dash-resumen-hero" id="dashResumenHero">
+        ${heroCardMarkup}
+        <button type="button" class="progress-snapshot" id="dashProgressSnapshot" aria-label="Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades, ${snapshotDetail}">
+          <div class="progress-snapshot__visual dash-snapshot-ring" style="--progress: ${pct}" role="img" aria-hidden="true">
+            <div><strong class="dash-snapshot-pct">${pct}%</strong></div>
+          </div>
+          <span class="progress-snapshot__copy">
+            <span class="progress-snapshot__line progress-snapshot__line--primary">
+              <span class="progress-snapshot__title">Tu biblioteca</span>
+            </span>
+            <span class="progress-snapshot__line progress-snapshot__line--meta dash-snapshot-meta">${snapshotDetail}</span>
+          </span>
+          <div class="progress-snapshot__stat-col">
+            <span class="progress-snapshot__stat-wrap">
+              <span class="progress-snapshot__stat dash-snapshot-stat">${progress.summary.completedActivities}/${progress.summary.totalActivities}</span><span class="progress-snapshot__unit"> actividades</span>
+            </span>
+          </div>
+          <span class="progress-snapshot__chev" aria-hidden="true">›</span>
+        </button>
+      </div>
+
+      <!-- Recent activity -->
+      <section class="${recentSectionClass}" aria-labelledby="dashRecentTitle">
+        <h3 id="dashRecentTitle">Actividad reciente</h3>
+        ${recentEvents.length ? buildRecentRowsMarkup(recentEvents) : '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>'}
       </section>
 
       <!-- Songs CTA -->
     </div>
   `;
 
-  // Bind CTA
   if (recommendation) {
     document.getElementById('dashHeroCta')?.addEventListener('click', () => onSongClick(recommendation.song));
   } else {
     document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
   }
-  document.getElementById('dashSongsCta')?.addEventListener('click', onShowSongs);
+  document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowStats);
 
-  if (animateReveal && !shouldDeferStatsDisplay()) {
-    animateText(app.querySelector('.dash-hero__pct strong'), 0, pct, (v) => `${v}%`);
-    animateText(app.querySelector('.dash-hero__title-value'), 0, progress.summary.completedActivities);
-    animateText(app.querySelector('.dash-hero__pct-badge'), 0, pct, (v) => `${v}%`);
-    const metrics = app.querySelectorAll('.dash-hero__metrics .dash-metric strong');
-    if (metrics[0]) animateText(metrics[0], 0, streak.current);
-    if (metrics[1]) animateText(metrics[1], 0, progress.summary.completedContent);
-    if (metrics[2]) animateText(metrics[2], 0, totalAttempts);
-    if (metrics[3]) animateText(metrics[3], 0, pct, (v) => `${v}%`);
-    app.querySelectorAll('.dash-act-bar__fill').forEach((fill, index) => {
-      const act = ACTIVITY_IDS[index];
-      const { completed, total } = activityCounts[act];
-      const width = total ? (completed / total) * 100 : 0;
-      animateWidth(fill, width);
-    });
-    const ringFill = app.querySelector('.dash-hero__ring .stats-ring__fill');
-    if (ringFill && pct > 0) {
-      const radius = 50;
-      const circumference = 2 * Math.PI * radius;
-      animateValue({
-        from: 0,
-        to: pct,
-        onUpdate: (value) => {
-          const offset = circumference - (value / 100) * circumference;
-          ringFill.setAttribute('stroke-dashoffset', String(offset));
-        },
-      });
-    }
+  applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal);
+
+  const recentSection = app.querySelector('.dash-recent');
+  if (recentSection && recentEvents.length && !deferRecent) {
+    revealRecentSection(recentSection, shouldAnimateRecent);
   }
 }
 
@@ -404,36 +495,15 @@ export function renderStats() {
         </div>
       </div>
 
+      <section class="sv-card sv-card--activities" aria-labelledby="svActivitiesTitle">
+        <h3 id="svActivitiesTitle">Actividades</h3>
+        <div class="dash-activities dash-activities--stats">
+          ${buildActivityCardsMarkup(activityCounts)}
+        </div>
+      </section>
+
       <!-- Mid: 3-column row -->
       <div class="sv-mid">
-        <section class="sv-card" aria-label="Actividades">
-          <table class="sv-act-table" role="table">
-            <thead>
-              <tr>
-                <th class="sv-act-table__th" colspan="2">Actividad</th>
-                <th class="sv-act-table__th sv-act-table__th--num">Hecho</th>
-                <th class="sv-act-table__th sv-act-table__th--num">Total</th>
-                <th class="sv-act-table__th sv-act-table__th--num">%</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${ACTIVITY_IDS.map(act => {
-                const { completed, total } = activityCounts[act];
-                const pct = total ? Math.round((completed / total) * 100) : 0;
-                const meta = ACTIVITY_META[act];
-                return `
-                <tr class="sv-act-table__row">
-                  <td class="sv-act-table__icon">${meta.icon}</td>
-                  <td class="sv-act-table__name">${meta.label}</td>
-                  <td class="sv-act-table__num">${completed}</td>
-                  <td class="sv-act-table__num">${total}</td>
-                  <td class="sv-act-table__num sv-act-table__pct">${pct}%</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </section>
-
         <section class="sv-card" aria-labelledby="svLevelsTitle">
           <h3 id="svLevelsTitle">Por nivel</h3>
           <div class="sv-levels">

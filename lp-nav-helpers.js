@@ -25,8 +25,12 @@ var LpNavHelpers = (function () {
     return window.LpNavIcons ? window.LpNavIcons.svg(name) : '';
   }
 
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+
   function currentThemeIcon() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var isDark = currentTheme() === 'dark';
     return window.LpNavIcons ? window.LpNavIcons.themeIcon(isDark) : '';
   }
 
@@ -58,6 +62,7 @@ var LpNavHelpers = (function () {
   return {
     themedAppHref: themedAppHref,
     navIcon: navIcon,
+    currentTheme: currentTheme,
     currentThemeIcon: currentThemeIcon,
     toggleTheme: toggleTheme,
   };
