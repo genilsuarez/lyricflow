@@ -6,6 +6,8 @@
    Token prefix: --lp- (Learn Platform)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+@import './breakpoints.css';
+
 /* Font loaded via <link> in index.html — no @import needed */
 
 :root {
@@ -711,29 +713,6 @@ body {
   gap: 12px;
   margin-bottom: 6px;
   animation: fadeUp 0.4s var(--lp-ease) 0.1s both;
-}
-
-.back-btn {
-  background: var(--lp-surface-sunken);
-  border: 1px solid var(--lp-border);
-  color: var(--lp-muted);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s var(--lp-ease);
-  flex-shrink: 0;
-}
-
-.back-btn:hover {
-  border-color: color-mix(in srgb, var(--lp-accent) 30%, transparent);
-  color: var(--lp-accent-text);
-  background: var(--lp-accent-soft);
-  transform: translateX(-2px);
 }
 
 /* Artwork */
@@ -1647,8 +1626,10 @@ html.browser-cursor-embedded .song-list {
   height: 18px;
 }
 
-.app-header__menu-btn {
-  display: none !important;
+@media (min-width: 861px) {
+  .app-header__menu-btn {
+    display: none !important;
+  }
 }
 
 .app-header--player .app-header__back-btn {
@@ -1732,11 +1713,6 @@ html.browser-cursor-embedded .song-list {
 
 .app-header__player-center .song-learning-progress--player {
   pointer-events: auto;
-}
-
-.app-header--player .back-btn {
-  width: var(--lp-navbtn-size);
-  height: var(--lp-navbtn-size);
 }
 
 .app-header-brand {
@@ -4357,9 +4333,6 @@ a:focus-visible,
 
 /* Play: 42→44 y no encoge en móvil (era 38) */
 .play-btn { width: 44px; height: 44px; }
-
-/* Volver: 32→44 visual (header con espacio; §3.4 rec.1) */
-.back-btn { width: 44px; height: 44px; font-size: 0.9rem; }
 
 /* Volumen: hit-area 44 sin cambiar el tamaño visual (sin tooltip → ::after libre) */
 .volume-btn { position: relative; }
