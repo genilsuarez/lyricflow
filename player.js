@@ -1065,7 +1065,7 @@ function initUnifiedNavigation() {
     setNavigationOpen(false);
     showAboutLearnFlow(aboutEvent);
   });
-  lpLogin.bindNavButton('#navigationLogin', {
+  lpLogin?.bindNavButton?.('#navigationLogin', {
     beforeOpen: () => setNavigationOpen(false),
     labelSelector: 'span:last-child',
   });

@@ -6,7 +6,10 @@
 
 import pickerSongs from './songs/picker-data.js';
 import { getProgress, getSongProgress, progressConfig } from './progress.js';
-import { app } from './player.js';
+
+function getAppRoot() {
+  return document.getElementById('app');
+}
 
 const ACTIVITY_KEY = progressConfig.activityKey;
 const ACTIVITY_IDS = progressConfig.activities;
@@ -201,6 +204,8 @@ export function renderDashboard(onSongClick, onShowSongs) {
   const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
   const recommendation = pickRecommendation(songDetails);
   const recentEvents = events.slice(0, 5);
+  const app = getAppRoot();
+  if (!app) return;
 
   const shell = app.closest('.app-shell');
   if (shell) shell.classList.add('app-shell--fullscreen');
@@ -315,6 +320,8 @@ export function cleanupStats() {
 export function renderStats() {
   const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
   const recentEvents = events.slice(0, 5);
+  const app = getAppRoot();
+  if (!app) return;
 
   const shell = app.closest('.app-shell');
   if (shell) shell.classList.add('app-shell--fullscreen');
