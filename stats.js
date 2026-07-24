@@ -6,6 +6,8 @@
 
 import pickerSongs from './songs/picker-data.js';
 import { getProgress, getSongProgress, progressConfig } from './progress.js';
+import { shouldDeferStatsDisplay, consumeStatsRevealAnimation } from './sync-engine.js';
+import { animateText, animateWidth, animateValue } from './lp-stats-animate.js';
 
 function getAppRoot() {
   return document.getElementById('app');
@@ -26,6 +28,7 @@ const LEVEL_ORDER = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function readActivityLedger() {
+  if (shouldDeferStatsDisplay()) return [];
   try {
     const raw = localStorage.getItem(ACTIVITY_KEY);
     const parsed = JSON.parse(raw);
@@ -174,7 +177,7 @@ function pickRecommendation(songDetails) {
     .filter(({ progress }) => progress.progressPct > 0 && !progress.completed)
     .map(({ song, progress }) => {
       const lastAttemptAt = Math.max(0, ...PICKER_ACTIVITY_ORDER.map(activity => {
-        const at = progress.activities[activity].lastAttemptAt;
+        const at = progress.activities?.[activity]?.lastAttemptAt;
         return at ? new Date(at).getTime() : 0;
       }));
       return { song, progress, lastAttemptAt };
@@ -201,6 +204,7 @@ export function cleanupDashboard() {
 }
 
 export function renderDashboard(onSongClick, onShowSongs) {
+  const animateReveal = consumeStatsRevealAnimation();
   const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
   const recommendation = pickRecommendation(songDetails);
   const recentEvents = events.slice(0, 5);
@@ -211,7 +215,7 @@ export function renderDashboard(onSongClick, onShowSongs) {
   if (shell) shell.classList.add('app-shell--fullscreen');
 
   app.innerHTML = `
-    <div class="dashboard-view">
+    <div class="dashboard-view" data-lp-home>
 
       <!-- Hero: motivational banner with large ring + CTA -->
       <div class="dash-hero">
@@ -308,6 +312,36 @@ export function renderDashboard(onSongClick, onShowSongs) {
     document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
   }
   document.getElementById('dashSongsCta')?.addEventListener('click', onShowSongs);
+
+  if (animateReveal && !shouldDeferStatsDisplay()) {
+    animateText(app.querySelector('.dash-hero__pct strong'), 0, pct, (v) => `${v}%`);
+    animateText(app.querySelector('.dash-hero__title-value'), 0, progress.summary.completedActivities);
+    animateText(app.querySelector('.dash-hero__pct-badge'), 0, pct, (v) => `${v}%`);
+    const metrics = app.querySelectorAll('.dash-hero__metrics .dash-metric strong');
+    if (metrics[0]) animateText(metrics[0], 0, streak.current);
+    if (metrics[1]) animateText(metrics[1], 0, progress.summary.completedContent);
+    if (metrics[2]) animateText(metrics[2], 0, totalAttempts);
+    if (metrics[3]) animateText(metrics[3], 0, pct, (v) => `${v}%`);
+    app.querySelectorAll('.dash-act-bar__fill').forEach((fill, index) => {
+      const act = ACTIVITY_IDS[index];
+      const { completed, total } = activityCounts[act];
+      const width = total ? (completed / total) * 100 : 0;
+      animateWidth(fill, width);
+    });
+    const ringFill = app.querySelector('.dash-hero__ring .stats-ring__fill');
+    if (ringFill && pct > 0) {
+      const radius = 50;
+      const circumference = 2 * Math.PI * radius;
+      animateValue({
+        from: 0,
+        to: pct,
+        onUpdate: (value) => {
+          const offset = circumference - (value / 100) * circumference;
+          ringFill.setAttribute('stroke-dashoffset', String(offset));
+        },
+      });
+    }
+  }
 }
 
 // ─── Stats (detailed) ──────────────────────────────────────────────────────────

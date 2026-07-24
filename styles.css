@@ -369,7 +369,9 @@ body {
   box-shadow: var(--lp-shadow-lg);
   position: relative;
   z-index: 2;
-  animation: cardReveal 0.7s var(--lp-ease) both;
+  /* No opacity entrance animation here: fill-mode:both + paused CSS
+     animations (Cursor design mode / DevTools) left the whole #app at
+     opacity:0 while the header (outside .app-shell) stayed visible. */
 }
 
 .app-shell--fullscreen {
@@ -841,6 +843,19 @@ body {
    must not apply there. */
 html.browser-cursor-embedded {
   --cursor-preview-chrome-bottom: 52px;
+}
+
+/* Cursor design mode / element picker often pauses CSS animations. Views that
+   enter with opacity:0 + fill-mode:both then stay invisible (looks like an
+   empty #app under a visible header). Skip those entrances in the embed. */
+html.browser-cursor-embedded .dashboard-view,
+html.browser-cursor-embedded .song-picker,
+html.browser-cursor-embedded .stats-view,
+html.browser-cursor-embedded .picker-hero,
+html.browser-cursor-embedded .song-list {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 /* ─── Progress Section ──────────────────────────────────────────────────────── */
@@ -4207,6 +4222,13 @@ html.browser-cursor-embedded {
   .loop-btn.setting { animation: none; }
   .listening-input.lc-active { animation: none; }
   .lr-overlay, .lr-modal { animation: none; }
+  .dashboard-view,
+  .song-picker,
+  .stats-view,
+  .picker-hero,
+  .song-list {
+    animation: none !important;
+  }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
 
@@ -4722,7 +4744,7 @@ body {
   width: 232px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   padding: 22px 14px 16px;
   border-right: 1.5px solid var(--lp-border);
@@ -4739,6 +4761,7 @@ body {
   gap: 12px;
   padding: 6px 8px 16px;
   border-bottom: 1px solid var(--lp-border);
+  flex-shrink: 0;
 }
 .unified-nav-brand > span:not(.unified-nav-mark) {
   flex: 1;
@@ -4786,6 +4809,11 @@ body {
   gap: 2px;
   margin-top: 14px;
   padding: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-content: start;
 }
 
 .unified-nav-item {
@@ -4886,7 +4914,10 @@ body {
   gap: 2px;
   margin-top: auto;
   padding-top: 12px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--lp-border);
+  flex-shrink: 0;
+  background: var(--lp-bg-paper);
 }
 
 .unified-nav-footer .unified-nav-icon {
