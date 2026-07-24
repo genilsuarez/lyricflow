@@ -5569,7 +5569,16 @@ body {
 }
 
 .dash-recent--deferred {
-  display: none;
+  opacity: 0.72;
+}
+
+.dash-recent__loading {
+  font-family: var(--lp-font-body);
+  font-size: 0.82rem;
+  color: var(--lp-muted);
+  text-align: center;
+  padding: 16px 0;
+  font-style: italic;
 }
 
 .dash-recent__list {
@@ -5955,9 +5964,6 @@ body {
     grid-area: bar;
     height: var(--lp-progress-height-compact);
   }
-
-  /* Sin actividad reciente: ocultar bloque vacío en mobile */
-  .dash-recent:has(.dash-empty) { display: none; }
 }
 
 /* ─── Picker solo search (no hero) ─── */

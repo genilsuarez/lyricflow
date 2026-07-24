@@ -205,6 +205,13 @@ function pickRecommendation(songDetails) {
   return null;
 }
 
+function buildRecentSectionBody(recentEvents, { deferRecent = false } = {}) {
+  if (deferRecent) {
+    return '<p class="dash-recent__loading">Cargando actividad…</p>';
+  }
+  return buildRecentRowsMarkup(recentEvents);
+}
+
 function buildRecentRowsMarkup(recentEvents) {
   if (!recentEvents.length) {
     return '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>';
@@ -256,18 +263,18 @@ export function patchDashboardRecentActivity() {
   if (!recentSection) return false;
 
   const deferRecent = shouldDeferActivityDisplay('lyricflow');
-  if (deferRecent) return false;
-
   const events = readActivityLedger();
-  const recentEvents = events.slice(0, 5);
-  if (!recentEvents.length) return false;
+  const recentEvents = deferRecent ? [] : events.slice(0, 5);
+  const hadRows = Boolean(recentSection.querySelector('.dash-recent__row'));
+  const shouldAnimateRecent = !deferRecent && recentEvents.length > 0 && !hadRows;
 
-  const hadRecentPainted = isRecentActivityPainted();
-  const shouldAnimateRecent = !hadRecentPainted && recentEvents.length > 0;
-
-  recentSection.className = shouldAnimateRecent
-    ? 'dash-recent dash-recent--pending'
-    : 'dash-recent dash-recent--revealed';
+  recentSection.className = deferRecent
+    ? 'dash-recent dash-recent--deferred'
+    : shouldAnimateRecent
+      ? 'dash-recent dash-recent--pending'
+      : recentEvents.length
+        ? 'dash-recent dash-recent--revealed'
+        : 'dash-recent';
 
   const title = recentSection.querySelector('h3');
   recentSection.innerHTML = '';
@@ -278,14 +285,26 @@ export function patchDashboardRecentActivity() {
     heading.textContent = 'Actividad reciente';
     recentSection.appendChild(heading);
   }
-  recentSection.insertAdjacentHTML('beforeend', buildRecentRowsMarkup(recentEvents));
-  revealRecentSection(recentSection, shouldAnimateRecent);
+  recentSection.insertAdjacentHTML('beforeend', buildRecentSectionBody(recentEvents, { deferRecent }));
+  if (!deferRecent) revealRecentSection(recentSection, shouldAnimateRecent);
   return true;
 }
 
-export function isRecentActivityPainted() {
+/** True when recent section shows a settled state (rows, empty, or still loading). */
+export function isRecentSectionSettled() {
   const app = getAppRoot();
-  return Boolean(app?.querySelector('.dash-recent__row'));
+  const section = app?.querySelector('.dash-recent');
+  if (!section) return false;
+  if (section.classList.contains('dash-recent--deferred')) return false;
+  if (section.classList.contains('dash-recent--pending')) return false;
+  return Boolean(
+    section.querySelector('.dash-recent__row, .dash-empty, .dash-recent__loading')
+  );
+}
+
+/** @deprecated Use isRecentSectionSettled — kept for callers checking row paint. */
+export function isRecentActivityPainted() {
+  return isRecentSectionSettled() && Boolean(getAppRoot()?.querySelector('.dash-recent__row'));
 }
 
 export function cleanupDashboard() {
@@ -413,7 +432,7 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
       <!-- Recent activity -->
       <section class="${recentSectionClass}" aria-labelledby="dashRecentTitle">
         <h3 id="dashRecentTitle">Actividad reciente</h3>
-        ${recentEvents.length ? buildRecentRowsMarkup(recentEvents) : '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>'}
+        ${buildRecentSectionBody(recentEvents, { deferRecent })}
       </section>
 
       <!-- Songs CTA -->

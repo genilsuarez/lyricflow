@@ -7,7 +7,7 @@
 import pickerSongs from './songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
 import { toggleQuizMode } from './quiz.js';
-import { renderDashboard, refreshDashboardStats, patchDashboardRecentActivity, isRecentActivityPainted, cleanupDashboard, renderStats, cleanupStats } from './stats.js';
+import { renderDashboard, refreshDashboardStats, patchDashboardRecentActivity, isRecentSectionSettled, cleanupDashboard, renderStats, cleanupStats } from './stats.js';
 import {
   configureProgressCatalog,
   createListenTracker,
@@ -64,10 +64,10 @@ function flushDashboardQueue() {
     return;
   }
 
-  // Safety: stats rendered while activity ledger arrived mid-frame.
+  // Safety: ledger arrived after a stats-only refresh left recent unsettled.
   if (
     isDashboardVisible() &&
-    !isRecentActivityPainted() &&
+    !isRecentSectionSettled() &&
     hasLocalActivityLedger('lyricflow')
   ) {
     patchDashboardRecentActivity();
@@ -92,41 +92,32 @@ function scheduleDashboardStatsRefresh() {
   queueDashboardFlush();
 }
 
-/** Stats sync: patch snapshot only when recent activity is already visible in the DOM. */
+/** Stats sync: patch snapshot only when recent section already settled. */
 function scheduleDashboardUpdate() {
-  if (isRecentActivityPainted()) {
+  if (isRecentSectionSettled()) {
     scheduleDashboardStatsRefresh();
   } else {
     scheduleDashboardRender();
   }
 }
 
-async function bootHomeDashboard() {
-  showDashboard({ deferRender: true });
-  try {
-    await hydrateActivityFromCloud('lyricflow');
-  } catch {
-    /* render with whatever is already in localStorage */
-  } finally {
-    scheduleDashboardRender();
-  }
+function bootHomeDashboard() {
+  showDashboard();
+  void hydrateActivityFromCloud('lyricflow');
 }
 
 window.addEventListener('lp-stats-ready', () => {
-  if (
-    isDashboardVisible() &&
-    !isRecentActivityPainted() &&
-    hasLocalActivityLedger('lyricflow') &&
-    patchDashboardRecentActivity()
-  ) {
-    scheduleDashboardStatsRefresh();
-    return;
+  if (isDashboardVisible() && !isRecentSectionSettled()) {
+    if (patchDashboardRecentActivity()) {
+      scheduleDashboardStatsRefresh();
+      return;
+    }
   }
   scheduleDashboardUpdate();
 });
 window.addEventListener('lp-activity-ready', (event) => {
   if (event.detail?.app !== 'lyricflow') return;
-  if (isRecentActivityPainted()) return;
+  if (isRecentSectionSettled()) return;
   if (isDashboardVisible()) {
     patchDashboardRecentActivity();
     return;
@@ -674,7 +665,7 @@ function setActiveNavItem(id) {
   if (target) target.classList.add('is-active');
 }
 
-function showDashboard({ deferRender = false } = {}) {
+function showDashboard() {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -689,7 +680,7 @@ function showDashboard({ deferRender = false } = {}) {
   }
   setActiveNavItem('navigationHome');
   renderAppHeader();
-  if (!deferRender) scheduleDashboardRender();
+  scheduleDashboardRender();
 }
 
 function showStats() {
