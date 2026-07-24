@@ -24,29 +24,51 @@ configureProgressCatalog(pickerSongs);
 function refreshLyricFlowUiAfterAuth() {
   configureProgressCatalog(pickerSongs);
   const dashboard = document.getElementById('dashboard');
-  if (dashboard && !dashboard.hidden) renderDashboard();
+  if (dashboard && !dashboard.hidden) scheduleDashboardRender();
   const headerProgress = document.getElementById('appHeaderProgress');
   if (headerProgress) updateAppHeaderProgress();
 }
+
+function refreshLyricFlowAfterGuestReset() {
+  configureProgressCatalog(pickerSongs);
+  const dashboard = document.getElementById('dashboard');
+  if (dashboard && !dashboard.hidden) scheduleDashboardRender();
+  const headerProgress = document.getElementById('appHeaderProgress');
+  if (headerProgress) updateAppHeaderProgress();
+}
+
+let dashboardRenderScheduled = false;
+function scheduleDashboardRender() {
+  if (dashboardRenderScheduled) return;
+  dashboardRenderScheduled = true;
+  requestAnimationFrame(() => {
+    dashboardRenderScheduled = false;
+    renderDashboard(loadSong, () => showPicker(true));
+    updateAppHeaderProgress();
+  });
+}
+
+function bootHomeDashboard() {
+  showDashboard();
+}
+
+window.addEventListener('lp-stats-ready', () => scheduleDashboardRender());
 
 setupSupabaseAuth({
   onAfterLogin: () => {
     refreshLyricFlowUiAfterAuth();
   },
   onAfterLogout: () => {
-    configureProgressCatalog(pickerSongs);
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard && !dashboard.hidden) renderDashboard();
+    refreshLyricFlowAfterGuestReset();
   },
 });
 
-function refreshLyricFlowAfterGuestReset() {
-  configureProgressCatalog(pickerSongs);
-  const dashboard = document.getElementById('dashboard');
-  if (dashboard && !dashboard.hidden) renderDashboard();
-}
-
 window.addEventListener('lp-guest-reset', refreshLyricFlowAfterGuestReset);
+window.addEventListener('lp-cloud-hydrated', refreshLyricFlowUiAfterAuth);
+window.addEventListener('lp-sync-peer', refreshLyricFlowUiAfterAuth);
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) refreshLyricFlowUiAfterAuth();
+});
 window.addEventListener('storage', storageEvent => {
   if (storageEvent.key?.startsWith('learnflow:progress:') && storageEvent.newValue === null) {
     refreshLyricFlowAfterGuestReset();
@@ -146,6 +168,12 @@ export const state = {
 // ─── Persistence (localStorage) ────────────────────────────────────────────────
 
 const STORAGE_KEY = 'lyricflow_prefs';
+
+/** True on local Vite/gateway hosts — enables shortcuts panel and related UI. */
+function isLocalHost() {
+  const hostname = location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
+}
 
 function loadPrefs() {
   try {
@@ -581,7 +609,7 @@ function showDashboard() {
   }
   setActiveNavItem('navigationHome');
   renderAppHeader();
-  renderDashboard(loadSong, () => showPicker(true));
+  scheduleDashboardRender();
 }
 
 function showStats() {
@@ -789,14 +817,12 @@ export async function loadSong(song) {
   state.playbackRate = 1;
   state.currentSubIndex = -1;
 
-  // Preserve toolbar if already present, only recreate content
-  const existingToolbar = document.getElementById('modeToolbarContainer');
-  if (existingToolbar) {
-    updateToolbarActiveState('');
-  } else {
+  // Keep shell; always (re)render toolbar so a failed prior load can't leave
+  // an empty #modeToolbarContainer that skips ensureModeToolbar forever.
+  if (!document.getElementById('modeToolbarContainer')) {
     app.innerHTML = '';
-    ensureModeToolbar(song, '');
   }
+  ensureModeToolbar(song, '');
   setModeContent(`
     <div class="subtitle-container" id="subContainer"></div>
     <div class="song-fin-actions hidden" id="songFinActions">
@@ -854,8 +880,7 @@ export async function loadSong(song) {
   renderSubtitles(song.subtitles);
 
   // Local dev: always show line numbers
-  const _hn = location.hostname;
-  if (_hn === 'localhost' || _hn === '127.0.0.1' || _hn.startsWith('192.168.')) {
+  if (isLocalHost()) {
     state.showLineNumbers = true;
     const _sc = document.getElementById('subContainer');
     if (_sc) _sc.classList.add('show-line-numbers');
@@ -903,6 +928,17 @@ const currentThemeIcon = () => window.LpNavHelpers.currentThemeIcon();
 const toggleTheme = (iconEl) => window.LpNavHelpers.toggleTheme(iconEl);
 const themedAppHref = (app) => window.LpNavHelpers.themedAppHref(app);
 
+function bindPortalNavigation(root = document) {
+  root.querySelectorAll('[data-lp-portal]').forEach(link => {
+    link.href = themedAppHref('deskflow');
+    if (link.dataset.portalBound) return;
+    link.dataset.portalBound = '1';
+    link.addEventListener('click', () => {
+      link.href = themedAppHref('deskflow');
+      setNavigationOpen(false, true);
+    });
+  });
+}
 
 const NAVIGATION_STORAGE_KEY = 'lp-navigation-mode';
 
@@ -954,6 +990,9 @@ function setNavigationOpen(isOpen, restoreFocus = false) {
   trigger.setAttribute('aria-expanded', String(effectivelyOpen));
   if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(effectivelyOpen));
   document.body.classList.toggle('navigation-open', isOpen && !isPersistent);
+  if (isOpen && !isPersistent && typeof lpLogin !== 'undefined' && lpLogin.refreshNavLabels) {
+    lpLogin.refreshNavLabels();
+  }
   if (isOpen && !isPersistent) navigation.querySelector('button, a[href]')?.focus();
   else if (restoreFocus && !isPersistent) focusTarget.focus();
 }
@@ -1023,7 +1062,7 @@ function initUnifiedNavigation() {
       <button class="unified-nav-item" id="navigationLogin" type="button" aria-label="Iniciar sesión">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('user')}</span><span>Iniciar Sesión</span>
       </button>
-      <a class="unified-nav-item" id="navigationPortal" href="${themedAppHref('deskflow')}">
+      <a class="unified-nav-item" id="navigationPortal" data-lp-portal href="${themedAppHref('deskflow')}">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
       </a>
     </footer>
@@ -1039,10 +1078,6 @@ function initUnifiedNavigation() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-  const platformLinks = [
-    ['navigationPortal', 'deskflow'],
-  ];
-
   trigger.addEventListener('click', () => setNavigationOpen(true));
   backdrop.addEventListener('click', () => setNavigationOpen(false, true));
   modeToggle.addEventListener('click', () => {
@@ -1075,12 +1110,7 @@ function initUnifiedNavigation() {
     themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
     themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   });
-  platformLinks.forEach(([id, app]) => {
-    document.getElementById(id).addEventListener('click', linkEvent => {
-      linkEvent.currentTarget.href = themedAppHref(app);
-      setNavigationOpen(false);
-    });
-  });
+  bindPortalNavigation(navigation);
   window.addEventListener('storage', storageEvent => {
     if (storageEvent.key !== NAVIGATION_STORAGE_KEY) return;
     updateNavigationMode(storageEvent.newValue === 'floating' ? 'floating' : 'sidebar');
@@ -3172,5 +3202,5 @@ if (initialSong) {
     u.searchParams.delete('song');
     history.replaceState(null, '', u);
   }
-  showDashboard();
+  bootHomeDashboard();
 }
