@@ -1,6 +1,11 @@
 import * as lpSupabase from './lp-supabase.js';
-import { isCloudHydrated } from './sync-engine.js';
-import { enrichLyricflowSongEntry, LYRICFLOW_ACTIVITY_IDS } from './lp-progress-summary.js';
+import { isCloudHydrated, reconcileLyricflowProgressFromEvents } from './sync-engine.js';
+import {
+  applyLyricflowActivityEvents,
+  enrichLyricflowSongEntry,
+  LYRICFLOW_ACTIVITY_IDS,
+  recomputeProgressDocumentSummary,
+} from './lp-progress-summary.js';
 
 const PROGRESS_KEY = 'learnflow:progress:lyricflow:v1';
 const ACTIVITY_KEY = 'learnflow:activity:lyricflow:v1';
@@ -205,18 +210,43 @@ function appendEvent(event) {
 // Debounced: recordActivityResult/markListenCompleted pueden dispararse
 // varias veces seguidas (una cancion tiene 4 actividades).
 let cloudSyncTimer = null;
+let pendingCloudSync = false;
+
+function ensureLyricflowProgressReconciled() {
+  reconcileLyricflowProgressFromEvents();
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('lp-cloud-hydrated', () => {
+    if (pendingCloudSync) scheduleCloudSync();
+  });
+}
+
 function scheduleCloudSync() {
   if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(async () => {
     cloudSyncTimer = null;
     const authed = await lpSupabase.isAuthenticated().catch(() => false);
-    if (!authed || !isCloudHydrated()) return;
+    if (!authed) return;
+    if (!isCloudHydrated()) {
+      pendingCloudSync = true;
+      return;
+    }
+    pendingCloudSync = false;
 
     const progressDoc = readJson(PROGRESS_KEY, emptyProgress);
+    const activityDoc = readJson(ACTIVITY_KEY, emptyActivityLedger);
     if (progressDoc.content && Object.keys(progressDoc.content).length) {
+      if (activityDoc.events?.length) {
+        applyLyricflowActivityEvents(progressDoc.content, activityDoc.events);
+      }
+      recomputeProgressDocumentSummary(progressDoc, APP_ID);
+      progressDoc.updatedAt = nowIso();
+      try {
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(progressDoc));
+      } catch {}
       await lpSupabase.syncProgress(APP_ID, { content: progressDoc.content });
     }
-    const activityDoc = readJson(ACTIVITY_KEY, emptyActivityLedger);
     if (activityDoc.events?.length) {
       await lpSupabase.syncActivityEvents(APP_ID, activityDoc.events);
     }
@@ -259,6 +289,7 @@ export function configureProgressCatalog(songs) {
 }
 
 export function getProgress() {
+  ensureLyricflowProgressReconciled();
   const document = readJson(PROGRESS_KEY, emptyProgress);
   if (catalogIds.length) {
     const allowed = new Set(catalogIds);
@@ -272,6 +303,7 @@ export function getProgress() {
 }
 
 export function getSongProgress(contentId) {
+  ensureLyricflowProgressReconciled();
   const document = readJson(PROGRESS_KEY, emptyProgress);
   const song = ensureSong(document, contentId);
   enrichLyricflowSongEntry(contentId, song);

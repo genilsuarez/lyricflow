@@ -21,11 +21,17 @@ import { setupSupabaseAuth } from './lp-auth-setup.js';
 
 configureProgressCatalog(pickerSongs);
 
+function refreshLyricFlowUiAfterAuth() {
+  configureProgressCatalog(pickerSongs);
+  const dashboard = document.getElementById('dashboard');
+  if (dashboard && !dashboard.hidden) renderDashboard();
+  const headerProgress = document.getElementById('appHeaderProgress');
+  if (headerProgress) updateAppHeaderProgress();
+}
+
 setupSupabaseAuth({
   onAfterLogin: () => {
-    configureProgressCatalog(pickerSongs);
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard && !dashboard.hidden) renderDashboard();
+    refreshLyricFlowUiAfterAuth();
   },
   onAfterLogout: () => {
     configureProgressCatalog(pickerSongs);
