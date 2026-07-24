@@ -5021,26 +5021,6 @@ body {
     top: calc(var(--lp-navbtn-offset-top-compact) + env(safe-area-inset-top, 0px));
     left: var(--lp-navbtn-offset-left);
     display: flex;
-    border: none;
-    border-radius: var(--lp-radius-md);
-    background: transparent;
-    box-shadow: none;
-    color: var(--lp-ink-soft);
-    font-size: 1.0625rem;
-    font-weight: 400;
-  }
-
-  .unified-nav-trigger:hover {
-    background: color-mix(in srgb, var(--lp-ink) 5%, transparent);
-    border-color: transparent;
-    box-shadow: none;
-    transform: none;
-    color: var(--lp-ink);
-  }
-
-  .unified-nav-trigger:active {
-    background: color-mix(in srgb, var(--lp-ink) 9%, transparent);
-    transform: scale(0.97);
   }
 
   /* Sidebar pin es desktop-only — ocultar toggle de modo nav en mobile/tablet */
