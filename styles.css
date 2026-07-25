@@ -1632,26 +1632,36 @@ html.browser-cursor-embedded .song-list {
   }
 }
 
-.app-header--player .app-header__back-btn {
+.app-header--player .app-header__back-btn,
+.app-header--player .app-header__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: var(--lp-navbtn-size);
   height: var(--lp-navbtn-size);
   min-width: var(--lp-navbtn-size);
   min-height: var(--lp-navbtn-size);
-  border: 1.5px solid var(--lp-border);
-  border-radius: 50%;
-  background: var(--lp-surface);
+  border: none;
+  border-radius: var(--lp-radius-md);
+  background: transparent;
+  box-shadow: none;
   color: var(--lp-ink-soft);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--lp-ink) 8%, transparent);
+  font-size: 1.0625rem;
+  font-weight: 400;
 }
 
-.app-header--player .app-header__back-btn:hover {
-  border-color: var(--lp-accent);
-  color: var(--lp-accent);
-  background: var(--lp-surface);
-  transform: scale(1.06);
+.app-header--player .app-header__back-btn:hover,
+.app-header--player .app-header__menu-btn:hover {
+  background: color-mix(in srgb, var(--lp-ink) 5%, transparent);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--lp-ink);
 }
 
-.app-header--player .app-header__back-btn:active {
+.app-header--player .app-header__back-btn:active,
+.app-header--player .app-header__menu-btn:active {
+  background: color-mix(in srgb, var(--lp-ink) 9%, transparent);
   transform: scale(0.97);
 }
 
@@ -4977,6 +4987,48 @@ body {
   }
 }
 
+/* L2 player — mobile-first [←] title [☰] (works without sibling @media) */
+body:has(.app-header--player) .unified-nav-trigger {
+  display: none !important;
+}
+
+.app-header--player .app-header__player-bar {
+  width: 100%;
+}
+
+.app-header--player .app-header__learning-toolbar {
+  display: grid;
+  grid-template-columns: var(--lp-navbtn-size, 44px) minmax(0, 1fr) var(--lp-navbtn-size, 44px);
+  align-items: center;
+  width: 100%;
+  min-height: var(--lp-navbtn-size, 44px);
+  gap: 0;
+}
+
+.app-header--player .app-header__back-btn {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.app-header--player .app-header__song-block {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.app-header--player .app-header__menu-btn {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.app-header--player .app-header__song-sub,
+.app-header--player .app-header__player-center {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .unified-nav {
     inset: 0 auto 0 0;
@@ -5120,7 +5172,10 @@ body {
   }
 
   .app-header--player .app-header__song-title {
-    font-size: 1rem;
+    font-size: var(--lp-header-title-size);
+    font-weight: var(--lp-header-title-weight);
+    letter-spacing: var(--lp-header-title-tracking);
+    line-height: var(--lp-header-title-line-height);
     text-align: center;
   }
 
