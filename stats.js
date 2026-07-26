@@ -312,11 +312,7 @@ export function cleanupDashboard() {
   if (shell) shell.classList.remove('app-shell--fullscreen');
 }
 
-function applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal) {
-  const snapshotDetail = `${streak.current} racha · ${progress.summary.completedContent} canciones · ${totalAttempts} intentos`;
-  const metaEl = app.querySelector('.dash-snapshot-meta');
-  if (metaEl) metaEl.textContent = snapshotDetail;
-
+function applyDashboardSnapshotStats(app, { progress, pct }, animateReveal) {
   const ring = app.querySelector('.dash-snapshot-ring');
   const pctEl = app.querySelector('.dash-snapshot-pct');
   const statEl = app.querySelector('.dash-snapshot-stat');
@@ -325,7 +321,7 @@ function applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct
   if (snapshot) {
     snapshot.setAttribute(
       'aria-label',
-      `Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades, ${snapshotDetail}`
+      `Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades`
     );
   }
 
@@ -352,7 +348,7 @@ export function refreshDashboardStats(onSongClick, onShowSongs, onShowStats) {
   const data = getComputedData();
   applyDashboardSnapshotStats(app, data, animateReveal);
   const snapshot = document.getElementById('dashProgressSnapshot');
-  if (snapshot) snapshot.onclick = onShowStats;
+  if (snapshot) snapshot.onclick = onShowSongs;
 }
 
 export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
@@ -386,7 +382,6 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
               <span class="hero-card__title">${recommendation.song.title}</span>
               <span class="hero-card__meta">${recommendation.song.artist}</span>
             </span>
-            <span class="hero-card__chev" aria-hidden="true">›</span>
           </button>
         </div>
       ` : `
@@ -398,19 +393,16 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
               <span class="hero-card__title">Explorar canciones</span>
               <span class="hero-card__meta">Elige una canción para empezar</span>
             </span>
-            <span class="hero-card__chev" aria-hidden="true">›</span>
           </button>
         </div>
       `;
-
-  const snapshotDetail = `${streak.current} racha · ${progress.summary.completedContent} canciones · ${totalAttempts} intentos`;
 
   app.innerHTML = `
     <div class="dashboard-view" data-lp-home>
 
       <div class="resumen-hero dash-resumen-hero" id="dashResumenHero">
         ${heroCardMarkup}
-        <button type="button" class="progress-snapshot" id="dashProgressSnapshot" aria-label="Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades, ${snapshotDetail}">
+        <button type="button" class="progress-snapshot" id="dashProgressSnapshot" aria-label="Tu biblioteca: ${pct} por ciento, ${progress.summary.completedActivities} de ${progress.summary.totalActivities} actividades">
           <div class="progress-snapshot__visual dash-snapshot-ring" style="--progress: ${pct}" role="img" aria-hidden="true">
             <div><strong class="dash-snapshot-pct">${pct}%</strong></div>
           </div>
@@ -418,7 +410,6 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
             <span class="progress-snapshot__line progress-snapshot__line--primary">
               <span class="progress-snapshot__title">Tu biblioteca</span>
             </span>
-            <span class="progress-snapshot__line progress-snapshot__line--meta dash-snapshot-meta">${snapshotDetail}</span>
           </span>
           <div class="progress-snapshot__stat-col">
             <span class="progress-snapshot__stat-wrap">
@@ -444,7 +435,7 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
   } else {
     document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
   }
-  document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowStats);
+  document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowSongs);
 
   applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal);
 

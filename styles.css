@@ -1509,6 +1509,75 @@ html.browser-cursor-embedded .song-list {
   opacity: 0.58;
 }
 
+/* Web: lyrics column centered in the subtitle panel */
+@media (min-width: 768px) {
+  .subtitle-container {
+    padding-left: clamp(20px, 5vw, 56px);
+    padding-right: clamp(20px, 5vw, 56px);
+  }
+
+  .sub-line {
+    width: min(100%, 34rem);
+    margin-inline: auto;
+    justify-content: center;
+  }
+
+  .sub-text {
+    align-items: center;
+    flex: 0 1 auto;
+  }
+
+  .sub-line .original,
+  .sub-line .translation {
+    text-align: center;
+  }
+
+  .sub-line .translation {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .sub-line.active {
+    transform: none;
+    border-left-color: transparent;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--lp-accent) 11%, var(--lp-surface)) 0%,
+      color-mix(in srgb, var(--lp-accent) 5%, var(--lp-surface)) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--lp-accent) 24%, var(--lp-border));
+    border-radius: var(--lp-radius-md);
+    box-shadow:
+      0 1px 2px color-mix(in srgb, var(--lp-ink) 4%, transparent),
+      0 6px 18px color-mix(in srgb, var(--lp-accent) 14%, transparent);
+    padding: 10px 18px;
+  }
+
+  .sub-line.active::before {
+    left: 14px;
+    right: 14px;
+    top: 0;
+    bottom: auto;
+    width: auto;
+    height: 2px;
+    transform: none;
+    border-radius: var(--lp-radius-md) var(--lp-radius-md) 0 0;
+    animation: none;
+    box-shadow: none;
+    opacity: 1;
+  }
+
+  .subtitle-container.show-line-numbers .sub-line.active .sub-index {
+    opacity: 0.55;
+    color: var(--lp-accent);
+    font-weight: 700;
+  }
+
+  .sub-line.active .original {
+    letter-spacing: -0.01em;
+  }
+}
+
 /* ─── Theme Toggle ──────────────────────────────────────────────────────────── */
 
 /* ─── App Header (page-level, persistent across every view: picker, player,
@@ -3257,6 +3326,14 @@ html.browser-cursor-embedded .song-list {
   gap: 7px;
 }
 
+@media (min-width: 768px) {
+  .quiz-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
 .quiz-option {
   font-family: var(--lp-font-body);
   font-size: 0.85rem;
@@ -4885,7 +4962,7 @@ body {
     display: none !important;
   }
 
-  .app-header__song-block {
+  .app-header:not(.app-header--player) .app-header__song-block {
     max-width: calc(50% - var(--lp-score-height) - 24px);
   }
 
@@ -4936,25 +5013,48 @@ body:has(.app-header--player) .unified-nav-trigger {
   width: 100%;
   min-height: var(--lp-navbtn-size, 44px);
   gap: 0;
+  position: relative;
 }
 
 .app-header--player .app-header__back-btn {
   grid-column: 1;
   grid-row: 1;
   justify-self: start;
+  position: relative;
+  z-index: 1;
 }
 
 .app-header--player .app-header__song-block {
-  grid-column: 2;
-  grid-row: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(calc(100% - 2 * var(--lp-navbtn-size, 44px) - 20px), 36rem);
+  max-width: none;
   min-width: 0;
+  flex: unset;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  padding: 0 4px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .app-header--player .app-header__menu-btn {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
+  position: relative;
+  z-index: 1;
+}
+
+.app-header--player .app-header__song-title {
+  width: 100%;
+  text-align: center;
 }
 
 .app-header--player .app-header__song-sub,
@@ -5083,31 +5183,9 @@ body:has(.app-header--player) .unified-nav-trigger {
     transform: scale(0.97);
   }
 
-  .app-header--player .app-header__song-block {
-    grid-column: 2;
-    grid-row: 1;
-    flex: unset;
-    max-width: none;
-    min-width: 0;
-    padding: 0 2px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-  }
-
   .app-header--player .app-header__song-sub,
   .app-header--player .app-header__player-center {
     display: none;
-  }
-
-  .app-header--player .app-header__song-title {
-    font-size: var(--lp-header-title-size);
-    font-weight: var(--lp-header-title-weight);
-    letter-spacing: var(--lp-header-title-tracking);
-    line-height: var(--lp-header-title-line-height);
-    text-align: center;
   }
 
   .site-foot {
@@ -5150,7 +5228,16 @@ body:has(.app-header--player) .unified-nav-trigger {
 .dash-resumen-hero .hero-card {
   position: relative;
   border-radius: var(--lp-radius-lg);
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* Tinted-surface lift clips inside dashboard scroll/stack — shadow only */
+.dash-resumen-hero :is(.hero-card, .progress-snapshot):hover {
+  transform: none;
+}
+
+.dash-resumen-hero :is(.hero-card, .progress-snapshot):active {
+  transform: scale(0.98);
 }
 
 .dash-resumen-hero .hero-card__launch {
@@ -5622,49 +5709,6 @@ body:has(.app-header--player) .unified-nav-trigger {
     padding-bottom: 12px;
   }
 
-  .dash-resumen-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    gap: 12px;
-  }
-
-  .dash-resumen-hero .hero-card {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .dash-resumen-hero .progress-snapshot {
-    grid-column: 2;
-    grid-row: 1;
-    padding: 14px 16px;
-  }
-
-  .dash-resumen-hero .progress-snapshot__visual {
-    width: 52px;
-    height: 52px;
-  }
-
-  .dash-resumen-hero .progress-snapshot__visual > div {
-    width: 40px;
-    height: 40px;
-  }
-
-  .dash-resumen-hero .progress-snapshot__visual strong {
-    font-size: 0.875rem;
-  }
-
-  .dash-resumen-hero .hero-card__launch {
-    padding: 16px 18px;
-  }
-
-  .dash-resumen-hero .hero-card__title {
-    font-size: 1rem;
-  }
-
-  .dash-resumen-hero .progress-snapshot__metrics {
-    gap: 13px;
-  }
-
   .dash-metric strong {
     font-size: 0.99rem;
   }
@@ -5709,12 +5753,12 @@ body:has(.app-header--player) .unified-nav-trigger {
   .dash-recent__time { font-size: 0.61rem; }
 }
 
-/* Web ancho: hero + biblioteca a la izquierda, actividad reciente a la derecha */
+/* Web: hero + biblioteca en fila 1; actividad reciente en fila 2 */
 @media (min-width: 768px) {
   .dashboard-view {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     gap: 14px;
     width: 100%;
     max-width: min(1000px, 100%);
@@ -5727,22 +5771,26 @@ body:has(.app-header--player) .unified-nav-trigger {
   .dash-resumen-hero {
     grid-column: 1;
     grid-row: 1;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     gap: 12px;
     align-self: start;
     width: 100%;
     min-height: 0;
   }
 
-  .dash-resumen-hero .hero-card,
-  .dash-resumen-hero .progress-snapshot {
+  .dash-resumen-hero .hero-card {
+    grid-column: 1;
+    grid-row: 1;
     width: 100%;
-    flex: 0 0 auto;
     align-self: stretch;
   }
 
   .dash-resumen-hero .progress-snapshot {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    align-self: stretch;
     height: auto;
     min-height: 0;
     grid-template-columns: auto 1fr auto;
@@ -5751,6 +5799,14 @@ body:has(.app-header--player) .unified-nav-trigger {
     row-gap: 4px;
     padding: 14px 16px;
     align-content: center;
+  }
+
+  .dash-resumen-hero .hero-card__launch {
+    padding: 16px 18px;
+  }
+
+  .dash-resumen-hero .hero-card__title {
+    font-size: 1rem;
   }
 
   .dash-resumen-hero .progress-snapshot__visual {
@@ -5790,8 +5846,8 @@ body:has(.app-header--player) .unified-nav-trigger {
   }
 
   .dash-recent {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
     align-self: stretch;
     min-height: 0;
     overflow: hidden;
@@ -5804,26 +5860,30 @@ body:has(.app-header--player) .unified-nav-trigger {
   }
 }
 
-/* ─── Dashboard Responsive ─── */
-
-@media (max-width: 580px) {
+/* Mobile: hero y biblioteca apilados; actividad reciente abajo */
+@media (max-width: 767px) {
   .dashboard-view {
-    gap: 10px;
-    padding: 0 12px 16px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
   }
 
   .dash-resumen-hero {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
+    width: 100%;
   }
 
-  .dash-resumen-hero .hero-card__launch {
-    padding: 12px 14px;
+  .dash-resumen-hero .hero-card,
+  .dash-resumen-hero .progress-snapshot {
+    min-width: 0;
+    width: 100%;
   }
 
-  .dash-resumen-hero .hero-card__title {
-    font-size: 0.95rem;
+  .dash-recent {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 0;
   }
 
   .dash-resumen-hero .progress-snapshot {
@@ -5834,6 +5894,8 @@ body:has(.app-header--player) .unified-nav-trigger {
     row-gap: 2px;
     min-height: 52px;
     padding: 8px 12px 8px 14px;
+    text-align: left;
+    justify-items: unset;
   }
 
   .dash-resumen-hero .progress-snapshot__visual {
@@ -5872,6 +5934,7 @@ body:has(.app-header--player) .unified-nav-trigger {
     grid-column: 3;
     grid-row: 1 / -1;
     align-self: center;
+    justify-content: flex-end;
   }
 
   .dash-resumen-hero .progress-snapshot__line--meta {
@@ -5891,6 +5954,21 @@ body:has(.app-header--player) .unified-nav-trigger {
     line-height: 1;
     color: color-mix(in srgb, var(--lp-muted) 85%, transparent);
     padding-left: 4px;
+  }
+}
+
+/* ─── Dashboard Responsive ─── */
+
+@media (max-width: 580px) {
+  .dashboard-view {
+    gap: 10px;
+    padding: 0 12px 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dash-resumen-hero {
+    gap: 8px;
   }
 
   .dash-metric {
@@ -5980,6 +6058,8 @@ body:has(.app-header--player) .unified-nav-trigger {
 .stats-view {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 10px;
   padding: 12px clamp(16px, 2.5vw, 32px);
   animation: fadeUp 0.3s var(--lp-ease) both;
@@ -6116,18 +6196,23 @@ body:has(.app-header--player) .unified-nav-trigger {
 .sv-mid {
   display: grid;
   grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 720px) {
   .sv-mid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 }
 
 @media (min-width: 540px) and (max-width: 719px) {
   .sv-mid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 }
 
@@ -6261,18 +6346,37 @@ body:has(.app-header--player) .unified-nav-trigger {
 /* ─── Recent ─── */
 
 .sv-card:has(#svRecentTitle) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
   padding: 9px 13px;
 }
 
 .sv-card:has(#svRecentTitle) h3 {
   margin-bottom: 5px;
   font-size: 0.54rem;
+  flex-shrink: 0;
+}
+
+.sv-card:has(#svLevelsTitle) {
+  align-self: start;
+}
+
+@media (min-width: 540px) {
+  .sv-card:has(#svRecentTitle) {
+    grid-column: 2;
+    grid-row: 1;
+  }
 }
 
 .sv-recent {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sv-recent-row {
@@ -6331,6 +6435,12 @@ body:has(.app-header--player) .unified-nav-trigger {
   font-size: var(--lp-text-xs);
   color: var(--lp-muted);
   font-style: italic;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-height: 6rem;
 }
 
 /* ─── Songs section ─── */

@@ -8,7 +8,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .song-list-item,
   .book,
   .tile
 ) {
@@ -35,7 +34,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .song-list-item,
   .book,
   .tile
 ):hover {
@@ -56,7 +54,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .song-list-item,
   .book,
   .tile
 ):active {
@@ -67,7 +64,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .song-list-item,
   .book,
   .tile
 ):focus-visible {
@@ -79,15 +75,10 @@
 .continue-card--amber { --card-color: var(--lp-cat-amber); --card-soft: var(--lp-cat-amber-soft); }
 .continue-card--teal { --card-color: var(--lp-cat-teal); --card-soft: var(--lp-cat-teal-soft); }
 
-.book.b-vocab,
-.song-list-item:nth-child(5n+4) { --card-soft: var(--lp-cat-purple-soft); }
-.book.b-grammar,
-.song-list-item:nth-child(5n+2) { --card-soft: var(--lp-cat-amber-soft); }
-.book.b-pron,
-.song-list-item:nth-child(5n+1) { --card-soft: var(--lp-cat-blue-soft); }
-.book.b-analysis,
-.song-list-item:nth-child(5n+5) { --card-soft: var(--lp-cat-teal-soft); }
-.song-list-item:nth-child(5n+3) { --card-soft: var(--lp-cat-green-soft); }
+.book.b-vocab { --card-soft: var(--lp-cat-purple-soft); }
+.book.b-grammar { --card-soft: var(--lp-cat-amber-soft); }
+.book.b-pron { --card-soft: var(--lp-cat-blue-soft); }
+.book.b-analysis { --card-soft: var(--lp-cat-teal-soft); }
 .tile.v { --card-soft: var(--lp-cat-purple-soft); }
 .tile.p { --card-soft: var(--lp-cat-blue-soft); }
 .tile.g { --card-soft: var(--lp-cat-amber-soft); }
@@ -190,12 +181,48 @@
   background: var(--lp-success);
 }
 
+/* Song catalog — neutral surface + color spine (no pastel wash) */
+.song-list-item {
+  --tint-color: var(--card-color, var(--spine, var(--lp-accent)));
+  --tint-soft: var(--lp-surface);
+  background: var(--lp-surface);
+  border: 1px solid color-mix(in srgb, var(--tint-color) 22%, var(--lp-border));
+  border-left: 3px solid var(--tint-color);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--lp-ink) 5%, transparent),
+    0 2px 10px color-mix(in srgb, var(--tint-color) 10%, transparent);
+  transition:
+    background 0.2s var(--lp-ease, ease),
+    transform 0.2s var(--lp-ease, ease),
+    box-shadow 0.2s var(--lp-ease, ease),
+    border-color 0.2s var(--lp-ease, ease);
+}
+
+.song-list-item:hover {
+  background: color-mix(in srgb, var(--tint-color) 7%, var(--lp-surface));
+  border-color: color-mix(in srgb, var(--tint-color) 36%, var(--lp-border));
+  border-left-color: var(--tint-color);
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--tint-color) 12%, transparent),
+    0 8px 22px color-mix(in srgb, var(--tint-color) 18%, transparent);
+  transform: translateY(-2px);
+}
+
+.song-list-item:active {
+  transform: translateY(0) scale(0.97);
+  background: color-mix(in srgb, var(--tint-color) 10%, var(--lp-surface));
+}
+
+.song-list-item:focus-visible {
+  outline: 2px solid var(--tint-color);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :is(
     .continue-card,
     .hero-card:not(.hero-card--loading),
     .progress-snapshot,
-    .song-list-item,
     .book,
     .tile
   ):hover,
@@ -203,10 +230,11 @@
     .continue-card,
     .hero-card:not(.hero-card--loading),
     .progress-snapshot,
-    .song-list-item,
     .book,
     .tile
-  ):active {
+  ):active,
+  .song-list-item:hover,
+  .song-list-item:active {
     transform: none;
   }
 }

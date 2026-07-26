@@ -562,23 +562,19 @@ export function updateSongProgressUi(contentId) {
 // ─── App Header (persistent: brand + overall progress, shown on every view) ────
 
 const LP_ICON_TROPHY = '<svg class="lp-header-stats__icon lp-header-stats__icon--trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg>';
-const LP_ICON_STAR = '<svg class="lp-header-stats__icon lp-header-stats__icon--star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>';
-
 function updateAppHeaderProgress() {
   const el = document.getElementById('appHeaderProgress');
   if (!el) return;
   const { summary } = getProgress();
+  el.setAttribute(
+    'aria-label',
+    `${summary.completedActivities} de ${summary.totalActivities} actividades completadas`
+  );
   el.innerHTML = `
     <span class="lp-header-stats__group">
       ${LP_ICON_TROPHY}
       <strong class="lp-header-stats__value">${summary.completedActivities}/${summary.totalActivities}</strong>
       <span class="lp-header-stats__label">actividades</span>
-    </span>
-    <span class="lp-header-stats__divider" aria-hidden="true"></span>
-    <span class="lp-header-stats__group">
-      <strong class="lp-header-stats__value">${summary.completedContent}</strong>
-      ${LP_ICON_STAR}
-      <span class="lp-header-stats__label">canciones</span>
     </span>
   `;
 }
