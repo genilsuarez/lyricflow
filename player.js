@@ -1060,7 +1060,8 @@ function setNavigationOpen(isOpen, restoreFocus = false) {
   backdrop.classList.toggle('is-open', isOpen && !isPersistent);
   trigger.setAttribute('aria-expanded', String(effectivelyOpen));
   if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(effectivelyOpen));
-  document.body.classList.toggle('navigation-open', isOpen && !isPersistent);
+  document.body.classList.toggle('lp-drawer-open', isOpen && !isPersistent);
+  navigation.classList.toggle('is-persistent', isPersistent);
   if (isOpen && !isPersistent && typeof lpLogin !== 'undefined' && lpLogin.refreshNavLabels) {
     lpLogin.refreshNavLabels();
   }
@@ -1098,12 +1099,12 @@ function initUnifiedNavigation() {
 
   const backdrop = document.createElement('div');
   backdrop.id = 'unifiedNavBackdrop';
-  backdrop.className = 'unified-nav-backdrop';
+  backdrop.className = 'lp-drawer-scrim';
   backdrop.setAttribute('aria-hidden', 'true');
 
   const navigation = document.createElement('aside');
   navigation.id = 'unifiedNavigation';
-  navigation.className = 'unified-nav';
+  navigation.className = 'unified-nav lp-drawer';
   navigation.setAttribute('aria-label', 'Navegación de LearnFlow');
   navigation.innerHTML = `
     <div class="unified-nav-brand">

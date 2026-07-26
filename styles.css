@@ -4733,10 +4733,6 @@ body {
   padding: 22px 14px 16px;
   border-right: 1.5px solid var(--lp-border);
   background: var(--lp-bg-paper);
-  box-shadow: var(--lp-shadow-md);
-  transform: translate3d(-100%, 0, 0);
-  transition: transform 320ms cubic-bezier(0.22, 0.9, 0.36, 1);
-  backface-visibility: hidden;
 }
 
 .unified-nav-brand {
@@ -4917,21 +4913,8 @@ body {
   font-size: 1rem;
 }
 
-.unified-nav-backdrop {
-  position: fixed;
-  inset: 0;
+.lp-drawer-scrim {
   z-index: 201;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  background: color-mix(in srgb, var(--lp-ink) 45%, transparent);
-  transition: opacity 320ms cubic-bezier(0.22, 0.9, 0.36, 1), visibility 320ms;
-}
-
-.unified-nav-backdrop.is-open {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
 }
 
 @media (min-width: 861px) {
@@ -4958,14 +4941,12 @@ body {
     font-size: var(--lp-header-title-size);
   }
 
-  html[data-navigation-mode="floating"] .unified-nav {
+  html[data-navigation-mode="floating"] .unified-nav.lp-drawer {
     pointer-events: none;
-    transform: translate3d(-100%, 0, 0);
   }
 
-  html[data-navigation-mode="floating"] .unified-nav.is-open {
+  html[data-navigation-mode="floating"] .unified-nav.lp-drawer.is-open {
     pointer-events: auto;
-    transform: translate3d(0, 0, 0);
   }
 
   html[data-navigation-mode="floating"] .unified-nav-trigger {
@@ -5034,12 +5015,10 @@ body:has(.app-header--player) .unified-nav-trigger {
     inset: 0 auto 0 0;
     width: min(232px, 86vw);
     pointer-events: none;
-    transform: translate3d(-100%, 0, 0);
   }
 
   .unified-nav.is-open {
     pointer-events: auto;
-    transform: translate3d(0, 0, 0);
   }
 
   .unified-nav-trigger {
@@ -5187,7 +5166,6 @@ body:has(.app-header--player) .unified-nav-trigger {
 
 @media (prefers-reduced-motion: reduce) {
   .unified-nav,
-  .unified-nav-backdrop,
   .unified-nav-item,
   body {
     transition: none !important;
