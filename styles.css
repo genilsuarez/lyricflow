@@ -5702,11 +5702,16 @@ body:has(.app-header--player) .unified-nav-trigger {
     padding: 2px clamp(16px, 3vw, 40px) 18px;
     overflow: visible;
     overscroll-behavior: none;
+    width: 100%;
+    max-width: min(720px, 100%);
+    flex: 1;
+    min-height: 0;
   }
 
   .app-shell--fullscreen .player-wrapper {
     overflow: visible;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: stretch;
     padding-top: 10px;
     padding-bottom: 12px;
   }
@@ -5764,6 +5769,16 @@ body:has(.app-header--player) .unified-nav-trigger {
 
   .dash-recent {
     padding: 13px 14px;
+    flex: 1;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dash-recent .dash-empty,
+  .dash-recent__list {
+    flex: 1;
+    min-height: 0;
   }
 
   .dash-recent h3 {
@@ -5786,6 +5801,101 @@ body:has(.app-header--player) .unified-nav-trigger {
   .dash-recent__activity { font-size: 0.61rem; }
   .dash-recent__score { font-size: 0.65rem; }
   .dash-recent__time { font-size: 0.61rem; }
+}
+
+/* Web ancho: hero + biblioteca a la izquierda, actividad reciente a la derecha */
+@media (min-width: 768px) {
+  .dashboard-view {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    max-width: min(1000px, 100%);
+    flex: 1;
+    min-height: 0;
+    align-content: stretch;
+    padding: 8px clamp(20px, 3vw, 40px) 20px;
+  }
+
+  .dash-resumen-hero {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-self: start;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .dash-resumen-hero .hero-card,
+  .dash-resumen-hero .progress-snapshot {
+    width: 100%;
+    flex: 0 0 auto;
+    align-self: stretch;
+  }
+
+  .dash-resumen-hero .progress-snapshot {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0 14px;
+    row-gap: 4px;
+    padding: 14px 16px;
+    align-content: center;
+  }
+
+  .dash-resumen-hero .progress-snapshot__visual {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: center;
+    width: 52px;
+    height: 52px;
+  }
+
+  .dash-resumen-hero .progress-snapshot__visual > div {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dash-resumen-hero .progress-snapshot__visual strong {
+    font-size: 0.875rem;
+  }
+
+  .dash-resumen-hero .progress-snapshot__copy {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+    gap: 3px;
+  }
+
+  .dash-resumen-hero .progress-snapshot__stat-col {
+    grid-column: 3;
+    grid-row: 1 / -1;
+    align-self: center;
+    justify-self: end;
+  }
+
+  .dash-resumen-hero .progress-snapshot__line--meta {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .dash-recent {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: stretch;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .dash-recent .dash-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ─── Dashboard Responsive ─── */
