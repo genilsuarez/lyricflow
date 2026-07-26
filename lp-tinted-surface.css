@@ -1,0 +1,212 @@
+/**
+ * LP Tinted Surface — DeskFlow module-card pattern for cross-app menus.
+ * NOT used in DeskFlow (module-card lives in DeskFlow/styles.css).
+ * Set color via --card-color, --spine, --hero-spine, or --module-accent.
+ */
+
+:is(
+  .continue-card,
+  .hero-card:not(.hero-card--loading),
+  .progress-snapshot,
+  .song-list-item,
+  .book,
+  .tile
+) {
+  --tint-color: var(--card-color, var(--spine, var(--hero-spine, var(--module-accent, var(--lp-accent)))));
+  --tint-soft: var(--card-soft, color-mix(in srgb, var(--tint-color) 8%, var(--lp-surface)));
+  border: 1.5px solid color-mix(in srgb, var(--tint-color) 30%, var(--lp-border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--tint-color) 12%, var(--tint-soft)) 0%,
+    var(--tint-soft) 52%,
+    color-mix(in srgb, var(--tint-color) 6%, var(--lp-surface)) 100%
+  );
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--tint-color) 10%, transparent),
+    0 3px 12px color-mix(in srgb, var(--tint-color) 14%, transparent);
+  transition:
+    background 0.2s var(--lp-ease, ease),
+    transform 0.2s var(--lp-ease, ease),
+    box-shadow 0.2s var(--lp-ease, ease),
+    border-color 0.2s var(--lp-ease, ease);
+}
+
+:is(
+  .continue-card,
+  .hero-card:not(.hero-card--loading),
+  .progress-snapshot,
+  .song-list-item,
+  .book,
+  .tile
+):hover {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--tint-color) 18%, var(--tint-soft)) 0%,
+    color-mix(in srgb, var(--tint-color) 8%, var(--tint-soft)) 52%,
+    color-mix(in srgb, var(--tint-color) 10%, var(--lp-surface)) 100%
+  );
+  border-color: color-mix(in srgb, var(--tint-color) 44%, var(--lp-border));
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--tint-color) 12%, transparent),
+    0 6px 18px color-mix(in srgb, var(--tint-color) 22%, transparent);
+  transform: translateY(-2px);
+}
+
+:is(
+  .continue-card,
+  .hero-card:not(.hero-card--loading),
+  .progress-snapshot,
+  .song-list-item,
+  .book,
+  .tile
+):active {
+  transform: translateY(0) scale(0.97);
+}
+
+:is(
+  .continue-card,
+  .hero-card:not(.hero-card--loading),
+  .progress-snapshot,
+  .song-list-item,
+  .book,
+  .tile
+):focus-visible {
+  outline: 2px solid var(--tint-color);
+  outline-offset: 2px;
+}
+
+.continue-card--purple { --card-color: var(--lp-cat-purple); --card-soft: var(--lp-cat-purple-soft); }
+.continue-card--amber { --card-color: var(--lp-cat-amber); --card-soft: var(--lp-cat-amber-soft); }
+.continue-card--teal { --card-color: var(--lp-cat-teal); --card-soft: var(--lp-cat-teal-soft); }
+
+.book.b-vocab,
+.song-list-item:nth-child(5n+4) { --card-soft: var(--lp-cat-purple-soft); }
+.book.b-grammar,
+.song-list-item:nth-child(5n+2) { --card-soft: var(--lp-cat-amber-soft); }
+.book.b-pron,
+.song-list-item:nth-child(5n+1) { --card-soft: var(--lp-cat-blue-soft); }
+.book.b-analysis,
+.song-list-item:nth-child(5n+5) { --card-soft: var(--lp-cat-teal-soft); }
+.song-list-item:nth-child(5n+3) { --card-soft: var(--lp-cat-green-soft); }
+.tile.v { --card-soft: var(--lp-cat-purple-soft); }
+.tile.p { --card-soft: var(--lp-cat-blue-soft); }
+.tile.g { --card-soft: var(--lp-cat-amber-soft); }
+.tile.a { --card-soft: var(--lp-cat-teal-soft); }
+.tile.r { --card-soft: var(--lp-cat-green-soft); }
+
+.dash-resumen-hero {
+  --card-soft: var(--lp-cat-teal-soft);
+}
+
+/* module-card__mark pattern for menu icons */
+:is(.hero-card, .song-list-item, .book, .tile) .hero-card__icon,
+:is(.hero-card, .song-list-item, .book, .tile) .song-list-item__icon,
+:is(.hero-card, .song-list-item, .book, .tile) .book-icon,
+:is(.hero-card, .song-list-item, .book, .tile) .tile-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: none;
+  background: var(--tint-color);
+  color: var(--lp-ink-inverse);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--tint-color) 22%, transparent);
+}
+
+.book {
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  align-items: center;
+}
+
+.book-spine {
+  display: none;
+}
+
+.book-body {
+  padding: 0;
+  min-width: 0;
+}
+
+.hero-card__chev,
+.progress-snapshot__chev,
+.song-list-item__chevron {
+  color: var(--tint-color);
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 1;
+}
+
+.song-list-item__chevron {
+  width: auto;
+  height: auto;
+  margin-right: 0;
+  border: none;
+  transform: none;
+}
+
+.song-list-item__chevron::before {
+  content: '→';
+}
+
+.song-list-item:hover .song-list-item__chevron {
+  transform: none;
+}
+
+.hero-card__context {
+  color: var(--tint-color);
+}
+
+:is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .progress-track,
+:is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .book-progress__bar,
+.song-list-item .song-progress-track {
+  background: color-mix(in srgb, var(--tint-color) 14%, var(--lp-surface-sunken));
+}
+
+:is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .progress-track__fill,
+.book-progress:not(.book-progress--done) .book-progress__fill,
+.song-list-item .song-progress-segment.is-complete {
+  background: var(--tint-color);
+}
+
+.book-progress__pct {
+  font-family: var(--lp-font-display, inherit);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--tint-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-progress--done .book-progress__fill {
+  background: var(--lp-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .continue-card,
+    .hero-card:not(.hero-card--loading),
+    .progress-snapshot,
+    .song-list-item,
+    .book,
+    .tile
+  ):hover,
+  :is(
+    .continue-card,
+    .hero-card:not(.hero-card--loading),
+    .progress-snapshot,
+    .song-list-item,
+    .book,
+    .tile
+  ):active {
+    transform: none;
+  }
+}
