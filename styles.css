@@ -5450,10 +5450,6 @@ body:has(.app-header--player) .unified-nav-trigger {
   line-height: 1;
 }
 
-.dash-resumen-hero .progress-snapshot__chev {
-  display: none;
-}
-
 .dash-hero__metrics {
   display: flex;
   gap: 14px;
@@ -6000,7 +5996,7 @@ body:has(.app-header--player) .unified-nav-trigger {
   }
 
   .dash-resumen-hero .progress-snapshot {
-    grid-template-columns: 40px 1fr auto auto;
+    grid-template-columns: 40px 1fr auto;
     grid-template-rows: auto auto;
     align-items: center;
     gap: 0 10px;
@@ -6056,17 +6052,6 @@ body:has(.app-header--player) .unified-nav-trigger {
     align-self: start;
     display: block;
     font-size: 0.6875rem;
-  }
-
-  .dash-resumen-hero .progress-snapshot__chev {
-    display: block;
-    grid-column: 4;
-    grid-row: 1 / -1;
-    align-self: center;
-    font-size: 1.125rem;
-    line-height: 1;
-    color: color-mix(in srgb, var(--lp-muted) 85%, transparent);
-    padding-left: 4px;
   }
 }
 
@@ -6697,8 +6682,33 @@ body:has(.app-header--player) .unified-nav-trigger {
 
 @media (max-width: 580px) {
   .stats-view {
-    padding: 8px 6px;
+    padding: 8px 6px 16px;
     gap: 8px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .stats-view > .sv-top,
+  .stats-view > .sv-card,
+  .stats-view > .sv-mid,
+  .stats-view > .sv-songs {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
+  .stats-view .sv-mid > .sv-card {
+    height: auto;
+    min-height: auto;
+  }
+
+  .stats-view .sv-recent,
+  .stats-view .sv-songs-grid {
+    overflow: visible;
+    flex: none;
+    min-height: auto;
   }
 
   .sv-top {
@@ -6770,9 +6780,15 @@ body:has(.app-header--player) .unified-nav-trigger {
     text-overflow: ellipsis;
   }
 
-  .sv-card:has(#svLevelsTitle),
-  .sv-card:has(#svRecentTitle) {
-    display: none;
+  .sv-mid {
+    flex: 0 0 auto;
+    grid-template-rows: auto auto;
+    min-height: auto;
+  }
+
+  .sv-songs {
+    flex: 0 0 auto;
+    min-height: auto;
   }
 
   .sv-song-row {

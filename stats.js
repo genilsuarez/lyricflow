@@ -427,7 +427,6 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
               <span class="progress-snapshot__stat dash-snapshot-stat">${progress.summary.completedActivities}/${progress.summary.totalActivities}</span><span class="progress-snapshot__unit"> actividades</span>
             </span>
           </div>
-          <span class="progress-snapshot__chev" aria-hidden="true">›</span>
         </button>
       </div>
 
@@ -563,7 +562,7 @@ export function renderStats() {
                 </div>`;
             }).join('')}
           </div>
-          ` : '<p class="sv-empty">Sin actividad aun</p>'}
+          ` : '<p class="sv-empty">Comienza con una canción para ver tu actividad aquí</p>'}
         </section>
       </div>
 
