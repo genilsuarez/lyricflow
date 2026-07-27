@@ -217,6 +217,19 @@ function buildRecentRowsMarkup(recentEvents) {
     return '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>';
   }
   return `
+        <div class="dash-recent__head" aria-hidden="true">
+          <div class="dash-recent__main">
+            <span class="dash-recent__icon dash-recent__icon--spacer" aria-hidden="true"></span>
+            <div class="dash-recent__song">
+              <span class="dash-recent__col dash-recent__col--song">Canción</span>
+            </div>
+          </div>
+          <div class="dash-recent__meta">
+            <span class="dash-recent__col dash-recent__col--activity">Actividad</span>
+            <span class="dash-recent__col dash-recent__col--score">Resultado</span>
+            <span class="dash-recent__col dash-recent__col--time">Cuándo</span>
+          </div>
+        </div>
         <div class="dash-recent__list">
           ${recentEvents.map(event => {
             const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
@@ -227,11 +240,18 @@ function buildRecentRowsMarkup(recentEvents) {
             const displayArtist = songData?.artist || '';
             return `
               <div class="dash-recent__row">
-                <span class="dash-recent__icon">${meta.icon}</span>
-                <span class="dash-recent__title">${displayTitle}${displayArtist ? `<span class="dash-recent__artist">${displayArtist}</span>` : ''}</span>
-                <span class="dash-recent__activity">${meta.label}</span>
-                <span class="dash-recent__score">${scoreStr}${passedStr ? ' ' + passedStr : ''}</span>
-                <time class="dash-recent__time">${timeAgo(event.occurredAt)}</time>
+                <div class="dash-recent__main">
+                  <span class="dash-recent__icon" aria-hidden="true">${meta.icon}</span>
+                  <div class="dash-recent__song">
+                    <span class="dash-recent__title">${displayTitle}</span>
+                    ${displayArtist ? `<span class="dash-recent__artist">${displayArtist}</span>` : ''}
+                  </div>
+                </div>
+                <div class="dash-recent__meta">
+                  <span class="dash-recent__activity">${meta.label}</span>
+                  <span class="dash-recent__score">${scoreStr}${passedStr ? ` <span class="dash-recent__pass" aria-hidden="true">${passedStr}</span>` : ''}</span>
+                  <time class="dash-recent__time" datetime="${event.occurredAt}">${timeAgo(event.occurredAt)}</time>
+                </div>
               </div>`;
           }).join('')}
         </div>`;
@@ -276,16 +296,7 @@ export function patchDashboardRecentActivity() {
         ? 'dash-recent dash-recent--revealed'
         : 'dash-recent';
 
-  const title = recentSection.querySelector('h3');
-  recentSection.innerHTML = '';
-  if (title) recentSection.appendChild(title);
-  else {
-    const heading = document.createElement('h3');
-    heading.id = 'dashRecentTitle';
-    heading.textContent = 'Actividad reciente';
-    recentSection.appendChild(heading);
-  }
-  recentSection.insertAdjacentHTML('beforeend', buildRecentSectionBody(recentEvents, { deferRecent }));
+  recentSection.innerHTML = buildRecentSectionBody(recentEvents, { deferRecent });
   if (!deferRecent) revealRecentSection(recentSection, shouldAnimateRecent);
   return true;
 }
@@ -421,9 +432,11 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
       </div>
 
       <!-- Recent activity -->
-      <section class="${recentSectionClass}" aria-labelledby="dashRecentTitle">
+      <section class="dash-recent-block" aria-labelledby="dashRecentTitle">
         <h3 id="dashRecentTitle">Actividad reciente</h3>
-        ${buildRecentSectionBody(recentEvents, { deferRecent })}
+        <div class="${recentSectionClass}">
+          ${buildRecentSectionBody(recentEvents, { deferRecent })}
+        </div>
       </section>
 
       <!-- Songs CTA -->
@@ -454,7 +467,7 @@ export function cleanupStats() {
 
 export function renderStats() {
   const { progress, events, streak, songDetails, activityCounts, totalAttempts, pct } = getComputedData();
-  const recentEvents = events.slice(0, 5);
+  const recentEvents = events.slice(0, 4);
   const app = getAppRoot();
   if (!app) return;
 

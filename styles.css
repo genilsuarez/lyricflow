@@ -1854,23 +1854,26 @@ html.browser-cursor-embedded .song-list {
   font-size: 0.84rem;
   font-family: var(--lp-font-body);
   font-weight: 500;
-  background: var(--lp-surface-sunken);
-  border: 1px solid transparent;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border-strong);
   border-radius: var(--lp-radius-full);
   color: var(--lp-ink);
-  box-shadow: none;
+  box-shadow: var(--lp-shadow-sm);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .search-bar input:focus {
   outline: none;
   background: var(--lp-surface);
-  border-color: color-mix(in srgb, var(--lp-accent) 35%, var(--lp-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lp-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--lp-accent) 50%, var(--lp-border-strong));
+  box-shadow:
+    var(--lp-shadow-md),
+    0 0 0 3px color-mix(in srgb, var(--lp-accent) 14%, transparent);
 }
 
 .search-bar input::placeholder {
-  color: var(--lp-muted);
+  color: var(--lp-ink-soft);
+  opacity: 0.72;
 }
 
 .search-bar::before {
@@ -1881,7 +1884,7 @@ html.browser-cursor-embedded .song-list {
   transform: translateY(-50%);
   width: 15px;
   height: 15px;
-  opacity: 0.42;
+  opacity: 0.62;
   pointer-events: none;
   background: currentColor;
   color: var(--lp-muted);
@@ -5539,6 +5542,23 @@ body:has(.app-header--player) .unified-nav-trigger {
 
 /* ─── Dashboard Recent Activity ─── */
 
+.dash-recent-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dash-recent-block h3 {
+  font-family: var(--lp-font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lp-muted);
+  margin: 0;
+}
+
 .dash-recent {
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
@@ -5563,7 +5583,7 @@ body:has(.app-header--player) .unified-nav-trigger {
 .dash-recent__list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   overflow: hidden;
   transition:
     max-height 0.6s cubic-bezier(0.22, 1, 0.36, 1),
@@ -5575,18 +5595,86 @@ body:has(.app-header--player) .unified-nav-trigger {
   opacity: 0;
 }
 
+.dash-recent--pending .dash-recent__head {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 .dash-recent--revealed .dash-recent__list {
   max-height: 320px;
   opacity: 1;
 }
 
+.dash-recent--revealed .dash-recent__head {
+  opacity: 1;
+  transition: opacity 0.45s ease;
+}
+
+.dash-recent__head,
 .dash-recent__row {
-  display: grid;
-  grid-template-columns: 20px 1fr auto 60px 56px;
-  gap: 6px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dash-recent__meta {
+  display: grid;
+  grid-template-columns: 4.75rem 3.5rem 3.25rem;
+  column-gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.dash-recent__head {
+  padding: 0 2px 8px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.dash-recent__col {
+  font-family: var(--lp-font-body);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lp-muted);
+}
+
+.dash-recent__col--song { text-align: left; }
+.dash-recent__col--activity { text-align: left; }
+.dash-recent__col--score,
+.dash-recent__col--time { text-align: right; }
+
+.dash-recent__row {
+  padding: 8px 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--lp-border) 60%, transparent);
   font-family: var(--lp-font-body);
   font-size: 0.8rem;
+}
+
+.dash-recent__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dash-recent__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dash-recent__song {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .dash-recent--pending .dash-recent__row {
@@ -5626,32 +5714,36 @@ body:has(.app-header--player) .unified-nav-trigger {
   }
 }
 
-.dash-recent h3 {
-  font-family: var(--lp-font-body);
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--lp-muted);
-  margin-bottom: 10px;
+.dash-recent__icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1;
 }
 
-.dash-recent__icon { font-size: 0.8rem; text-align: center; }
+.dash-recent__icon--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
 
 .dash-recent__title {
   color: var(--lp-ink);
   font-weight: 500;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dash-recent__artist {
-  display: block;
   color: var(--lp-muted);
   font-weight: 400;
   font-size: 0.68rem;
-  line-height: 1.3;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dash-recent__activity {
@@ -5661,21 +5753,24 @@ body:has(.app-header--player) .unified-nav-trigger {
   white-space: nowrap;
 }
 
-.dash-recent__activity::before {
-  content: none;
-}
-
 .dash-recent__score {
   font-weight: 600;
   color: var(--lp-accent-text);
   font-size: 0.72rem;
   text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-recent__pass {
+  font-weight: 700;
 }
 
 .dash-recent__time {
   color: var(--lp-muted);
   font-size: 0.68rem;
   text-align: right;
+  white-space: nowrap;
 }
 
 .dash-empty {
@@ -5717,10 +5812,20 @@ body:has(.app-header--player) .unified-nav-trigger {
     gap: 9px;
   }
 
+  .dash-recent-block {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .dash-recent-block h3 {
+    font-size: 0.56rem;
+    flex-shrink: 0;
+  }
+
   .dash-recent {
     padding: 13px 14px;
     flex: 1;
-    min-height: 140px;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
@@ -5731,26 +5836,26 @@ body:has(.app-header--player) .unified-nav-trigger {
     min-height: 0;
   }
 
-  .dash-recent h3 {
-    margin-bottom: 9px;
-    font-size: 0.56rem;
+  .dash-recent__list {
+    gap: 0;
   }
 
-  .dash-recent__list {
-    gap: 7px;
+  .dash-recent__meta {
+    grid-template-columns: 4.25rem 3.25rem 3rem;
+    column-gap: 10px;
   }
 
   .dash-recent__row {
-    grid-template-columns: 18px 1fr auto 54px 50px;
-    gap: 5px;
+    padding: 7px 2px;
     font-size: 0.72rem;
   }
 
-  .dash-recent__icon { font-size: 0.72rem; }
+  .dash-recent__icon { font-size: 0.72rem; width: 1.1rem; }
   .dash-recent__artist { font-size: 0.61rem; }
   .dash-recent__activity { font-size: 0.61rem; }
   .dash-recent__score { font-size: 0.65rem; }
   .dash-recent__time { font-size: 0.61rem; }
+  .dash-recent__col { font-size: 0.54rem; }
 }
 
 /* Web: hero + biblioteca en fila 1; actividad reciente en fila 2 */
@@ -5845,11 +5950,15 @@ body:has(.app-header--player) .unified-nav-trigger {
     line-height: 1.35;
   }
 
-  .dash-recent {
+  .dash-recent-block {
     grid-column: 1;
     grid-row: 2;
     align-self: stretch;
     min-height: 0;
+    overflow: hidden;
+  }
+
+  .dash-recent {
     overflow: hidden;
   }
 
@@ -5880,10 +5989,14 @@ body:has(.app-header--player) .unified-nav-trigger {
     width: 100%;
   }
 
-  .dash-recent {
+  .dash-recent-block {
     width: 100%;
     flex: 0 0 auto;
     min-height: 0;
+  }
+
+  .dash-recent {
+    width: 100%;
   }
 
   .dash-resumen-hero .progress-snapshot {
@@ -6043,6 +6156,19 @@ body:has(.app-header--player) .unified-nav-trigger {
   .dash-act-bar {
     grid-area: bar;
     height: var(--lp-progress-height-compact);
+  }
+
+  .dash-recent__head {
+    display: none;
+  }
+
+  .dash-recent__meta {
+    grid-template-columns: 3.25rem 2.75rem 2.5rem;
+    column-gap: 6px;
+  }
+
+  .dash-recent__row {
+    padding: 7px 0;
   }
 }
 
@@ -6214,6 +6340,22 @@ body:has(.app-header--player) .unified-nav-trigger {
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     grid-template-rows: minmax(0, 1fr);
   }
+
+  .sv-mid > .sv-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
+}
+
+@media (min-width: 720px) {
+  .sv-mid > .sv-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
 }
 
 .sv-card {
@@ -6322,21 +6464,37 @@ body:has(.app-header--player) .unified-nav-trigger {
 
 /* ─── Levels ─── */
 
+.sv-card:has(#svLevelsTitle) {
+  padding: 7px 12px;
+}
+
+.sv-card:has(#svLevelsTitle) h3 {
+  margin-bottom: 4px;
+  font-size: 0.54rem;
+}
+
 .sv-levels {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
 }
 
 .sv-level-row {
   display: grid;
-  grid-template-columns: 34px 1fr 28px;
+  grid-template-columns: 32px 1fr 26px;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+}
+
+.sv-levels .level-badge {
+  font-size: 0.52rem;
+  padding: 2px 7px;
 }
 
 .sv-level-count {
-  font-size: 0.7rem;
+  font-size: 0.63rem;
   font-weight: var(--lp-weight-semibold);
   color: var(--lp-muted);
   text-align: right;
@@ -6346,21 +6504,13 @@ body:has(.app-header--player) .unified-nav-trigger {
 /* ─── Recent ─── */
 
 .sv-card:has(#svRecentTitle) {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-  padding: 9px 13px;
+  padding: 7px 12px;
 }
 
 .sv-card:has(#svRecentTitle) h3 {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   font-size: 0.54rem;
   flex-shrink: 0;
-}
-
-.sv-card:has(#svLevelsTitle) {
-  align-self: start;
 }
 
 @media (min-width: 540px) {
@@ -6371,9 +6521,10 @@ body:has(.app-header--player) .unified-nav-trigger {
 }
 
 .sv-recent {
+  --sv-recent-row-h: 1.28rem;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -6381,16 +6532,17 @@ body:has(.app-header--player) .unified-nav-trigger {
 
 .sv-recent-row {
   display: grid;
-  grid-template-columns: 16px 1fr auto 49px 47px;
+  grid-template-columns: 14px 1fr auto 44px 42px;
   align-items: center;
-  gap: 5px;
-  padding: 1px 0;
+  gap: 4px;
+  min-height: var(--sv-recent-row-h);
+  padding: 0;
 }
 
-.sv-recent-icon { font-size: 0.72rem; }
+.sv-recent-icon { font-size: 0.65rem; }
 
 .sv-recent-title {
-  font-size: 0.675rem;
+  font-size: 0.61rem;
   color: var(--lp-ink);
   white-space: nowrap;
   overflow: hidden;
@@ -6401,14 +6553,14 @@ body:has(.app-header--player) .unified-nav-trigger {
   display: block;
   color: var(--lp-muted);
   font-weight: var(--lp-weight-normal);
-  font-size: 0.54rem;
-  line-height: 1.2;
+  font-size: 0.49rem;
+  line-height: 1.15;
 }
 
 .sv-recent-activity {
   color: var(--lp-muted);
   font-weight: var(--lp-weight-normal);
-  font-size: 0.59rem;
+  font-size: 0.53rem;
   white-space: nowrap;
 }
 
@@ -6417,7 +6569,7 @@ body:has(.app-header--player) .unified-nav-trigger {
 }
 
 .sv-recent-score {
-  font-size: 0.63rem;
+  font-size: 0.57rem;
   font-weight: var(--lp-weight-semibold);
   color: var(--lp-accent-text);
   font-family: var(--lp-font-mono);
@@ -6425,7 +6577,7 @@ body:has(.app-header--player) .unified-nav-trigger {
 }
 
 .sv-recent-time {
-  font-size: 0.59rem;
+  font-size: 0.53rem;
   color: var(--lp-muted);
   white-space: nowrap;
   text-align: right;
@@ -6443,14 +6595,19 @@ body:has(.app-header--player) .unified-nav-trigger {
   min-height: 6rem;
 }
 
+.sv-card:has(#svRecentTitle) .sv-empty {
+  flex: 0;
+  min-height: 3.2rem;
+}
+
 /* ─── Songs section ─── */
 
 .sv-songs {
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius-md);
-  padding: 10px 14px;
-  flex: 1;
+  padding: 7px 14px;
+  flex: 0.9 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -6462,14 +6619,14 @@ body:has(.app-header--player) .unified-nav-trigger {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--lp-muted);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   flex-shrink: 0;
 }
 
 .sv-songs-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1px 48px;
+  gap: 0 48px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -6478,8 +6635,8 @@ body:has(.app-header--player) .unified-nav-trigger {
 .sv-song-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 0;
+  gap: 5px;
+  padding: 2px 0;
   border-radius: var(--lp-radius-xs);
   transition: background var(--lp-duration-fast);
 }
@@ -6488,10 +6645,10 @@ body:has(.app-header--player) .unified-nav-trigger {
   background: var(--lp-surface-sunken);
 }
 
-.sv-song-icon { font-size: 0.85rem; flex-shrink: 0; width: 18px; text-align: center; }
+.sv-song-icon { font-size: 0.78rem; flex-shrink: 0; width: 16px; text-align: center; }
 
 .sv-song-name {
-  font-size: var(--lp-text-xs);
+  font-size: 0.7rem;
   font-weight: var(--lp-weight-medium);
   color: var(--lp-ink);
   white-space: nowrap;
@@ -6502,7 +6659,7 @@ body:has(.app-header--player) .unified-nav-trigger {
 }
 
 .sv-song-artist {
-  font-size: var(--lp-text-xs);
+  font-size: 0.7rem;
   color: var(--lp-muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -6527,7 +6684,7 @@ body:has(.app-header--player) .unified-nav-trigger {
 }
 
 .sv-song-pct {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: var(--lp-weight-semibold);
   color: var(--lp-muted);
   text-align: right;
