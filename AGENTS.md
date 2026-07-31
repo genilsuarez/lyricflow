@@ -36,7 +36,7 @@ songs/              — Carpeta de canciones
   <Nombre>/
     data.js         — Metadata + subtítulos sincronizados
     vocab.js        — Vocabulario de la canción
-    *.mp4           — Archivo de audio/video
+    *.mp3           — Archivo de audio
 scripts/            — Scripts de build y QA
 ```
 
