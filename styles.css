@@ -421,6 +421,30 @@ body {
    returning learner never has to guess where to click first — without
    costing an extra full-width row above the catalog. */
 
+/* ─── Level Status Banner ─── docs/to-do/learnflow-progression-system.md */
+.level-status-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  width: 100%; max-width: 780px;
+  margin: 0 auto 10px; padding: 10px 14px;
+  background: color-mix(in srgb, var(--lp-accent) 8%, var(--lp-surface));
+  border: 1.5px solid color-mix(in srgb, var(--lp-accent) 30%, transparent);
+  border-radius: var(--lp-radius-lg);
+}
+.level-status-banner[hidden] { display: none; }
+.level-status-banner__icon { font-size: 1rem; flex-shrink: 0; }
+.level-status-banner__text {
+  flex: 1 1 auto; min-width: 180px;
+  font-size: 0.78rem; font-weight: 500; color: var(--lp-ink-soft); line-height: 1.35;
+}
+.level-status-banner__btn {
+  flex-shrink: 0; padding: 6px 12px;
+  background: var(--lp-accent); color: var(--lp-ink-inverse);
+  border-radius: var(--lp-radius-full);
+  font-size: 0.74rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.level-status-banner__btn:hover { opacity: 0.85; }
+
 .picker-toprow {
   display: grid;
   grid-template-columns: 1fr 1fr;

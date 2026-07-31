@@ -19,6 +19,8 @@ import {
 } from './progress.js';
 import { setupSupabaseAuth } from './lp-auth-setup.js';
 import { hydrateActivityFromCloud, hasLocalActivityLedger } from './sync-engine.js';
+import { getActiveLevel, levelUnlocks } from './lp-progress-summary.js';
+import { initLevelStatus, refreshLevelStatusBanner } from './level-status.js';
 
 configureProgressCatalog(pickerSongs);
 
@@ -144,6 +146,11 @@ window.addEventListener('storage', storageEvent => {
   if (storageEvent.key?.startsWith('learnflow:progress:') && storageEvent.newValue === null) {
     refreshLyricFlowAfterGuestReset();
   }
+});
+
+initLevelStatus();
+window.addEventListener('lp-level-changed', () => {
+  if (document.getElementById('songList')) showPicker(true);
 });
 
 export const app = document.getElementById('app');
@@ -719,16 +726,29 @@ function showPicker(skipAutoLoad = false) {
 
   // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
   const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-  const songs = [...pickerSongs].sort((a, b) => {
-    const la = levelOrder.indexOf((a.level || '').toLowerCase());
-    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
-    const ia = la === -1 ? levelOrder.length : la;
-    const ib = lb === -1 ? levelOrder.length : lb;
-    return ia - ib || a.title.localeCompare(b.title);
-  });
+  // LearnFlow Progression System — docs/to-do/learnflow-progression-system.md.
+  // El nivel activo es criterio de ACCESO: canciones por encima de lp-level
+  // no se muestran. "Dernière Danse" (level "FR", no CEFR) queda fuera del
+  // sistema de niveles y siempre está desbloqueada (levelUnlocks devuelve
+  // true para niveles desconocidos).
+  const activeLevel = getActiveLevel();
+  const songs = pickerSongs
+    .filter(song => levelUnlocks((song.level || '').toLowerCase(), activeLevel))
+    .sort((a, b) => {
+      const la = levelOrder.indexOf((a.level || '').toLowerCase());
+      const lb = levelOrder.indexOf((b.level || '').toLowerCase());
+      const ia = la === -1 ? levelOrder.length : la;
+      const ib = lb === -1 ? levelOrder.length : lb;
+      return ia - ib || a.title.localeCompare(b.title);
+    });
 
   app.innerHTML = `
     <div class="song-picker">
+      <div class="level-status-banner" id="levelStatusBanner" hidden>
+        <span class="level-status-banner__icon" aria-hidden="true">🔒</span>
+        <span class="level-status-banner__text">Tu nivel es compartido entre FluentFlow, HubFlow y LyricFlow. Ya hiciste tu parte aquí — revisa qué falta.</span>
+        <a class="level-status-banner__btn" id="levelStatusBannerLink" href="#" target="_blank" rel="noopener">Ver progreso global →</a>
+      </div>
       <div class="picker-toprow picker-toprow--solo">
         <div class="search-bar">
           <input type="search" id="songSearch" placeholder="Buscar canciones…" aria-label="Buscar canciones" autocomplete="off">
@@ -737,6 +757,7 @@ function showPicker(skipAutoLoad = false) {
       <div class="song-list" id="songList"></div>
     </div>
   `;
+  refreshLevelStatusBanner();
 
   const list = document.getElementById('songList');
 

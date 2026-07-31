@@ -8,6 +8,7 @@ import {
 import {
   enrichLyricflowSongEntry,
   LYRICFLOW_ACTIVITY_IDS,
+  checkLevelAdvancement,
 } from './lp-progress-summary.js';
 
 const PROGRESS_KEY = 'learnflow:progress:lyricflow:v1';
@@ -192,6 +193,10 @@ function writeProgress(document) {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(document));
   } catch {
     return false;
+  }
+  const result = checkLevelAdvancement();
+  if (result.advanced) {
+    lpSupabase.updateCefrLevel(result.level).catch(() => {});
   }
   return true;
 }
