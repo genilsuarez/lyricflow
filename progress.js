@@ -212,7 +212,7 @@ function writeProgress(document) {
     if (catalogIds.length) {
       localStorage.setItem(
         CATALOG_KEY,
-        JSON.stringify({ totalContent: catalogIds.length, updatedAt: document.updatedAt })
+        JSON.stringify({ totalContent: catalogIds.length, ids: catalogIds, updatedAt: document.updatedAt })
       );
     }
   } catch {
