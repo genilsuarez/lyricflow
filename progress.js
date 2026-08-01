@@ -171,6 +171,15 @@ function deriveSummary(document) {
     }).length
   ), 0);
 
+  // Catálogo real vigente, fuera de summary/content a propósito: el
+  // cloud-merge de DeskFlow (sync-engine.js) solo une content_ids de
+  // Supabase sin podar ids huérfanos de catálogos viejos, así que
+  // songs.length ahí puede inflarse. catalogTotalContent es la única
+  // fuente que sabe con certeza cuántas canciones hay AHORA — solo se
+  // estampa cuando catalogIds ya cargó (si no, songs.length es un
+  // fallback sobre document.content, no el catálogo real).
+  if (catalogIds.length) document.catalogTotalContent = catalogIds.length;
+
   document.summary = {
     progressPct: songs.length
       ? songs.reduce((sum, song) => sum + song.progressPct, 0) / songs.length
