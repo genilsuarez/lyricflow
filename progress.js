@@ -12,6 +12,7 @@ import {
 } from './lp-progress-summary.js';
 
 const PROGRESS_KEY = 'learnflow:progress:lyricflow:v1';
+const CATALOG_KEY = 'learnflow:catalog:lyricflow:v1';
 const ACTIVITY_KEY = 'learnflow:activity:lyricflow:v1';
 const SCHEMA_VERSION = 1;
 const APP_ID = 'lyricflow';
@@ -200,6 +201,20 @@ function writeProgress(document) {
   document.updatedAt = nowIso();
   try {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(document));
+    // learnflow:catalog:lyricflow:v1 — tamaño de catálogo por separado de
+    // learnflow:progress:lyricflow:v1. clearGuestLocalProgress() (DeskFlow,
+    // lp-guest-reset.js) borra todo lo que empieza con learnflow:progress:/
+    // learnflow:activity: al hacer logout explícito (correcto, evita
+    // filtrar progreso ajeno en un dispositivo compartido) — pero eso
+    // dejaba el total en 0 también en modo invitado, aunque el catálogo es
+    // público. Esta clave no matchea ese borrado, así que sobrevive al
+    // logout. Solo se escribe cuando catalogIds ya cargó.
+    if (catalogIds.length) {
+      localStorage.setItem(
+        CATALOG_KEY,
+        JSON.stringify({ totalContent: catalogIds.length, updatedAt: document.updatedAt })
+      );
+    }
   } catch {
     return false;
   }
