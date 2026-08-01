@@ -11,7 +11,19 @@ TIMEOUT=180
 INTERVAL=10
 WARNINGS=()
 
+cd "$(dirname "$0")"
+
 echo "📦 LyricFlow"
+
+# ─── Progress-system validation (blocking) ─────────────────────────────────────
+# Invariantes del conteo + deriva de archivos compartidos.
+# docs/progress-counting-system.md
+
+if [ -x ../scripts/lp-build-validate.sh ]; then
+  ../scripts/lp-build-validate.sh LyricFlow || exit 1
+elif [ -f tests/progress-invariants.mjs ]; then
+  node tests/progress-invariants.mjs || exit 1
+fi
 
 # ─── Commit & Push ──────────────────────────────────────────────────────────────
 
