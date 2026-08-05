@@ -1056,27 +1056,7 @@ html.browser-cursor-embedded .song-list {
   position: relative;
 }
 
-/* Área táctil extendida a 44px sin cambiar el tamaño visual (mismo patrón que .lp-icon-btn--sm) */
-.toggle-trans-btn::after,
-.toggle-select-btn::after,
-.toggle-theater-btn::after,
-.toggle-shortcuts-btn::after,
-.toggle-player-btn::after,
-.toggle-vocab-btn::after,
-.toggle-blanks-btn::after,
-.toggle-culture-btn::after,
-.toggle-listening-btn::after,
-.toggle-quiz-btn::after,
-.loop-btn::after {
-  content: '';
-  position: absolute;
-  inset: 50%;
-  translate: -50% -50%;
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
+/* Sin ::after de hit-area: el tooltip ya usa ::before/::after (ver AGENTS.md); agregarlo corrompe su box model. */
 
 .toggle-trans-btn {
   font-family: var(--lp-font-body);
