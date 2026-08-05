@@ -1128,6 +1128,7 @@ function initUnifiedNavigation() {
       <span class="unified-nav-mark" aria-hidden="true">LF</span>
       <span><strong>LyricFlow</strong><small>LearnFlow</small></span>
       <button class="unified-nav-mode-toggle" id="navigationModeToggle" type="button" aria-pressed="false" aria-label="Usar menú flotante" title="Oculta la barra lateral y usa un menú flotante"><span aria-hidden="true">◫</span></button>
+      <button class="unified-nav-close-btn" id="drawerCloseBtn" type="button" aria-label="Cerrar navegación">✕</button>
     </div>
     <nav class="unified-nav-menu" aria-label="Navegación principal">
       <button class="unified-nav-item is-active" id="navigationHome" type="button">
@@ -1169,6 +1170,7 @@ function initUnifiedNavigation() {
   themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   trigger.addEventListener('click', () => setNavigationOpen(true));
   backdrop.addEventListener('click', () => setNavigationOpen(false, true));
+  document.getElementById('drawerCloseBtn').addEventListener('click', () => setNavigationOpen(false, true));
   modeToggle.addEventListener('click', () => {
     const nextMode = navigationMode() === 'sidebar' ? 'floating' : 'sidebar';
     updateNavigationMode(nextMode, true);
