@@ -1808,12 +1808,12 @@ html.browser-cursor-embedded .song-list {
 
 /* ─── Footer (signature, home/picker view) ──────────────────────────────────── */
 
-.foot-meta { font-family: var(--lp-font-mono); font-size: 9px; font-weight: 700; color: var(--lp-muted); letter-spacing: .08em; text-transform: uppercase; }
+.lp-footer__meta { font-family: var(--lp-font-mono); font-size: 9px; font-weight: 700; color: var(--lp-muted); letter-spacing: .08em; text-transform: uppercase; }
 
 /* ─── Site footer (page-level, in normal flow below the floating card — same
    containment pattern as DeskFlow/HubFlow/FluentFlow's footer) ────────────── */
 
-.site-foot {
+.lp-footer {
   position: relative; /* stays in normal flow, but lets z-index lift it above the fixed orbs/grain */
   z-index: 3;
   width: 100%;
@@ -1829,7 +1829,7 @@ html.browser-cursor-embedded .song-list {
 /* ─── Theater Mode (hide header + footer) ───────────────────────────────────── */
 
 .theater-mode .app-header,
-.theater-mode .site-foot,
+.theater-mode .lp-footer,
 .theater-mode #unifiedNavTrigger,
 .theater-mode #unifiedNavigation {
   display: none;
@@ -2099,7 +2099,7 @@ html.browser-cursor-embedded .song-list {
     height: 100%;
   }
 
-  body:has(.app-header--player) .site-foot {
+  body:has(.app-header--player) .lp-footer {
     display: none;
   }
 
@@ -5270,7 +5270,7 @@ body:has(.app-header--player) .unified-nav-trigger {
     display: none;
   }
 
-  .site-foot {
+  .lp-footer {
     display: none;
   }
 }
