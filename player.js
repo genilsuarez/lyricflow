@@ -622,7 +622,7 @@ function renderAppHeader(song) {
     header.innerHTML = `
       <div class="app-header-brand">
         <h1>Lyric<em>Flow</em></h1>
-        <span>Aprende idiomas con música</span>
+        <span>Aprende idiomas con <em>música</em></span>
       </div>
       <div class="lp-header-stats" id="appHeaderProgress" role="status" aria-label="Progreso total de LyricFlow"></div>
     `;
