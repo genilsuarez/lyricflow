@@ -9,5 +9,6 @@ export default [
   'Let_It_Be',
   'Losing_My_Religion',
   'Stand_By_Me',
+  'Voyage_Voyage',
   'Wonderwall'
 ];
