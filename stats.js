@@ -294,7 +294,7 @@ export function patchDashboardRecentActivity() {
       ? 'dash-recent dash-recent--pending'
       : recentEvents.length
         ? 'dash-recent dash-recent--revealed'
-        : 'dash-recent';
+        : 'dash-recent dash-recent--empty';
 
   recentSection.innerHTML = buildRecentSectionBody(recentEvents, { deferRecent });
   if (!deferRecent) revealRecentSection(recentSection, shouldAnimateRecent);
@@ -377,7 +377,7 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
       ? 'dash-recent dash-recent--pending'
       : recentEvents.length
         ? 'dash-recent dash-recent--revealed'
-        : 'dash-recent';
+        : 'dash-recent dash-recent--empty';
   const app = getAppRoot();
   if (!app) return;
 

@@ -6042,6 +6042,13 @@ body:has(.app-header--player) .unified-nav-trigger {
     align-items: center;
     justify-content: center;
   }
+
+  /* Estado vacío: no estirar a la altura completa de la fila del grid —
+     el mensaje quedaba centrado en una caja de ~93% vacío (H8/4.2). Con
+     eventos sí se justifica el estirado (las filas llenan el espacio). */
+  .dash-recent-block:has(.dash-recent--empty) {
+    align-self: start;
+  }
 }
 
 /* Mobile: hero y biblioteca apilados; actividad reciente abajo */
