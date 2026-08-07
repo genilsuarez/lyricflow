@@ -39,6 +39,24 @@
   <footer class="lp-footer">
     <span class="lp-footer__meta">LyricFlow → LearnFlow</span>
   </footer>
+
+  <!-- H8/4.6: bloqueo de landscape en móvil — mismo patrón que
+       FluentFlow/useMobileLandscapeLock.ts, portado a CSS puro (sin hook: el
+       media query ya es el mecanismo real, display:none ya saca el contenido
+       del árbol de accesibilidad). -->
+  <div class="orientation-lock" role="dialog" aria-modal="true" aria-live="polite">
+    <div class="orientation-lock__container">
+      <div class="orientation-lock__icon-wrapper" aria-hidden="true">
+        <span class="orientation-lock__icon">🔄</span>
+      </div>
+      <div class="orientation-lock__content">
+        <h2 class="orientation-lock__title">Para una mejor experiencia de aprendizaje</h2>
+        <p class="orientation-lock__subtitle">Por favor gira tu dispositivo a modo vertical</p>
+        <p class="orientation-lock__explanation">LyricFlow está optimizado para pantalla vertical</p>
+      </div>
+    </div>
+  </div>
+
   <script src="lp-guest-reset.js"></script>
   <script src="lp-login.js"></script>
   <script src="lp-about-content.js"></script>
