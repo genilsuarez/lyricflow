@@ -19,7 +19,7 @@ import {
 } from './progress.js';
 import { setupSupabaseAuth } from './lp-auth-setup.js';
 import { hydrateActivityFromCloud, hasLocalActivityLedger } from './sync-engine.js';
-import { getActiveLevel, levelUnlocks } from './lp-progress-summary.js';
+import { getActiveLevel, levelUnlocks, isCefrTrackComplete } from './lp-progress-summary.js';
 import { initLevelStatus, refreshLevelStatusBanner } from './level-status.js';
 
 configureProgressCatalog(pickerSongs);
@@ -728,12 +728,17 @@ function showPicker(skipAutoLoad = false) {
   const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
   // LearnFlow Progression System — docs/to-do/learnflow-progression-system.md.
   // El nivel activo es criterio de ACCESO: canciones por encima de lp-level
-  // no se muestran. "Dernière Danse" (level "FR", no CEFR) queda fuera del
-  // sistema de niveles y siempre está desbloqueada (levelUnlocks devuelve
-  // true para niveles desconocidos).
+  // no se muestran. Las canciones "FR" (Dernière Danse, Voyage Voyage) están
+  // fuera de la escala CEFR y se desbloquean por separado: solo cuando todo
+  // C2 está completo (isCefrTrackComplete), no por levelUnlocks.
   const activeLevel = getActiveLevel();
+  const frenchUnlocked = isCefrTrackComplete();
   const songs = pickerSongs
-    .filter(song => levelUnlocks((song.level || '').toLowerCase(), activeLevel))
+    .filter(song => {
+      const level = (song.level || '').toLowerCase();
+      if (level === 'fr') return frenchUnlocked;
+      return levelUnlocks(level, activeLevel);
+    })
     .sort((a, b) => {
       const la = levelOrder.indexOf((a.level || '').toLowerCase());
       const lb = levelOrder.indexOf((b.level || '').toLowerCase());
