@@ -1809,6 +1809,8 @@ html.browser-cursor-embedded .song-list {
 /* ─── Footer (signature, home/picker view) ──────────────────────────────────── */
 
 .lp-footer__meta { font-family: var(--lp-font-mono); font-size: 9px; font-weight: 700; color: var(--lp-muted); letter-spacing: .08em; text-transform: uppercase; }
+.lp-footer__link { font-size: 11px; color: var(--lp-muted); text-decoration: underline; }
+.lp-footer__link:hover { color: var(--lp-ink-soft); }
 
 /* ─── Site footer (page-level, in normal flow below the floating card — same
    containment pattern as DeskFlow/HubFlow/FluentFlow's footer) ────────────── */

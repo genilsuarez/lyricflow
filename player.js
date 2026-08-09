@@ -1160,6 +1160,9 @@ function initUnifiedNavigation() {
       <a class="unified-nav-item" id="navigationPortal" data-lp-portal href="${themedAppHref('deskflow')}">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
       </a>
+      <a class="unified-nav-item" href="privacy.html">
+        <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>Privacidad</span>
+      </a>
     </footer>
   `;
 
