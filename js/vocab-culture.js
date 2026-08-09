@@ -12,7 +12,7 @@ import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState } from '
 export async function loadVocab(song) {
   try {
     const folderName = song.folder.replace(/^songs\//, '');
-    const mod = await import(`./songs/${folderName}/vocab.js`);
+    const mod = await import(`../songs/${folderName}/vocab.js`);
     state.vocabData = mod.default;
   } catch {
     state.vocabData = [];

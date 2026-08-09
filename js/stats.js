@@ -4,7 +4,7 @@
 // Stats: full-page detailed statistics (songs table, per-level breakdown).
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import pickerSongs from './songs/picker-data.js';
+import pickerSongs from '../songs/picker-data.js';
 import { getProgress, getSongProgress, progressConfig } from './progress.js';
 import { shouldDeferStatsDisplay, consumeStatsRevealAnimation, readLocalActivityEvents, shouldDeferActivityDisplay } from './sync-engine.js';
 import { animateText, animateCssVar, prefersReducedMotion } from './lp-stats-animate.js';

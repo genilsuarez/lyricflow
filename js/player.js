@@ -4,7 +4,7 @@
 // Features: synced lyrics, vocab, fill-in-the-blanks, A-B loop, speed control, culture
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import pickerSongs from './songs/picker-data.js';
+import pickerSongs from '../songs/picker-data.js';
 import { loadVocab, toggleVocabMode, showCultureView } from './vocab-culture.js';
 import { toggleQuizMode } from './quiz.js';
 import { renderDashboard, refreshDashboardStats, patchDashboardRecentActivity, isRecentSectionSettled, cleanupDashboard, renderStats, cleanupStats } from './stats.js';
@@ -727,17 +727,19 @@ function showPicker(skipAutoLoad = false) {
   // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
   const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
   // LearnFlow Progression System — docs/to-do/learnflow-progression-system.md.
-  // El nivel activo es criterio de ACCESO: canciones por encima de lp-level
-  // no se muestran. Las canciones "FR" (Dernière Danse, Voyage Voyage) están
-  // fuera de la escala CEFR y se desbloquean por separado: solo cuando todo
-  // C2 está completo (isCefrTrackComplete), no por levelUnlocks.
+  // El nivel activo es criterio de ACCESO: las canciones por encima de
+  // lp-level se muestran bloqueadas (no se ocultan) para que el catálogo no
+  // se sienta vacío — se abren al llegar a ese nivel. Las canciones "FR"
+  // (Dernière Danse, Voyage Voyage) están fuera de la escala CEFR y se
+  // desbloquean por separado: solo cuando todo C2 está completo
+  // (isCefrTrackComplete), no por levelUnlocks.
   const activeLevel = getActiveLevel();
   const frenchUnlocked = isCefrTrackComplete();
   const songs = pickerSongs
-    .filter(song => {
+    .map(song => {
       const level = (song.level || '').toLowerCase();
-      if (level === 'fr') return frenchUnlocked;
-      return levelUnlocks(level, activeLevel);
+      const locked = level === 'fr' ? !frenchUnlocked : !levelUnlocks(level, activeLevel);
+      return { ...song, locked };
     })
     .sort((a, b) => {
       const la = levelOrder.indexOf((a.level || '').toLowerCase());
@@ -775,10 +777,15 @@ function showPicker(skipAutoLoad = false) {
     filtered.forEach((song) => {
       const item = document.createElement('button');
       item.type = 'button';
-      item.className = 'song-list-item';
-      item.setAttribute('aria-label', `Abrir ${song.title} de ${song.artist}`);
+      item.className = song.locked ? 'song-list-item song-list-item--locked' : 'song-list-item';
+      if (song.locked) {
+        item.disabled = true;
+        item.setAttribute('aria-label', `${song.title} de ${song.artist} — bloqueado hasta nivel ${(song.level || '').toUpperCase()}`);
+      } else {
+        item.setAttribute('aria-label', `Abrir ${song.title} de ${song.artist}`);
+      }
       item.innerHTML = `
-        <span class="song-list-item__icon" aria-hidden="true">${song.icon || '🎵'}</span>
+        <span class="song-list-item__icon" aria-hidden="true">${song.locked ? '🔒' : (song.icon || '🎵')}</span>
         <span class="song-list-item__body">
           <span class="song-list-item__head">
             <span class="song-list-item__copy">
@@ -787,11 +794,11 @@ function showPicker(skipAutoLoad = false) {
             </span>
             ${song.level ? `<span class="level-badge level-${song.level.toLowerCase()}">${song.level}</span>` : ''}
           </span>
-          ${songProgressHtml(song.id, 'song-learning-progress--card')}
+          ${song.locked ? `<span class="song-list-item__locked-hint">Se desbloquea en nivel ${(song.level || '').toUpperCase()}</span>` : songProgressHtml(song.id, 'song-learning-progress--card')}
         </span>
         <span class="song-list-item__chevron" aria-hidden="true"></span>
       `;
-      item.addEventListener('click', () => loadSong(song));
+      if (!song.locked) item.addEventListener('click', () => loadSong(song));
       list.appendChild(item);
     });
   }
@@ -870,7 +877,7 @@ export async function loadSong(song) {
   if (!song.subtitles) {
     try {
       const folderName = song.folder.replace(/^songs\//, '');
-      const mod = await import(`./songs/${folderName}/data.js`);
+      const mod = await import(`../songs/${folderName}/data.js`);
       song = { ...mod.default, id: song.id, folder: song.folder };
     } catch (err) {
       console.error(`[LyricFlow] Failed to load song data: ${song.folder}`, err);
