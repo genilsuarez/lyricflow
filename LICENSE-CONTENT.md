@@ -25,7 +25,7 @@ usa una API con licencia.
 
 Los archivos de audio viven en un repositorio aparte precisamente para que un
 reclamo sobre ellos no afecte a este código. En desarrollo local se sirven
-desde `songs/` sin versionar; en producción, desde `/lyricflow-media/`.
+desde `songs/` sin versionar; en producción, desde `/lf-assets/`.
 
 ## Marcas
 
