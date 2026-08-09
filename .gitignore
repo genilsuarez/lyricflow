@@ -5,3 +5,6 @@ vite.config.js
 # Backups de canciones recortadas
 *.original.mp3
 *.original.js
+
+# Audio: vive en el repo lyricflow-media (derechos de terceros)
+songs/*/*.mp3

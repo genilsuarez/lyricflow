@@ -1268,8 +1268,18 @@ function bindPlayerEvents(song) {
 
 // ─── Audio ─────────────────────────────────────────────────────────────────────
 
+// El audio vive en un repo aparte (lyricflow-media) porque las grabaciones son
+// de terceros y el resto de LyricFlow no lo es: así un reclamo sobre el audio
+// no arrastra al código ni al contenido propio. En local los .mp3 siguen en
+// songs/ pero no se versionan — ver .gitignore.
+const MEDIA_BASE = location.hostname.endsWith('github.io') ? '/lyricflow-media' : 'songs';
+
+function audioUrl(song) {
+  return `${MEDIA_BASE}/${song.folder.replace(/^songs\//, '')}/${song.file}`;
+}
+
 function initAudio(song) {
-  const mediaPath = `${song.folder}/${song.file}`;
+  const mediaPath = audioUrl(song);
   state.audio = new Audio(mediaPath);
   state.audio.preload = 'metadata';
   state.audio.playbackRate = state.playbackRate;
