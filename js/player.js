@@ -53,6 +53,14 @@ function flushDashboardQueue() {
   pendingDashboardFull = false;
   pendingDashboardStats = false;
 
+  // lp-stats-ready/lp-activity-ready pueden llegar después de que el usuario
+  // ya navegó fuera del dashboard (p. ej. a canciones apenas cargó la app).
+  // Sin este guard, renderDashboard()/refreshDashboardStats() reemplazan
+  // #app igual y lo devuelven a Inicio sin que lo haya pedido. Se descarta
+  // el refresh pendiente — el dashboard se pinta con datos frescos la
+  // próxima vez que el usuario vuelva a él.
+  if (state.currentView !== 'dashboard') return;
+
   if (needsFull) {
     renderDashboard(loadSong, () => showPicker(true), showStats);
     updateAppHeaderProgress();
@@ -254,6 +262,7 @@ export const state = {
 
   // Navigation
   previousView: 'dashboard', // 'dashboard' | 'picker' | 'stats' — where to return on back
+  currentView: 'dashboard', // 'dashboard' | 'picker' | 'stats' | 'player' — what's on screen right now
 };
 
 // ─── Persistence (localStorage) ────────────────────────────────────────────────
@@ -686,6 +695,7 @@ function showDashboard() {
   state.playerCleanup = null;
   state.currentSong = null;
   state.previousView = 'dashboard';
+  state.currentView = 'dashboard';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupStats();
@@ -704,6 +714,7 @@ function showStats() {
   state.playerCleanup = null;
   state.currentSong = null;
   state.previousView = 'stats';
+  state.currentView = 'stats';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupDashboard();
@@ -724,6 +735,7 @@ function showPicker(skipAutoLoad = false) {
   state.playerCleanup = null;
   state.currentSong = null;
   state.previousView = 'picker';
+  state.currentView = 'picker';
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupStats();
@@ -910,6 +922,7 @@ export async function loadSong(song) {
   if (state.audio) { state.audio.pause(); state.audio = null; }
   stopUpdateLoop();
   state.currentSong = song;
+  state.currentView = 'player';
   state.showTranslation = false;
   state.showLineNumbers = false;
   state.blanksMode = false;
