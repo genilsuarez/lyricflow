@@ -1290,9 +1290,10 @@ function bindPlayerEvents(song) {
 
 // El audio vive en un repo aparte (lf-assets) porque las grabaciones son de
 // terceros y el resto de LyricFlow no lo es: así un reclamo sobre el audio no
-// arrastra al código ni al contenido propio. En local los .mp3 siguen en
-// songs/ pero no se versionan — ver .gitignore.
-const MEDIA_BASE = location.hostname.endsWith('github.io') ? '/lf-assets' : 'songs';
+// arrastra al código ni al contenido propio. /lf-assets/ se monta en el mismo
+// origen tanto en producción (GitHub Pages) como en local (gateway de
+// learnctl → LfAssets), así que la ruta es idéntica en ambos entornos.
+const MEDIA_BASE = '/lf-assets';
 
 function audioUrl(song) {
   return `${MEDIA_BASE}/${song.folder.replace(/^songs\//, '')}/${song.file}`;
