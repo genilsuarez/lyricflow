@@ -150,7 +150,20 @@ window.addEventListener('storage', storageEvent => {
 
 initLevelStatus();
 window.addEventListener('lp-level-changed', () => {
-  if (document.getElementById('songList')) showPicker(true);
+  const list = document.getElementById('songList');
+  if (!list) return;
+  // Reconstruye el picker (cambia qué canciones están bloqueadas) sin tirar
+  // por la borda lo que el usuario estaba haciendo: búsqueda activa y scroll.
+  const searchValue = document.getElementById('songSearch')?.value ?? '';
+  const scrollTop = list.scrollTop;
+  showPicker(true);
+  const newSearch = document.getElementById('songSearch');
+  if (newSearch && searchValue) {
+    newSearch.value = searchValue;
+    newSearch.dispatchEvent(new Event('input'));
+  }
+  const newList = document.getElementById('songList');
+  if (newList) newList.scrollTop = scrollTop;
 });
 
 export const app = document.getElementById('app');
