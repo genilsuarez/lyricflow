@@ -114,6 +114,20 @@ function scheduleDashboardUpdate() {
 function bootHomeDashboard() {
   showDashboard();
   void hydrateActivityFromCloud('lyricflow');
+  maybeShowMiniOnboarding();
+}
+
+// M1 — contexto de 1 pantalla para quien entra directo a LyricFlow sin pasar
+// por DeskFlow. No sustituye el onboarding completo (nivel, meta diaria,
+// placement test), que vive solo en DeskFlow. Lógica compartida en
+// js/lp-mini-onboarding.js.
+function maybeShowMiniOnboarding() {
+  if (typeof lpMiniOnboarding === 'undefined') return;
+  lpMiniOnboarding.maybeShow({
+    appName: 'LyricFlow',
+    appDesc: 'Aprende inglés estudiando la letra de tus canciones favoritas: dictado, blanks y traducción línea por línea.',
+    siblingApps: 'FluentFlow y HubFlow',
+  });
 }
 
 window.addEventListener('lp-stats-ready', () => {
