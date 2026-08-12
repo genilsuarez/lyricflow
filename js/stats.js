@@ -142,6 +142,18 @@ function summaryDisplayPct(summary) {
   return Math.round((summary.completedActivities / summary.totalActivities) * 100);
 }
 
+/**
+ * M2 — "0/40 actividades" en usuario nuevo lee como app vacía, no como
+ * catálogo disponible. Con cero completadas, el catálogo se enmarca como
+ * oferta ("40 canciones disponibles") en vez de progreso vacío.
+ */
+function summaryStatMarkup(summary) {
+  if (!summary?.completedActivities) {
+    return `<span class="progress-snapshot__stat dash-snapshot-stat">${summary?.totalActivities ?? 0}</span><span class="progress-snapshot__unit"> canciones disponibles</span>`;
+  }
+  return `<span class="progress-snapshot__stat dash-snapshot-stat">${summary.completedActivities}/${summary.totalActivities}</span><span class="progress-snapshot__unit"> actividades</span>`;
+}
+
 function getComputedData() {
   const progress = getProgress();
   const events = readActivityLedger();
@@ -326,7 +338,7 @@ export function cleanupDashboard() {
 function applyDashboardSnapshotStats(app, { progress, pct }, animateReveal) {
   const ring = app.querySelector('.dash-snapshot-ring');
   const pctEl = app.querySelector('.dash-snapshot-pct');
-  const statEl = app.querySelector('.dash-snapshot-stat');
+  const statWrap = app.querySelector('.progress-snapshot__stat-wrap');
   const snapshot = app.querySelector('#dashProgressSnapshot');
 
   if (snapshot) {
@@ -336,14 +348,14 @@ function applyDashboardSnapshotStats(app, { progress, pct }, animateReveal) {
     );
   }
 
+  if (statWrap) statWrap.innerHTML = summaryStatMarkup(progress.summary);
+
   if (animateReveal && !shouldDeferStatsDisplay()) {
     animateCssVar(ring, '--progress', pct);
     animateText(pctEl, 0, pct, (v) => `${v}%`);
-    animateText(statEl, 0, progress.summary.completedActivities, (v) => `${v}/${progress.summary.totalActivities}`);
   } else {
     if (ring) ring.style.setProperty('--progress', String(pct));
     if (pctEl) pctEl.textContent = `${pct}%`;
-    if (statEl) statEl.textContent = `${progress.summary.completedActivities}/${progress.summary.totalActivities}`;
   }
 }
 
@@ -424,7 +436,7 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
           </span>
           <div class="progress-snapshot__stat-col">
             <span class="progress-snapshot__stat-wrap">
-              <span class="progress-snapshot__stat dash-snapshot-stat">${progress.summary.completedActivities}/${progress.summary.totalActivities}</span><span class="progress-snapshot__unit"> actividades</span>
+              ${summaryStatMarkup(progress.summary)}
             </span>
           </div>
         </button>
