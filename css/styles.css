@@ -29,6 +29,10 @@
   --lp-muted: #8A7D6E;
   --lp-ink-faint: rgba(44, 36, 24, 0.1);
   --lp-ink-inverse: #FFFFFF;
+  /* Texto sobre fondos de color fijo (accent/success/error/cat-*): siempre
+     blanco, sin importar el tema — --lp-ink-inverse se invierte con el tema
+     y por eso no sirve para esto (queda casi negro sobre azul en dark). */
+  --lp-on-accent: #FFFFFF;
 
   /* ─── Accent — vivid blue (homologado entre las 4 apps) ─── */
   --lp-accent: #2563EB;
@@ -335,7 +339,7 @@ body {
   z-index: 10000;
   padding: 10px 18px;
   background: var(--lp-accent);
-  color: var(--lp-ink-inverse);
+  color: var(--lp-on-accent);
   font-weight: 700;
   font-size: 0.8rem;
   border-radius: var(--lp-radius-md);
@@ -438,7 +442,7 @@ body {
 }
 .level-status-banner__btn {
   flex-shrink: 0; padding: 6px 12px;
-  background: var(--lp-accent); color: var(--lp-ink-inverse);
+  background: var(--lp-accent); color: var(--lp-on-accent);
   border-radius: var(--lp-radius-full);
   font-size: 0.74rem; font-weight: 700; text-decoration: none; white-space: nowrap;
   transition: opacity 0.15s;
@@ -4337,13 +4341,15 @@ html.browser-cursor-embedded .song-list {
 .lp-btn:hover  { transform: translateY(-2px); }
 .lp-btn:active { transform: translateY(0) scale(0.97); }
 
-.lp-btn--primary { background: var(--lp-accent);  color: var(--lp-ink-inverse);
+.lp-btn--primary { background: var(--lp-accent);  color: var(--lp-on-accent);
   box-shadow: 0 3px 12px color-mix(in srgb, var(--lp-accent) 25%, transparent); }
+/* --lp-success se aclara en dark en LyricFlow (a diferencia de accent/error/
+   cat-purple, fijos aquí); --lp-ink-inverse invierte correctamente. */
 .lp-btn--success { background: var(--lp-success); color: var(--lp-ink-inverse);
   box-shadow: 0 3px 12px color-mix(in srgb, var(--lp-success) 25%, transparent); }
-.lp-btn--danger  { background: var(--lp-error);   color: var(--lp-ink-inverse);
+.lp-btn--danger  { background: var(--lp-error);   color: var(--lp-on-accent);
   box-shadow: 0 3px 12px color-mix(in srgb, var(--lp-error) 20%, transparent); }
-.lp-btn--purple  { background: var(--lp-cat-purple); color: var(--lp-ink-inverse);
+.lp-btn--purple  { background: var(--lp-cat-purple); color: var(--lp-on-accent);
   box-shadow: 0 3px 12px color-mix(in srgb, var(--lp-cat-purple) 25%, transparent); }
 .lp-btn--ghost   { background: var(--lp-surface); color: var(--lp-ink-soft);
   border: 1.5px solid var(--lp-border); box-shadow: none; }
@@ -4838,7 +4844,7 @@ body {
   place-items: center;
   border-radius: 50%;
   background: var(--lp-accent);
-  color: var(--lp-ink-inverse);
+  color: var(--lp-on-accent);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.03em;
