@@ -592,9 +592,10 @@ export function updateSongProgressUi(contentId) {
 
 const LP_ICON_TROPHY = '<svg class="lp-header-stats__icon lp-header-stats__icon--trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg>';
 function updateAppHeaderProgress() {
+  const { summary } = getProgress();
+  maybePromptLoginNudge(summary.completedActivities > 0);
   const el = document.getElementById('appHeaderProgress');
   if (!el) return;
-  const { summary } = getProgress();
   el.setAttribute(
     'aria-label',
     `${summary.completedActivities} de ${summary.totalActivities} actividades completadas`
@@ -606,6 +607,22 @@ function updateAppHeaderProgress() {
       <span class="lp-header-stats__label">actividades</span>
     </span>
   `;
+}
+
+// M3 — nudge de login tras la primera actividad real, una sola vez en toda
+// la plataforma. Lógica compartida en js/lp-login-nudge.js.
+function maybePromptLoginNudge(hasProgress) {
+  if (typeof lpLoginNudge === 'undefined') return;
+  lpLoginNudge.maybePrompt({
+    hasProgress,
+    copy: {
+      eyebrow: 'Canción completada',
+      title: 'No pierdas tu progreso',
+      lede: 'Tu progreso vive solo en este dispositivo: si cambias de teléfono, limpias el ' +
+        'navegador o lo pierdes, se pierde con él. Crear una cuenta toma un minuto y lo ' +
+        'respalda en la nube — o puedes seguir como invitado y hacerlo más adelante.'
+    }
+  });
 }
 
 function renderAppHeader(song) {
