@@ -442,6 +442,14 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
         </button>
       </div>
 
+      <!-- M4 — banner cuando el placement test B2+ quedó pendiente en DeskFlow.
+           No porta el examen, solo enlaza. js/lp-placement-banner.js -->
+      <div class="level-status-banner" id="placementTestBanner" hidden>
+        <span class="level-status-banner__icon" aria-hidden="true">🎯</span>
+        <span class="level-status-banner__text">Confirmaste nivel B2+ · Toma el examen en DeskFlow para desbloquear contenido avanzado.</span>
+        <a class="level-status-banner__btn" href="#" target="_blank" rel="noopener">Ir a DeskFlow →</a>
+      </div>
+
       <!-- Recent activity -->
       <section class="dash-recent-block" aria-labelledby="dashRecentTitle">
         <h3 id="dashRecentTitle">Actividad reciente</h3>
@@ -460,6 +468,7 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
     document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
   }
   document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowSongs);
+  if (typeof lpPlacementBanner !== 'undefined') lpPlacementBanner.mount('placementTestBanner');
 
   applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal);
 
