@@ -21,6 +21,12 @@ import { setupSupabaseAuth } from './lp-auth-setup.js';
 import { hydrateActivityFromCloud, hasLocalActivityLedger } from './sync-engine.js';
 import { getActiveLevel, levelUnlocks, isCefrTrackComplete } from './lp-progress-summary.js';
 import { initLevelStatus, refreshLevelStatusBanner } from './level-status.js';
+import {
+  DIFFICULTY,
+  normalizeForCompare,
+  buildBlanksMap as buildBlanksMapPure,
+  buildListeningBlanks as buildListeningBlanksPure,
+} from './blanks-engine.js';
 
 configureProgressCatalog(pickerSongs);
 
@@ -194,30 +200,10 @@ export const app = document.getElementById('app');
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25];
 
 // ─── Difficulty System (pedagogically-driven) ──────────────────────────────────
-// Philosophy: blanks reinforce KEY vocabulary from the song, not random words.
-// vocabData words are blanked first; only when cap allows do content words fill in.
-//
-// totalCap: max blanks for the entire song (absolute ceiling)
-// vocabBoost: multiplier for vocab-word score (higher = vocab almost always chosen)
-// minWordLen: words shorter than this are never blanked
-// maxPerLine: never exceed this many blanks on a single line
-const DIFFICULTY = {
-  easy:   { totalCap: 8,  vocabBoost: 200, minWordLen: 3, maxPerLine: 1 },
-  normal: { totalCap: 16, vocabBoost: 150, minWordLen: 2, maxPerLine: 1 },
-  hard:   { totalCap: 30, vocabBoost: 100, minWordLen: 1, maxPerLine: 2 },
-};
-
-// CEFR multiplier — lower levels get fewer blanks (more focus, less overwhelm)
-const LEVEL_FACTOR = { A1: 0.6, A2: 0.75, B1: 1.0, B2: 1.0, C1: 1.1, C2: 1.2 };
-
-// Shared stop words — never blanked in either mode
-const STOP_WORDS = new Set([
-  'je', 'tu', 'il', 'elle', 'on', 'nous', 'vous', 'ils', 'elles',
-  'me', 'te', 'se', 'le', 'la', 'les', 'un', 'une', 'des', 'du',
-  'de', 'et', 'ou', 'mais', 'en', 'au', 'aux', 'ce', 'ma', 'mon',
-  'sa', 'son', 'ne', 'pas', 'que', 'qui', 'est', 'ai', 'a', 'y',
-  'dans', 'sur', 'pour', 'par', 'avec', 'tout', 'si', 'ô', 'oh',
-]);
+// DIFFICULTY, LEVEL_FACTOR, STOP_WORDS, normalizeForCompare, seededRandom y el
+// algoritmo de selección de palabras viven en ./blanks-engine.js (C.3.3) —
+// lógica pura, testeada en tests/blanks-engine.mjs. Acá solo queda el wiring
+// con el `state` mutable del player.
 
 // Single mutable state object — every module-level piece of player state
 // lives here so it can be read/written uniformly (and later map cleanly
@@ -526,12 +512,6 @@ function pauseOnModeSwitch() {
   }
 }
 
-// Strip accents for comparison — "déambule" == "deambule"
-const COMBINING_MARKS = new RegExp('[\\u0300-\\u036f]', 'g');
-function normalizeForCompare(s) {
-  return s.normalize('NFD').replace(COMBINING_MARKS, '').toLowerCase().trim();
-}
-
 function formatTime(seconds) {
   if (isNaN(seconds) || seconds === Infinity) return '0:00';
   const mins = Math.floor(seconds / 60);
@@ -681,36 +661,6 @@ function renderAppHeader(song) {
     `;
     updateAppHeaderProgress();
   }
-}
-
-// Simple seeded random for consistent blanks per song
-function seededRandom(seed) {
-  let s = seed;
-  return () => {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-// Greedily pick blank candidates: respect global cap, per-line cap, and one
-// occurrence per unique word across the whole song (avoids "goodbye" ×10 in Hello, Goodbye).
-function pickBlankCandidates(allCandidates, totalCap, maxPerLine) {
-  const lineCounts = {};
-  const usedWords = new Set();
-  const picked = [];
-
-  for (const c of allCandidates) {
-    if (picked.length >= totalCap) break;
-    const lc = lineCounts[c.lineIndex] || 0;
-    if (lc >= maxPerLine) continue;
-    if (usedWords.has(c.clean)) continue;
-
-    picked.push(c);
-    lineCounts[c.lineIndex] = lc + 1;
-    usedWords.add(c.clean);
-  }
-
-  return picked;
 }
 
 // ─── Stats View ────────────────────────────────────────────────────────────────
@@ -2069,51 +2019,16 @@ function renderBlanksLine(text, lineIndex) {
 // 4. Spread across the song (not clustered at the top)
 
 function buildBlanksMap() {
-  const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
-  const subs = state.currentSong.subtitles;
-  const diff = DIFFICULTY[state.blanksDifficulty];
-
-  // Adjust cap by CEFR level
-  const level = state.currentSong.level || 'B1';
-  const factor = LEVEL_FACTOR[level] ?? 1.0;
-  const totalCap = Math.round(diff.totalCap * factor);
-
-  // Build vocab word set with their line positions for extra precision
   const vocabWords = new Set();
   if (state.vocabData && state.vocabData.length) {
     state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
   }
-
-  // Pass 1: collect ALL candidates across the song with scores
-  const allCandidates = [];
-  subs.forEach((sub, lineIndex) => {
-    const tokens = sub.original.split(/(\s+)/);
-    const rng = seededRandom(lineIndex * 31 + 7);
-    let wordIdx = 0;
-
-    tokens.forEach(token => {
-      if (/^\s+$/.test(token)) return;
-      const clean = token.toLowerCase().replace(STRIP, '');
-      if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
-
-      const inVocab = vocabWords.has(clean);
-      // Score: vocab words get huge boost; then word length; small random jitter for variety
-      const score = (inVocab ? diff.vocabBoost : 0) + clean.length * 2 + rng() * 3;
-      allCandidates.push({ lineIndex, wordIdx, clean, score, isVocab: inVocab });
-      wordIdx++;
-    });
+  return buildBlanksMapPure({
+    subtitles: state.currentSong.subtitles,
+    level: state.currentSong.level,
+    difficultyKey: state.blanksDifficulty,
+    vocabWords,
   });
-
-  // Pass 2: sort by score (vocab first, then longest/most interesting)
-  allCandidates.sort((a, b) => b.score - a.score);
-
-  const map = {};
-  for (const c of pickBlankCandidates(allCandidates, totalCap, diff.maxPerLine)) {
-    if (!map[c.lineIndex]) map[c.lineIndex] = new Set();
-    map[c.lineIndex].add(c.wordIdx);
-  }
-
-  return map;
 }
 
 function validateSingleBlank(input) {
@@ -2606,49 +2521,16 @@ function toggleListeningMode() {
 }
 
 function buildListeningBlanks() {
-  const STRIP = /[.,!?;:«»\u201C\u201D\u2018\u2019\u2026\-\u2013\u2014()']/g;
-  const subs = state.currentSong.subtitles;
-  const diff = DIFFICULTY[state.listeningDifficulty];
-
-  // Adjust cap by CEFR level
-  const level = state.currentSong.level || 'B1';
-  const factor = LEVEL_FACTOR[level] ?? 1.0;
-  const totalCap = Math.round(diff.totalCap * factor);
-
-  // Build vocab word set
   const vocabWords = new Set();
   if (state.vocabData && state.vocabData.length) {
     state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
   }
-
-  // Collect all candidates across the song
-  const allCandidates = [];
-  subs.forEach((sub, lineIndex) => {
-    const tokens = sub.original.split(/(\s+)/);
-    const rng = seededRandom(lineIndex * 47 + 13);
-    let wordIdx = 0;
-
-    tokens.forEach(token => {
-      if (/^\s+$/.test(token)) return;
-      const clean = token.toLowerCase().replace(STRIP, '');
-      if (!clean || clean.length <= diff.minWordLen || STOP_WORDS.has(clean)) { wordIdx++; return; }
-
-      const inVocab = vocabWords.has(clean);
-      const score = (inVocab ? diff.vocabBoost : 0) + clean.length * 2 + rng() * 3;
-      allCandidates.push({ lineIndex, wordIdx, clean, original: token, score });
-      wordIdx++;
-    });
+  return buildListeningBlanksPure({
+    subtitles: state.currentSong.subtitles,
+    level: state.currentSong.level,
+    difficultyKey: state.listeningDifficulty,
+    vocabWords,
   });
-
-  allCandidates.sort((a, b) => b.score - a.score);
-
-  const map = {};
-  for (const c of pickBlankCandidates(allCandidates, totalCap, diff.maxPerLine)) {
-    if (!map[c.lineIndex]) map[c.lineIndex] = [];
-    map[c.lineIndex].push({ wordIdx: c.wordIdx, clean: c.clean, original: c.original });
-  }
-
-  return map;
 }
 
 function renderListeningLine(text, lineIndex) {
