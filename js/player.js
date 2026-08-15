@@ -1212,6 +1212,33 @@ function initUnifiedNavigation() {
             <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>Privacidad</span>
           </a>
         </section>
+        <section class="lp-settings-section" id="settingsSectionDev" aria-labelledby="settingsSectionDevTitle" hidden>
+          <h3 class="lp-settings-section__title" id="settingsSectionDevTitle">Desarrollador</h3>
+          <button class="unified-nav-item" type="button" id="devToolsTrigger" aria-expanded="false" aria-controls="devToolsPanel">
+            <span class="unified-nav-icon" aria-hidden="true">${navIcon('wrench')}</span><span>Dev</span>
+          </button>
+          <div class="lp-dev-panel" id="devToolsPanel" hidden>
+            <header class="lp-dev-panel__header">
+              <span><span class="unified-nav-icon" aria-hidden="true">${navIcon('wrench')}</span><strong>Herramientas de desarrollo</strong></span>
+              <code id="devBuildStamp"></code>
+            </header>
+            <div class="lp-dev-panel__actions">
+              <button type="button" id="devRecompileBtn"><span class="unified-nav-icon" aria-hidden="true">${navIcon('refresh')}</span>Recargar</button>
+              <button type="button" id="devForceSyncBtn"><span class="unified-nav-icon" aria-hidden="true">${navIcon('refresh')}</span>Forzar sync</button>
+              <button type="button" id="devClearCacheBtn" aria-expanded="false"><span class="unified-nav-icon" aria-hidden="true">${navIcon('trash')}</span>Limpiar caché</button>
+              <button type="button" id="devScreenInfoBtn" aria-expanded="false"><span class="unified-nav-icon" aria-hidden="true">${navIcon('monitor')}</span>Información de Pantalla</button>
+            </div>
+            <p class="lp-dev-panel__status" id="devSyncStatus" hidden></p>
+            <div class="lp-dev-cache-confirm" id="devCacheConfirm" hidden role="alert">
+              <p>Borra caché y datos locales de LearnFlow en este navegador y recarga. Tema, modo y sesión se mantienen.</p>
+              <div>
+                <button type="button" id="devCacheCancelBtn">Cancelar</button>
+                <button type="button" id="devCacheConfirmBtn">Limpiar y recargar</button>
+              </div>
+            </div>
+            <dl class="lp-dev-screen-grid" id="devScreenGrid" hidden></dl>
+          </div>
+        </section>
       </div>
     </section>
   `;
@@ -1244,6 +1271,7 @@ function initUnifiedNavigation() {
     });
   });
   document.getElementById('settingsTrigger').addEventListener('click', (event) => {
+    if (window.lpDevTools) lpDevTools.updateSectionVisibility();
     lpSettings.open(event, { inertElements: [navigation] });
   });
   trigger.addEventListener('click', () => setNavigationOpen(true));
