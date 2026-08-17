@@ -1,6 +1,7 @@
 /**
- * LP Placement Banner — aviso en satélites cuando el placement test B2+
- * quedó pendiente en DeskFlow. No porta el examen (vive solo en DeskFlow);
+ * LP Placement Banner — aviso en satélites cuando quedó pendiente validar el
+ * nivel en DeskFlow: o se pidió B1/B2 en la encuesta y no se rindió el examen,
+ * o se dejó un examen a medias. No porta el examen (vive solo en DeskFlow);
  * solo informa y enlaza. Ver docs/auditoria-y-plan.md — M4.
  *
  *   lpPlacementBanner.mount('placementTestBanner')
@@ -9,7 +10,16 @@
 var lpPlacementBanner = (function () {
   'use strict';
 
-  var PENDING_KEY = 'lp-placement-test-pending';
+  var REQUEST_KEY = 'lp-placement-request';
+  var SNAPSHOT_KEY = 'lp-placement-progress';
+
+  function hasPendingValidation() {
+    try {
+      return !!localStorage.getItem(REQUEST_KEY) || !!localStorage.getItem(SNAPSHOT_KEY);
+    } catch (e) {
+      return false;
+    }
+  }
 
   function portalHref() {
     if (window.LPPlatformUrls && typeof window.LPPlatformUrls.portalHref === 'function') {
@@ -21,7 +31,7 @@ var lpPlacementBanner = (function () {
   function mount(elementId) {
     var el = document.getElementById(elementId);
     if (!el) return;
-    if (localStorage.getItem(PENDING_KEY) !== '1') {
+    if (!hasPendingValidation()) {
       el.hidden = true;
       return;
     }
