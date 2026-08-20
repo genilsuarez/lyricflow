@@ -1,6 +1,7 @@
 import * as lpSupabase from './lp-supabase.js';
 import {
   isCloudHydrated,
+  LYRICFLOW_LOCAL_READY_KEY,
   reconcileLyricflowProgressFromEvents,
   shouldDeferStatsDisplay,
   syncSingleApp,
@@ -201,6 +202,7 @@ function writeProgress(document) {
   document.updatedAt = nowIso();
   try {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(document));
+    localStorage.setItem(LYRICFLOW_LOCAL_READY_KEY, '1');
     // learnflow:catalog:lyricflow:v1 — tamaño de catálogo por separado de
     // learnflow:progress:lyricflow:v1. clearGuestLocalProgress() (DeskFlow,
     // lp-guest-reset.js) borra todo lo que empieza con learnflow:progress:/
@@ -327,6 +329,13 @@ export function getProgress() {
   }
   catalogIds.forEach(contentId => ensureSong(document, contentId));
   deriveSummary(document);
+  const stored = readJson(PROGRESS_KEY, null);
+  const drifted = stored?.summary && (
+    (stored.summary.completedActivities ?? 0) !== (document.summary.completedActivities ?? 0)
+    || (stored.summary.completedContent ?? 0) !== (document.summary.completedContent ?? 0)
+    || (stored.summary.totalActivities ?? 0) !== (document.summary.totalActivities ?? 0)
+  );
+  if (drifted) writeProgress(document);
   return clone(document);
 }
 
