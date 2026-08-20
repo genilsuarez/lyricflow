@@ -8,7 +8,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .book,
   .tile
 ) {
   --tint-color: var(--card-color, var(--spine, var(--hero-spine, var(--module-accent, var(--lp-accent)))));
@@ -34,7 +33,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .book,
   .tile
 ):hover {
   background: linear-gradient(
@@ -54,7 +52,6 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .book,
   .tile
 ):active {
   transform: translateY(0) scale(0.97);
@@ -64,9 +61,40 @@
   .continue-card,
   .hero-card:not(.hero-card--loading),
   .progress-snapshot,
-  .book,
   .tile
 ):focus-visible {
+  outline: 2px solid var(--tint-color);
+  outline-offset: 2px;
+}
+
+/* Module library cards: neutral surface + category color on icon/CTA only.
+   Full-wash gradients fought the new information hierarchy across 30+ cards. */
+.book {
+  --tint-color: var(--spine, var(--lp-accent));
+  --tint-soft: var(--lp-surface);
+  background: var(--lp-surface);
+  border: 1.5px solid var(--lp-border);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--lp-ink) 4%, transparent),
+    0 2px 8px color-mix(in srgb, var(--lp-ink) 4%, transparent);
+  transition:
+    background 0.2s var(--lp-ease, ease),
+    transform 0.2s var(--lp-ease, ease),
+    box-shadow 0.2s var(--lp-ease, ease),
+    border-color 0.2s var(--lp-ease, ease);
+}
+.book:hover {
+  background: color-mix(in srgb, var(--tint-color) 5%, var(--lp-surface));
+  border-color: color-mix(in srgb, var(--tint-color) 34%, var(--lp-border));
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--tint-color) 10%, transparent),
+    0 8px 20px color-mix(in srgb, var(--tint-color) 14%, transparent);
+  transform: translateY(-2px);
+}
+.book:active {
+  transform: translateY(0) scale(0.97);
+}
+.book:focus-visible {
   outline: 2px solid var(--tint-color);
   outline-offset: 2px;
 }
@@ -75,10 +103,10 @@
 .continue-card--amber { --card-color: var(--lp-cat-amber); --card-soft: var(--lp-cat-amber-soft); }
 .continue-card--teal { --card-color: var(--lp-cat-teal); --card-soft: var(--lp-cat-teal-soft); }
 
-.book.b-vocab { --card-soft: var(--lp-cat-purple-soft); }
-.book.b-grammar { --card-soft: var(--lp-cat-amber-soft); }
-.book.b-pron { --card-soft: var(--lp-cat-blue-soft); }
-.book.b-analysis { --card-soft: var(--lp-cat-teal-soft); }
+.book.b-vocab { --spine: var(--lp-cat-purple); }
+.book.b-grammar { --spine: var(--lp-cat-amber); }
+.book.b-pron { --spine: var(--lp-cat-blue); }
+.book.b-analysis { --spine: var(--lp-cat-teal); }
 .tile.v { --card-soft: var(--lp-cat-purple-soft); }
 .tile.p { --card-soft: var(--lp-cat-blue-soft); }
 .tile.g { --card-soft: var(--lp-cat-amber-soft); }
@@ -115,11 +143,20 @@
   box-shadow: 0 4px 14px color-mix(in srgb, var(--tint-color) 22%, transparent);
 }
 
+.book .book-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: .9rem;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--tint-color) 28%, transparent);
+}
+
 .book {
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 36px 1fr;
   gap: 10px;
-  padding: 12px 14px;
-  align-items: center;
+  padding: 10px 12px;
+  align-items: start;
 }
 
 .book-spine {
@@ -164,7 +201,7 @@
 :is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .progress-track,
 :is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .book-progress__bar,
 .song-list-item .song-progress-track {
-  background: color-mix(in srgb, var(--tint-color) 14%, var(--lp-surface-sunken));
+  background: color-mix(in srgb, var(--tint-color) 12%, var(--lp-surface-sunken));
 }
 
 :is(.continue-card, .hero-card, .progress-snapshot, .song-list-item, .book, .tile) .progress-track__fill,
@@ -173,11 +210,7 @@
   background: var(--tint-color);
 }
 
-.book-progress__pct {
-  font-family: var(--lp-font-display, inherit);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--tint-color);
+.book-progress__nums {
   font-variant-numeric: tabular-nums;
 }
 
