@@ -5,6 +5,7 @@ import {
   reconcileLyricflowProgressFromEvents,
   shouldDeferStatsDisplay,
   syncSingleApp,
+  ensureCloudHydrated,
 } from './sync-engine.js';
 import {
   enrichLyricflowSongEntry,
@@ -272,6 +273,7 @@ function scheduleCloudSync() {
     if (!authed || window.lpGuestReset?.isExplicitLogout?.()) return;
     if (!isCloudHydrated()) {
       pendingCloudSync = true;
+      ensureCloudHydrated();
       return;
     }
     pendingCloudSync = false;
