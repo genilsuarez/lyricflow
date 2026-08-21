@@ -2,7 +2,7 @@
 // Canonical progress summary helpers — copy to DeskFlow/, HubFlow/js/, LyricFlow/.
 // DeskFlow imports this module directly; keep all copies in sync (no build step).
 
-import { HUBFLOW_LEVELS, LYRICFLOW_LEVELS } from './lp-level-map.js';
+import { HUBFLOW_LEVELS, LYRICFLOW_LEVELS, FLUENTFLOW_LEVELS as FLUENTFLOW_LEVEL_CATALOG } from './lp-level-map.js';
 
 /** Nivel CEFR compartido entre las 3 apps de contenido (minúsculas, distinto de FLUENTFLOW_LEVELS). */
 export const LEVEL_ORDER = Object.freeze(['a1', 'a2', 'b1', 'b2', 'c1', 'c2']);
@@ -195,8 +195,25 @@ function isFluentflowPreviousLevelComplete(cefrLevel, byLevel) {
   return previousModules.every((item) => item.completed === true);
 }
 
+/**
+ * Catálogo real de FluentFlow por nivel (FLUENTFLOW_LEVEL_CATALOG, generado
+ * desde learningModules.json) — denominador estático, igual que HubFlow/
+ * LyricFlow. Sin esto, totalModules salía del progreso local del usuario
+ * (grupo `byLevel`), que empieza vacío: un usuario nuevo veía "0 de 0" en
+ * vez del total real del nivel.
+ */
+function countFluentflowCatalogByLevel() {
+  const totals = Object.fromEntries(FLUENTFLOW_LEVELS.map((level) => [level, 0]));
+  for (const level of Object.values(FLUENTFLOW_LEVEL_CATALOG || {})) {
+    const upper = level.toUpperCase();
+    if (totals[upper] !== undefined) totals[upper]++;
+  }
+  return totals;
+}
+
 export function computeFluentflowProgressSummary(content) {
   const byLevel = groupFluentflowContentByLevel(content);
+  const catalogTotals = countFluentflowCatalogByLevel();
   let completedContent = 0;
 
   for (const level of FLUENTFLOW_LEVELS) {
@@ -214,7 +231,7 @@ export function computeFluentflowProgressSummary(content) {
       const completedModules = levelModules.filter(
         (item) => item.completed === true && isFluentflowPreviousLevelComplete(level, byLevel)
       ).length;
-      const totalModules = levelModules.length;
+      const totalModules = catalogTotals[level] || levelModules.length;
       const progressPct = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
       const status =
         completedModules === 0
