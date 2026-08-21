@@ -51,7 +51,7 @@ var LpNavHelpers = (function () {
       }
       setTimeout(function () {
         document.documentElement.classList.remove('theme-transitioning');
-      }, 350);
+      }, 200);
     }
     if (iconEl && window.LpNavIcons) {
       var dark = document.documentElement.getAttribute('data-theme') === 'dark';
