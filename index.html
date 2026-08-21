@@ -13,7 +13,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Fuentes sin bloquear el render: se cargan como preload y se
+       promueven a stylesheet al llegar. display=swap ya estaba puesto. -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"></noscript>
   <meta name="description" content="LyricFlow — Aprende idiomas con música gratis: letras sincronizadas, ejercicios para completar la letra y escucha activa.">
   <meta property="og:title" content="LyricFlow — Aprende idiomas con música">
   <meta property="og:description" content="Letras sincronizadas y huecos que completas mientras suena la canción. Gratis y sin registro obligatorio — parte de la plataforma LearnFlow.">
@@ -26,6 +30,20 @@
   <meta property="og:url" content="https://genilsuarez.github.io/lyricflow/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://genilsuarez.github.io/lyricflow/og-image.png">
+  <!-- Precarga del grafo de módulos del entry point (evita cascada de round-trips) -->
+  <link rel="modulepreload" href="./songs/picker-data.js">
+  <link rel="modulepreload" href="./js/vocab-culture.js">
+  <link rel="modulepreload" href="./js/quiz.js">
+  <link rel="modulepreload" href="./js/stats.js">
+  <link rel="modulepreload" href="./js/progress.js">
+  <link rel="modulepreload" href="./js/lp-supabase.js">
+  <link rel="modulepreload" href="./js/vendor/supabase-js.min.js">
+  <link rel="modulepreload" href="./js/lp-auth-setup.js">
+  <link rel="modulepreload" href="./js/sync-engine.js">
+  <link rel="modulepreload" href="./js/lp-progress-summary.js">
+  <link rel="modulepreload" href="./js/level-status.js">
+  <link rel="modulepreload" href="./js/blanks-engine.js">
+  <link rel="modulepreload" href="./js/player.js">
   <meta name="theme-color" content="#ffffff">
   <meta name="color-scheme" content="light">
   <script src="js/lp-theme.min.js"></script>
