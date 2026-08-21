@@ -166,3 +166,6 @@ export const LYRICFLOW_LEVELS = {
   "stand-by-me-ben-e-king": "a2",
   "wonderwall-oasis": "b1"
 };
+
+/** Stub para compatibilidad con lp-progress-summary.js canónico — LyricFlow no usa el catálogo FluentFlow. */
+export const FLUENTFLOW_LEVELS = {};
