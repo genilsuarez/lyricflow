@@ -757,15 +757,15 @@ function showPicker(skipAutoLoad = false) {
 
   app.innerHTML = `
     <div class="song-picker">
-      <div class="level-status-banner" id="levelStatusBanner" hidden>
-        <span class="level-status-banner__icon" aria-hidden="true">🔒</span>
-        <span class="level-status-banner__text">Tu nivel es compartido entre FluentFlow, HubFlow y LyricFlow. Ya hiciste tu parte aquí — revisa qué falta.</span>
-        <a class="level-status-banner__btn" id="levelStatusBannerLink" href="#" target="_blank" rel="noopener">Ver progreso global →</a>
-      </div>
       <div class="picker-toprow picker-toprow--solo">
         <div class="search-bar">
           <input type="search" id="songSearch" placeholder="Buscar canciones…" aria-label="Buscar canciones" autocomplete="off">
         </div>
+      </div>
+      <div class="level-status-banner" id="levelStatusBanner" hidden>
+        <span class="level-status-banner__icon" aria-hidden="true">🔒</span>
+        <span class="level-status-banner__text">Nivel compartido entre apps. Ya cumpliste tu parte aquí.</span>
+        <a class="level-status-banner__btn" id="levelStatusBannerLink" href="#" target="_blank" rel="noopener">Ver progreso global →</a>
       </div>
       <div class="song-list" id="songList"></div>
     </div>
