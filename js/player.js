@@ -1165,9 +1165,6 @@ function initUnifiedNavigation() {
       <button class="unified-nav-item" id="navigationTheme" type="button">
         <span class="unified-nav-icon" id="navigationThemeIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeLabel">Modo oscuro</span>
       </button>
-      <a class="unified-nav-item" href="privacy.html">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>Privacidad</span>
-      </a>
       <button class="unified-nav-item" id="settingsTrigger" type="button">
         <span class="unified-nav-icon" aria-hidden="true">${navIcon('settings')}</span><span>Ajustes</span>
       </button>
