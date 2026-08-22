@@ -452,6 +452,9 @@ body {
   grid-area: text;
   min-width: 0;
   font-size: 0.78rem; font-weight: 500; color: var(--lp-ink-soft); line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .level-status-banner__btn {
   grid-area: btn;
@@ -471,11 +474,6 @@ body {
     column-gap: 12px;
     row-gap: 0;
     padding: 8px 14px;
-  }
-  .level-status-banner__text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .level-status-banner__btn {
     justify-self: end;
@@ -5382,8 +5380,10 @@ body:has(.app-header--player) .unified-nav-trigger {
   overflow: visible;
 }
 
-/* Tinted-surface lift clips inside dashboard scroll/stack — shadow only */
-.dash-resumen-hero :is(.hero-card, .progress-snapshot):hover {
+/* Tinted-surface lift clips inside dashboard scroll/stack — shadow only.
+   #dashResumenHero (id) needed to outrank lp-tinted-surface.css's :hover
+   rule, which loads after this file and ties on specificity otherwise. */
+#dashResumenHero :is(.hero-card, .progress-snapshot):hover {
   transform: none;
 }
 

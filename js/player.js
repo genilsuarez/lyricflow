@@ -764,7 +764,7 @@ function showPicker(skipAutoLoad = false) {
       </div>
       <div class="level-status-banner" id="levelStatusBanner" hidden>
         <span class="level-status-banner__icon" aria-hidden="true">🔒</span>
-        <span class="level-status-banner__text">Nivel compartido entre apps. Ya cumpliste tu parte aquí.</span>
+        <span class="level-status-banner__text">Nivel compartido. Ya cumpliste tu parte aquí.</span>
         <a class="level-status-banner__btn" id="levelStatusBannerLink" href="#" target="_blank" rel="noopener">Ver progreso global →</a>
       </div>
       <div class="song-list" id="songList"></div>
