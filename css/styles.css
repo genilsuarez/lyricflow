@@ -427,7 +427,14 @@ body {
 
 /* ─── Level Status Banner ─── docs/to-do/learnflow-progression-system.md */
 .level-status-banner {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "icon text"
+    "btn  btn";
+  align-items: start;
+  column-gap: 10px;
+  row-gap: 10px;
   width: 100%; max-width: 780px;
   margin: 0 auto 10px; padding: 10px 14px;
   background: color-mix(in srgb, var(--lp-accent) 8%, var(--lp-surface));
@@ -435,12 +442,20 @@ body {
   border-radius: var(--lp-radius-lg);
 }
 .level-status-banner[hidden] { display: none; }
-.level-status-banner__icon { font-size: 1rem; flex-shrink: 0; }
+.level-status-banner__icon {
+  grid-area: icon;
+  font-size: 1rem;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
 .level-status-banner__text {
-  flex: 1 1 auto; min-width: 180px;
+  grid-area: text;
+  min-width: 0;
   font-size: 0.78rem; font-weight: 500; color: var(--lp-ink-soft); line-height: 1.35;
 }
 .level-status-banner__btn {
+  grid-area: btn;
+  justify-self: start;
   flex-shrink: 0; padding: 6px 12px;
   background: var(--lp-accent); color: var(--lp-on-accent);
   border-radius: var(--lp-radius-full);
@@ -450,16 +465,20 @@ body {
 .level-status-banner__btn:hover { opacity: 0.85; }
 @media (min-width: 768px) {
   .level-status-banner {
-    flex-wrap: nowrap;
-    gap: 12px;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "icon text btn";
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 0;
     padding: 8px 14px;
   }
   .level-status-banner__text {
-    flex: 1 1 auto;
-    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .level-status-banner__btn {
+    justify-self: end;
   }
 }
 
@@ -6316,6 +6335,10 @@ body:has(.app-header--player) .unified-nav-trigger {
     width: 100%;
     flex: 0 0 auto;
     min-height: 0;
+  }
+
+  .dash-recent-block__sub {
+    display: none;
   }
 
   .dash-recent {
