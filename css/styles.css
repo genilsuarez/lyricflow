@@ -7169,6 +7169,11 @@ body:has(.app-header--player) .unified-nav-trigger {
     min-height: 0;
   }
 
+  .stats-view > .sv-top { order: 1; }
+  .stats-view > .sv-card--activities { order: 2; }
+  .stats-view > .sv-songs { order: 3; }
+  .stats-view > .sv-mid { order: 4; }
+
   .stats-view > .sv-top,
   .stats-view > .sv-card,
   .stats-view > .sv-mid,
@@ -7192,8 +7197,11 @@ body:has(.app-header--player) .unified-nav-trigger {
   .sv-top {
     flex-direction: column;
     align-items: stretch;
-    padding: 12px 14px;
+    padding: 0;
     gap: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 
   .sv-top__ring {
@@ -7206,24 +7214,26 @@ body:has(.app-header--player) .unified-nav-trigger {
   }
 
   .sv-top__title {
-    padding-bottom: 2px;
-  }
-
-  .sv-top__title h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
+    display: none;
   }
 
   .sv-top__numbers {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 10px;
-    padding: 10px 0 2px;
-    margin-top: 8px;
-    border-top: 1px solid color-mix(in srgb, var(--lp-border) 80%, transparent);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 0;
+    margin-top: 0;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius-md);
+    background: var(--lp-surface);
+    overflow: hidden;
     --sv-stat-num-width: auto;
+  }
+
+  /* Mobile: 4 KPIs — ocultar intentos y mejor racha (menos ruido en pantalla chica). */
+  .sv-top__numbers .sv-stat:nth-child(3),
+  .sv-top__numbers .sv-stat:nth-child(5) {
+    display: none;
   }
 
   .sv-stat--hide-mobile {
@@ -7234,22 +7244,35 @@ body:has(.app-header--player) .unified-nav-trigger {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    text-align: center;
+    justify-content: center;
+    gap: 1px;
     min-width: 0;
+    min-height: 44px;
+    padding: 4px 3px;
+    text-align: center;
+    border-right: 1px solid var(--lp-border-subtle);
+  }
+
+  .sv-top__numbers .sv-stat:last-child {
+    border-right: none;
+  }
+
+  .sv-stat.sv-stat--accent {
+    background: color-mix(in srgb, var(--lp-accent) 10%, var(--lp-surface));
   }
 
   .sv-stat strong {
-    font-size: 0.95rem;
-    line-height: 1.1;
+    font-size: 0.76rem;
+    line-height: 1.05;
     justify-self: unset;
     text-align: center;
+    white-space: nowrap;
   }
 
   .sv-stat span {
-    font-size: 0.5rem;
-    line-height: 1.15;
-    letter-spacing: 0.04em;
+    font-size: 0.42rem;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
     justify-self: unset;
     text-align: center;
     max-width: 100%;
@@ -7267,10 +7290,43 @@ body:has(.app-header--player) .unified-nav-trigger {
   .sv-songs {
     flex: 0 0 auto;
     min-height: auto;
+    padding: 5px 10px;
+  }
+
+  .sv-songs h3 {
+    margin-bottom: 2px;
+    font-size: 0.5rem;
   }
 
   .sv-song-row {
     gap: 4px;
+    padding: 1px 0;
+    line-height: 1.15;
+  }
+
+  .sv-song-icon {
+    font-size: 0.7rem;
+    width: 14px;
+  }
+
+  .sv-song-name {
+    font-size: 0.66rem;
+  }
+
+  .sv-song-row .level-badge {
+    font-size: 0.5rem;
+    padding: 1px 5px;
+    line-height: 1.25;
+  }
+
+  .sv-seg {
+    width: 7px;
+    height: 2px;
+  }
+
+  .sv-song-pct {
+    font-size: 0.58rem;
+    width: 26px;
   }
 
   .sv-song-artist {
@@ -7279,6 +7335,112 @@ body:has(.app-header--player) .unified-nav-trigger {
 
   .sv-songs-grid {
     grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Por nivel — grid 3×2 de chips compactos en lugar de 6 filas con barra larga. */
+  .sv-card:has(#svLevelsTitle) {
+    padding: 6px 10px 8px;
+  }
+
+  .sv-card:has(#svLevelsTitle) h3 {
+    margin-bottom: 5px;
+    font-size: 0.5rem;
+  }
+
+  .sv-levels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .sv-level-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 2px 5px;
+    padding: 5px 6px;
+    border: 1px solid var(--lp-border-subtle);
+    border-radius: var(--lp-radius-sm);
+    background: var(--lp-bg-paper);
+  }
+
+  .sv-levels .level-badge {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.48rem;
+    padding: 1px 5px;
+    line-height: 1.35;
+  }
+
+  .sv-level-count {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 0.56rem;
+    line-height: 1.2;
+  }
+
+  .sv-level-row .sv-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: 3px;
+    border: none;
+    background: var(--lp-border);
+  }
+
+  /* Actividades — fila única 4× mini-card (icono + count + barra); título oculto (ya en KPI strip). */
+  .stats-view .sv-card--activities {
+    padding: 4px 5px 5px;
+  }
+
+  .stats-view .sv-card--activities h3 {
+    display: none;
+  }
+
+  .stats-view .dash-activities--stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .stats-view .dash-activities--stats .dash-act-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 0;
+    padding: 5px 3px 4px;
+    border-radius: var(--lp-radius-sm);
+  }
+
+  .stats-view .dash-activities--stats .dash-act-icon {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .stats-view .dash-activities--stats .dash-act-count {
+    font-size: 0.56rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--lp-ink);
+  }
+
+  .stats-view .dash-activities--stats .dash-act-label {
+    font-size: 0.38rem;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    text-align: center;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stats-view .dash-activities--stats .dash-act-bar {
+    width: 100%;
+    height: 2px;
+    margin-top: 1px;
   }
 }
 
