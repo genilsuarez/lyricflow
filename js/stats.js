@@ -23,6 +23,11 @@ const ACTIVITY_META = {
   quiz: { icon: '🧠', label: 'Quiz' },
 };
 
+/** Callback de "abrir canción" del dashboard activo — las filas de actividad
+ *  reciente se repintan desde patchDashboardRecentActivity(), que no recibe
+ *  callbacks, así que el click se delega y lee esta referencia. */
+let dashSongClickHandler = null;
+
 const LEVEL_ORDER = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -154,6 +159,17 @@ function summaryStatMarkup(summary) {
   return `<span class="progress-snapshot__stat dash-snapshot-stat">${summary.completedActivities}/${summary.totalActivities}</span><span class="progress-snapshot__unit"> actividades</span>`;
 }
 
+/** Línea motivacional del panel de biblioteca — acompaña al % del anillo. */
+function moodLine(summary) {
+  const done = summary?.completedActivities ?? 0;
+  const total = summary?.totalActivities ?? 0;
+  if (!done) return 'Elige una canción y empieza';
+  const pct = total ? (done / total) * 100 : 0;
+  if (pct >= 80) return 'Casi lo tienes';
+  if (pct >= 40) return 'Vas muy bien, sigue así';
+  return 'Buen comienzo, sigue así';
+}
+
 function getComputedData() {
   const progress = getProgress();
   const events = readActivityLedger();
@@ -226,7 +242,7 @@ function buildRecentSectionBody(recentEvents, { deferRecent = false } = {}) {
 
 function buildRecentRowsMarkup(recentEvents) {
   if (!recentEvents.length) {
-    return '<p class="dash-empty">Comienza con una canción para ver tu actividad aqui</p>';
+    return '<p class="dash-empty">Comienza con una canción para ver tu actividad aquí</p>';
   }
   return `
         <div class="dash-recent__head" aria-hidden="true">
@@ -240,6 +256,7 @@ function buildRecentRowsMarkup(recentEvents) {
             <span class="dash-recent__col dash-recent__col--activity">Actividad</span>
             <span class="dash-recent__col dash-recent__col--score">Resultado</span>
             <span class="dash-recent__col dash-recent__col--time">Cuándo</span>
+            <span class="dash-recent__col dash-recent__col--chev"></span>
           </div>
         </div>
         <div class="dash-recent__list">
@@ -250,21 +267,30 @@ function buildRecentRowsMarkup(recentEvents) {
             const songData = pickerSongs.find(s => s.id === event.contentId);
             const displayTitle = songData?.title || event.title || event.contentId;
             const displayArtist = songData?.artist || '';
+            // Solo las filas de canciones que siguen en el catálogo son
+            // navegables; el resto se pinta como fila muerta (mismo layout).
+            const tag = songData ? 'button' : 'div';
+            const attrs = songData
+              ? ` type="button" data-song-id="${songData.id}" aria-label="Abrir ${displayTitle}"`
+              : '';
             return `
-              <div class="dash-recent__row">
+              <${tag} class="dash-recent__row${songData ? ' dash-recent__row--link' : ''}"${attrs}>
                 <div class="dash-recent__main">
-                  <span class="dash-recent__icon" aria-hidden="true">${meta.icon}</span>
+                  <span class="dash-recent__icon dash-recent__icon--${event.activity}" aria-hidden="true">${meta.icon}</span>
                   <div class="dash-recent__song">
                     <span class="dash-recent__title">${displayTitle}</span>
                     ${displayArtist ? `<span class="dash-recent__artist">${displayArtist}</span>` : ''}
                   </div>
                 </div>
                 <div class="dash-recent__meta">
-                  <span class="dash-recent__activity">${meta.label}</span>
+                  <span class="dash-recent__activity dash-recent__activity--${event.activity}">
+                    <span class="dash-recent__activity-icon" aria-hidden="true">${meta.icon}</span>${meta.label}
+                  </span>
                   <span class="dash-recent__score">${scoreStr}${passedStr ? ` <span class="dash-recent__pass" aria-hidden="true">${passedStr}</span>` : ''}</span>
                   <time class="dash-recent__time" datetime="${event.occurredAt}">${timeAgo(event.occurredAt)}</time>
+                  <span class="dash-recent__chev" aria-hidden="true">›</span>
                 </div>
-              </div>`;
+              </${tag}>`;
           }).join('')}
         </div>`;
 }
@@ -396,14 +422,20 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
   const shell = app.closest('.app-shell');
   if (shell) shell.classList.add('app-shell--fullscreen');
 
+  const heroCtaLabel = recommendation?.type === 'continue' ? 'Continuar' : 'Comenzar';
   const heroCardMarkup = recommendation ? `
         <div class="hero-card" id="dashHeroCard">
-          <button type="button" class="hero-card__launch" id="dashHeroCta" aria-label="${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}: ${recommendation.song.title}">
+          <button type="button" class="hero-card__launch" id="dashHeroCta" aria-label="${heroCtaLabel}: ${recommendation.song.title}">
             <span class="hero-card__icon" aria-hidden="true">${recommendation.song.icon || '🎵'}</span>
             <span class="hero-card__body">
-              <span class="hero-card__context">${recommendation.type === 'continue' ? 'Continuar' : 'Comenzar'}</span>
+              <span class="hero-card__context">${heroCtaLabel} tu aprendizaje</span>
               <span class="hero-card__title">${recommendation.song.title}</span>
-              <span class="hero-card__meta">${recommendation.song.artist}</span>
+              <span class="hero-card__meta">${recommendation.type === 'continue' ? 'Sigue practicando y alcanza tus metas' : `${recommendation.song.artist} · Empieza cuando quieras`}</span>
+            </span>
+            <span class="hero-card__cta" aria-hidden="true">
+              <span class="hero-card__play">▶</span>
+              <span class="hero-card__cta-label">${heroCtaLabel}</span>
+              <span class="hero-card__cta-arrow">→</span>
             </span>
           </button>
         </div>
@@ -415,6 +447,11 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
               <span class="hero-card__context">Tu biblioteca</span>
               <span class="hero-card__title">Explorar canciones</span>
               <span class="hero-card__meta">Elige una canción para empezar</span>
+            </span>
+            <span class="hero-card__cta" aria-hidden="true">
+              <span class="hero-card__play">▶</span>
+              <span class="hero-card__cta-label">Explorar</span>
+              <span class="hero-card__cta-arrow">→</span>
             </span>
           </button>
         </div>
@@ -433,8 +470,10 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
             <span class="progress-snapshot__line progress-snapshot__line--primary">
               <span class="progress-snapshot__title">Tu biblioteca</span>
             </span>
+            <span class="progress-snapshot__line progress-snapshot__line--meta dash-snapshot-mood">${moodLine(progress.summary)}</span>
           </span>
           <div class="progress-snapshot__stat-col">
+            <span class="progress-snapshot__stat-icon" aria-hidden="true">🎵</span>
             <span class="progress-snapshot__stat-wrap">
               ${summaryStatMarkup(progress.summary)}
             </span>
@@ -452,7 +491,13 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
 
       <!-- Recent activity -->
       <section class="dash-recent-block" aria-labelledby="dashRecentTitle">
-        <h3 id="dashRecentTitle">Actividad reciente</h3>
+        <div class="dash-recent-block__head">
+          <div class="dash-recent-block__copy">
+            <h3 id="dashRecentTitle">Actividad reciente</h3>
+            <p class="dash-recent-block__sub">Aquí puedes ver tus últimas actividades y resultados.</p>
+          </div>
+          <button type="button" class="dash-recent-block__link" id="dashRecentAll">Ver estadísticas <span aria-hidden="true">→</span></button>
+        </div>
         <div class="${recentSectionClass}">
           ${buildRecentSectionBody(recentEvents, { deferRecent })}
         </div>
@@ -468,6 +513,16 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
     document.getElementById('dashBrowseCta')?.addEventListener('click', onShowSongs);
   }
   document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowSongs);
+  document.getElementById('dashRecentAll')?.addEventListener('click', onShowStats);
+
+  // Delegado: patchDashboardRecentActivity() repinta las filas sin callbacks.
+  dashSongClickHandler = onSongClick;
+  app.querySelector('.dash-recent-block')?.addEventListener('click', (event) => {
+    const row = event.target.closest('.dash-recent__row--link');
+    if (!row) return;
+    const song = pickerSongs.find(s => s.id === row.dataset.songId);
+    if (song && dashSongClickHandler) dashSongClickHandler(song);
+  });
   if (typeof lpPlacementBanner !== 'undefined') lpPlacementBanner.mount('placementTestBanner');
 
   applyDashboardSnapshotStats(app, { progress, streak, totalAttempts, pct }, animateReveal);
