@@ -9,6 +9,7 @@
    ═══════════════════════════════════════════════════════ */
 
 import { getActiveLevel, getCombinedLevelProgress } from './lp-progress-summary.js';
+import { getThresholds } from './lp-completion-config.js';
 
 export function refreshLevelStatusBanner() {
   const banner = document.getElementById('levelStatusBanner');
@@ -16,8 +17,9 @@ export function refreshLevelStatusBanner() {
 
   const level = getActiveLevel();
   const progress = getCombinedLevelProgress(level);
-  const lyricflowDone = progress.lyricflow.progressPct >= 100;
-  const allDone = lyricflowDone && progress.fluentflow.progressPct >= 100 && progress.hubflow.progressPct >= 50;
+  const thresholds = getThresholds();
+  const lyricflowDone = progress.lyricflow.progressPct >= thresholds.lyricflow;
+  const allDone = lyricflowDone && progress.fluentflow.progressPct >= thresholds.fluentflow && progress.hubflow.progressPct >= thresholds.hubflow;
 
   // Si las 3 ya se cumplieron, checkLevelAdvancement() ya debería haber
   // subido el nivel (se dispara al guardar progreso) — no mostrar el aviso
@@ -39,7 +41,8 @@ export function initLevelStatus() {
   if (listenersAttached) return;
   listenersAttached = true;
   window.addEventListener('lp-level-changed', refreshLevelStatusBanner);
+  window.addEventListener('lp-completion-config-changed', refreshLevelStatusBanner);
   window.addEventListener('storage', (event) => {
-    if (event.key === 'lp-level') refreshLevelStatusBanner();
+    if (event.key === 'lp-level' || event.key === 'lp-completion-config') refreshLevelStatusBanner();
   });
 }
