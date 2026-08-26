@@ -6115,6 +6115,50 @@ body:has(.app-header--player) .unified-nav-trigger {
   font-style: italic;
 }
 
+/* ─── Franja de ayuda (pie del dashboard) ─── */
+
+.home-help {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding: 11px 16px;
+  border-radius: var(--lp-radius-lg);
+  background: color-mix(in srgb, var(--lp-accent) 5%, var(--lp-surface));
+  border: 1px solid var(--lp-border-subtle);
+  font-family: var(--lp-font-body);
+  font-size: 0.8rem;
+  color: var(--lp-ink-soft);
+  font-weight: var(--lp-weight-medium);
+}
+
+.home-help__question {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-help__sep {
+  width: 1px;
+  height: 16px;
+  background: var(--lp-border);
+}
+
+.home-help__link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: var(--lp-weight-bold);
+  color: var(--lp-accent);
+}
+
+.home-help__link:hover { text-decoration: underline; }
+.home-help__tagline { margin-left: auto; color: var(--lp-muted); }
+
 /* ─── Dashboard Desktop (compact + sin scroll fantasma) ─── */
 
 @media (min-width: 581px) {
@@ -6422,6 +6466,30 @@ body:has(.app-header--player) .unified-nav-trigger {
   .dash-resumen-hero {
     gap: 8px;
   }
+
+  .home-help {
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 10px 12px;
+    font-size: 0.7rem;
+  }
+
+  .home-help__question {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 4px;
+  }
+
+  .home-help__text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .home-help__sep { display: none; }
+  .home-help__link { margin-left: 0; flex: 0 0 auto; white-space: nowrap; }
+  .home-help__tagline { display: none; }
 
   .dash-metric {
     flex: 1;

@@ -503,6 +503,16 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
         </div>
       </section>
 
+      <div class="home-help">
+        <span class="home-help__question">
+          <span class="home-help__icon" aria-hidden="true">💡</span>
+          <span class="home-help__text">¿Necesitas ayuda?</span>
+        </span>
+        <span class="home-help__sep" aria-hidden="true"></span>
+        <button type="button" class="home-help__link" id="dashHelpAbout">Conoce más sobre LyricFlow</button>
+        <span class="home-help__tagline">Tu aprendizaje, nuestro propósito <span aria-hidden="true">💙</span></span>
+      </div>
+
       <!-- Songs CTA -->
     </div>
   `;
@@ -514,6 +524,9 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
   }
   document.getElementById('dashProgressSnapshot')?.addEventListener('click', onShowSongs);
   document.getElementById('dashRecentAll')?.addEventListener('click', onShowStats);
+  document.getElementById('dashHelpAbout')?.addEventListener('click', (event) => {
+    if (typeof lpAbout !== 'undefined') lpAbout.open(event);
+  });
 
   // Delegado: patchDashboardRecentActivity() repinta las filas sin callbacks.
   dashSongClickHandler = onSongClick;
