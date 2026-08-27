@@ -1,6 +1,6 @@
 .venv
-
-vite.config.js
+node_modules/
+dist/
 
 # Backups de canciones recortadas
 *.original.mp3

@@ -7,7 +7,16 @@ Player de canciones con subtítulos sincronizados, vocabulario interactivo, y mo
 ## Stack
 
 - HTML5 + CSS3 + Vanilla JS (ES modules)
-- Sin build step — se sirve directo (necesita HTTP server por ES modules, no funciona desde `file://`)
+- Bundled by Vite at deploy time (same philosophy as FluentFlow, without
+  React/TS): `npm run build` produces `dist/` from `main.js`'s import graph
+  (all the classic `lp-*.js` scripts + CSS in the original `<script>`/
+  `<link>` order) + `js/player.js` (already ESM, per-song data already
+  lazy-loaded via dynamic `import()` — untouched). CD Deploy runs this in
+  CI. Local edits still happen on the readable source files, same as
+  always — see `main.js`.
+- For local dev, use `npx vite` / `learnctl` (needs the bundler dev server,
+  same as before — a plain static server never worked here either since
+  `main.js` now also imports CSS, which only Vite understands).
 - Google Fonts: Fraunces (lyrics/display) + Manrope (UI)
 - Audio nativo del browser
 

@@ -117,8 +117,8 @@ function scheduleDashboardUpdate() {
   }
 }
 
-function bootHomeDashboard() {
-  showDashboard();
+function bootHomeDashboard(updateHistory = true) {
+  showDashboard(updateHistory);
   void hydrateActivityFromCloud('lyricflow');
   maybeShowMiniOnboarding();
 }
@@ -671,7 +671,26 @@ function setActiveNavItem(id) {
   if (target) target.classList.add('is-active');
 }
 
-function showDashboard() {
+/**
+ * Reflect the dashboard/picker/stats view in the URL hash so reload,
+ * back/forward, and sharing a link land on the right screen instead of
+ * always resetting to the dashboard. `hash` is '' for the dashboard (no
+ * hash), or e.g. 'picker'/'stats' otherwise. `updateHistory` is false when
+ * called from the popstate handler itself — the browser already changed
+ * the URL, so we must not push another entry on top of it.
+ */
+function syncViewUrl(hash, updateHistory) {
+  const u = new URL(location.href);
+  u.searchParams.delete('song');
+  u.hash = hash;
+  if (!updateHistory || (location.hash.slice(1) === hash && !location.search.includes('song='))) {
+    history.replaceState(null, '', u);
+  } else {
+    history.pushState(null, '', u);
+  }
+}
+
+function showDashboard(updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -680,17 +699,13 @@ function showDashboard() {
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupStats();
-  if (location.search.includes('song=')) {
-    const u = new URL(location.href);
-    u.searchParams.delete('song');
-    history.replaceState(null, '', u);
-  }
+  syncViewUrl('', updateHistory);
   setActiveNavItem('navigationHome');
   renderAppHeader();
   scheduleDashboardRender();
 }
 
-function showStats() {
+function showStats(updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -699,11 +714,7 @@ function showStats() {
   if (state.audio) { state.audio.pause(); state.audio.src = ''; state.audio = null; }
   stopUpdateLoop();
   cleanupDashboard();
-  if (location.search.includes('song=')) {
-    const u = new URL(location.href);
-    u.searchParams.delete('song');
-    history.replaceState(null, '', u);
-  }
+  syncViewUrl('stats', updateHistory);
   setActiveNavItem('navigationStats');
   renderAppHeader();
   renderStats();
@@ -711,7 +722,7 @@ function showStats() {
 
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
-function showPicker(skipAutoLoad = false) {
+function showPicker(skipAutoLoad = false, updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -723,11 +734,7 @@ function showPicker(skipAutoLoad = false) {
   cleanupDashboard();
   if (state.theaterMode) { state.theaterMode = false; document.body.classList.remove('theater-mode'); }
   setActiveNavItem('navigationSongs');
-  if (location.search.includes('song=')) {
-    const u = new URL(location.href);
-    u.searchParams.delete('song');
-    history.replaceState(null, '', u);
-  }
+  syncViewUrl('picker', updateHistory);
   renderAppHeader();
 
   // Songs pre-sorted by CEFR level from picker-data.js (no dynamic imports needed)
@@ -3339,6 +3346,10 @@ const isSessionReturn = sessionStorage.getItem('lyricflow_active');
 const initialSong = songParam && isSessionReturn && pickerSongs.find(s => s.folder.split('/').pop() === songParam);
 if (initialSong) {
   loadSong(initialSong);
+} else if (location.hash.slice(1) === 'picker') {
+  showPicker(true, false);
+} else if (location.hash.slice(1) === 'stats') {
+  showStats(false);
 } else {
   // Clean stale ?song= param if not resuming
   if (songParam) {
@@ -3346,5 +3357,17 @@ if (initialSong) {
     u.searchParams.delete('song');
     history.replaceState(null, '', u);
   }
-  bootHomeDashboard();
+  bootHomeDashboard(false);
 }
+
+// Atrás/adelante del navegador navega entre dashboard/picker/stats (mismo
+// patrón que DeskFlow/HubFlow) en vez de salir de la página. Las funciones
+// show*() ya actualizan el hash al navegar (arriba); acá solo respondemos
+// al cambio que el navegador ya hizo — updateHistory:false evita que la
+// respuesta al popstate empuje otra entrada de historial.
+window.addEventListener('popstate', () => {
+  const hash = location.hash.slice(1);
+  if (hash === 'picker') showPicker(true, false);
+  else if (hash === 'stats') showStats(false);
+  else showDashboard(false);
+});

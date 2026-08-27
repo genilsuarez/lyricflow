@@ -42,3 +42,4 @@ var lpPlacementBanner = (function () {
 
   return { mount: mount };
 })();
+window.lpPlacementBanner = lpPlacementBanner; // ESM side-effect import (main.js) does not attach top-level vars to window like a classic <script> did — restore it explicitly.
