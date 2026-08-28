@@ -43,22 +43,33 @@ css/
   lp-nav-active.css — Active nav item (copy of scripts/)
   lp-about.css      — About modal styles (copy of scripts/)
 songs/              — Carpeta de canciones
-  catalog.js        — Lista de folders disponibles
+  catalog.js        — Lista de folders disponibles (generado, ver "Canciones" abajo)
   <Nombre>/
     data.js         — Metadata + subtítulos sincronizados
     vocab.js        — Vocabulario de la canción
     *.mp3           — Archivo de audio
 scripts/            — Scripts de build y QA
+public/             — Estáticos que Vite copia a dist/ tal cual, sin hashear
+                      (manifest.json, iconos, robots.txt, sitemap.xml, 404.html,
+                      privacy.html) — necesario porque manifest.json referencia
+                      sus iconos por ruta literal, que Vite no puede reescribir
 ```
+
+El resto de `js/*.js` con prefijo `lp-` son copias de `scripts/` (`copy-shared.sh`
+en la raíz del repo `Learn`) — no editarlas a mano acá, editar el canónico y
+volver a correr `copy-shared.sh`.
 
 Nav/theme helpers en `player.js` delegan a `window.LpNavHelpers` — no duplicar `themedAppHref` / `toggleTheme` inline. Login: `lpLogin.bindNavButton('#navigationLogin', …)`. About: `lpAbout.open()` desde `lp-about.js`.
 
 ## Para servir en desarrollo
 
+Un servidor estático plano NO funciona — `main.js` importa CSS y usa el import
+graph de Vite (ver "Stack" arriba). Usar:
+
 ```bash
-npx serve . -p 3000
-# o
-python3 -m http.server 3000
+npx vite
+# o, para levantar las 4 apps juntas en un solo origin:
+../scripts/learnctl start
 ```
 
 ## QA Scripts
@@ -164,6 +175,22 @@ Razones:
 Están visualmente alineados con la identidad (usan tokens `--lp-*`, transitions, hover
 states), pero mantienen naming y sizing propios. Esta decisión es intencional y permanente
 salvo rediseño completo de la zona del player.
+
+## Agregar una canción nueva
+
+1. Crear carpeta en `songs/` (nombre sin espacios ni acentos, usar underscore):
+   ```
+   songs/Nombre_Cancion/
+   ```
+2. Dentro colocar:
+   - `data.js` — exporta default con: `title`, `artist`, `icon`, `file`, `subtitles[]`
+   - El archivo de audio referenciado en `file`
+3. Regenerar el catálogo (escanea `songs/` buscando subcarpetas con `data.js`):
+   ```bash
+   node scripts/build-catalog.js
+   ```
+   Correr esto cada vez que se agregue, elimine o renombre una carpeta de canción —
+   `songs/catalog.js` es generado, no editarlo a mano.
 
 ## Recortar canción (trim MP3 + ajustar subtítulos)
 
