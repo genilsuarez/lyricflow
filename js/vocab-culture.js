@@ -5,6 +5,7 @@
 // call back into `loadSong`/`stopUpdateLoop` to return to the player view).
 // ═══════════════════════════════════════════════════════════════════════════════
 
+import { escapeHtml } from './html-escape.js';
 import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState } from './player.js';
 
 // ─── Vocabulary ────────────────────────────────────────────────────────────────
@@ -151,7 +152,7 @@ function onVocabTap(e) {
   synContainer.innerHTML = '';
   synSection.hidden = true;
   if (entry && entry.synonyms && entry.synonyms.length > 0) {
-    synContainer.innerHTML = entry.synonyms.map(s => `<span class="vocab-mini-chip">${s}</span>`).join('');
+    synContainer.innerHTML = entry.synonyms.map(s => `<span class="vocab-mini-chip">${escapeHtml(s)}</span>`).join('');
     synSection.hidden = false;
   }
 
@@ -161,7 +162,7 @@ function onVocabTap(e) {
   antContainer.innerHTML = '';
   antSection.hidden = true;
   if (entry && entry.antonyms && entry.antonyms.length > 0) {
-    antContainer.innerHTML = entry.antonyms.map(a => `<span class="vocab-mini-chip vocab-mini-chip--ant">${a}</span>`).join('');
+    antContainer.innerHTML = entry.antonyms.map(a => `<span class="vocab-mini-chip vocab-mini-chip--ant">${escapeHtml(a)}</span>`).join('');
     antSection.hidden = false;
   }
 

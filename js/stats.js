@@ -7,6 +7,7 @@
 import pickerSongs from '../songs/picker-data.js';
 import { getProgress, getSongProgress, progressConfig } from './progress.js';
 import { shouldDeferStatsDisplay, consumeStatsRevealAnimation, readLocalActivityEvents, shouldDeferActivityDisplay } from './sync-engine.js';
+import { escapeHtml } from './html-escape.js';
 import { animateText, animateCssVar, prefersReducedMotion } from './lp-stats-animate.js';
 
 function getAppRoot() {
@@ -261,33 +262,34 @@ function buildRecentRowsMarkup(recentEvents) {
         </div>
         <div class="dash-recent__list">
           ${recentEvents.map(event => {
-            const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
+            const meta = ACTIVITY_META[event.activity] || { icon: '•', label: escapeHtml(event.activity) };
             const scoreStr = event.scorePct != null ? `${Math.round(event.scorePct)}%` : '';
             const passedStr = event.passed === true ? '✓' : event.passed === false ? '✗' : '';
             const songData = pickerSongs.find(s => s.id === event.contentId);
-            const displayTitle = songData?.title || event.title || event.contentId;
-            const displayArtist = songData?.artist || '';
+            const displayTitle = escapeHtml(songData?.title || event.title || event.contentId);
+            const displayArtist = escapeHtml(songData?.artist || '');
+            const activityKey = escapeHtml(event.activity);
             // Solo las filas de canciones que siguen en el catálogo son
             // navegables; el resto se pinta como fila muerta (mismo layout).
             const tag = songData ? 'button' : 'div';
             const attrs = songData
-              ? ` type="button" data-song-id="${songData.id}" aria-label="Abrir ${displayTitle}"`
+              ? ` type="button" data-song-id="${escapeHtml(songData.id)}" aria-label="Abrir ${displayTitle}"`
               : '';
             return `
               <${tag} class="dash-recent__row${songData ? ' dash-recent__row--link' : ''}"${attrs}>
                 <div class="dash-recent__main">
-                  <span class="dash-recent__icon dash-recent__icon--${event.activity}" aria-hidden="true">${meta.icon}</span>
+                  <span class="dash-recent__icon dash-recent__icon--${activityKey}" aria-hidden="true">${meta.icon}</span>
                   <div class="dash-recent__song">
                     <span class="dash-recent__title">${displayTitle}</span>
                     ${displayArtist ? `<span class="dash-recent__artist">${displayArtist}</span>` : ''}
                   </div>
                 </div>
                 <div class="dash-recent__meta">
-                  <span class="dash-recent__activity dash-recent__activity--${event.activity}">
+                  <span class="dash-recent__activity dash-recent__activity--${activityKey}">
                     <span class="dash-recent__activity-icon" aria-hidden="true">${meta.icon}</span>${meta.label}
                   </span>
                   <span class="dash-recent__score">${scoreStr}${passedStr ? ` <span class="dash-recent__pass" aria-hidden="true">${passedStr}</span>` : ''}</span>
-                  <time class="dash-recent__time" datetime="${event.occurredAt}">${timeAgo(event.occurredAt)}</time>
+                  <time class="dash-recent__time" datetime="${escapeHtml(event.occurredAt)}">${timeAgo(event.occurredAt)}</time>
                   <span class="dash-recent__chev" aria-hidden="true">›</span>
                 </div>
               </${tag}>`;
@@ -635,7 +637,7 @@ export function renderStats() {
           ${recentEvents.length ? `
           <div class="sv-recent">
             ${recentEvents.map(event => {
-              const meta = ACTIVITY_META[event.activity] || { icon: '•', label: event.activity };
+              const meta = ACTIVITY_META[event.activity] || { icon: '•', label: escapeHtml(event.activity) };
               const scoreStr = event.scorePct != null ? `${Math.round(event.scorePct)}%` : '';
               const passedStr = event.passed === true ? '✓' : event.passed === false ? '✗' : '';
               const songData = pickerSongs.find(s => s.id === event.contentId);
