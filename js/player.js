@@ -17,6 +17,9 @@ import {
   markListenCompleted,
   recordActivityResult,
 } from './progress.js';
+import { navIcon, setNavigationOpen, initUnifiedNavigation } from './navigation.js';
+import { disableLoopBtn, enableLoopBtn, onLoopClick, updateLoopRegion, bindLoopRegionDrag, loopDragging } from './loop.js';
+import { showSongEnd } from './results.js';
 import { setupSupabaseAuth } from './lp-auth-setup.js';
 import { hydrateActivityFromCloud, hasLocalActivityLedger } from './sync-engine.js';
 import { getActiveLevel, levelUnlocks, isCefrTrackComplete } from './lp-progress-summary.js';
@@ -234,6 +237,7 @@ export const state = {
   blanksAnswers: {},
   blanksBlanksMap: {},  // lineIndex -> Set of wordIdx to blank (pre-computed)
   blanksDifficulty: 'normal',
+  blanksRevealed: false, // true tras «Mostrar respuestas»; se apaga al reintentar
   challengeRunId: null,
   listeningDifficulty: 'normal',
   dictationRunId: null,
@@ -275,7 +279,7 @@ function isLocalHost() {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
 }
 
-function loadPrefs() {
+export function loadPrefs() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
   } catch { return {}; }
@@ -512,7 +516,7 @@ function pauseOnModeSwitch() {
   }
 }
 
-function formatTime(seconds) {
+export function formatTime(seconds) {
   if (isNaN(seconds) || seconds === Infinity) return '0:00';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -690,7 +694,7 @@ function syncViewUrl(hash, updateHistory) {
   }
 }
 
-function showDashboard(updateHistory = true) {
+export function showDashboard(updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -705,7 +709,7 @@ function showDashboard(updateHistory = true) {
   scheduleDashboardRender();
 }
 
-function showStats(updateHistory = true) {
+export function showStats(updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -722,7 +726,7 @@ function showStats(updateHistory = true) {
 
 // ─── Song Picker ───────────────────────────────────────────────────────────────
 
-function showPicker(skipAutoLoad = false, updateHistory = true) {
+export function showPicker(skipAutoLoad = false, updateHistory = true) {
   state.playerCleanup?.();
   state.playerCleanup = null;
   state.currentSong = null;
@@ -1036,315 +1040,6 @@ export async function loadSong(song) {
   }
 }
 
-// ─── Shared nav helpers (lp-nav-helpers.js) ──────────────────────────────────
-const navIcon = (name) => window.LpNavHelpers.navIcon(name);
-const currentThemeIcon = () => window.LpNavHelpers.currentThemeIcon();
-const toggleTheme = (iconEl) => window.LpNavHelpers.toggleTheme(iconEl);
-const themedAppHref = (app) => window.LpNavHelpers.themedAppHref(app);
-
-function bindPortalNavigation(root = document) {
-  root.querySelectorAll('[data-lp-portal]').forEach(link => {
-    link.href = themedAppHref('deskflow');
-    if (link.dataset.portalBound) return;
-    link.dataset.portalBound = '1';
-    link.addEventListener('click', () => {
-      link.href = themedAppHref('deskflow');
-      setNavigationOpen(false, true);
-    });
-  });
-}
-
-const NAVIGATION_STORAGE_KEY = 'lp-navigation-mode';
-
-function navigationMode() {
-  return localStorage.getItem(NAVIGATION_STORAGE_KEY) === 'floating' ? 'floating' : 'sidebar';
-}
-
-function isNavigationPersistent() {
-  return window.innerWidth >= 861 && navigationMode() === 'sidebar';
-}
-
-function syncNavigationLayout() {
-  setNavigationOpen(isNavigationPersistent());
-}
-
-function updateNavigationMode(mode, persist = false) {
-  const resolvedMode = mode === 'floating' ? 'floating' : 'sidebar';
-  document.documentElement.dataset.navigationMode = resolvedMode;
-  if (persist) localStorage.setItem(NAVIGATION_STORAGE_KEY, resolvedMode);
-
-  const toggle = document.getElementById('navigationModeToggle');
-  const isFloating = resolvedMode === 'floating';
-  if (toggle) {
-    toggle.setAttribute('aria-pressed', String(isFloating));
-    toggle.setAttribute('aria-label', isFloating ? 'Usar barra lateral fija' : 'Usar menú flotante');
-    toggle.title = isFloating ? 'Muestra la barra lateral fija' : 'Oculta la barra lateral y usa un menú flotante';
-    const icon = toggle.querySelector('span');
-    if (icon) icon.textContent = isFloating ? '▣' : '◫';
-  }
-  syncNavigationLayout();
-}
-
-function setNavigationOpen(isOpen, restoreFocus = false) {
-  const navigation = document.getElementById('unifiedNavigation');
-  const trigger = document.getElementById('unifiedNavTrigger');
-  const headerMenuBtn = document.getElementById('headerMenuBtn');
-  const backdrop = document.getElementById('unifiedNavBackdrop');
-  if (!navigation || !trigger || !backdrop) return;
-
-  const isPersistent = isNavigationPersistent();
-  const effectivelyOpen = isPersistent || isOpen;
-  const focusTarget = headerMenuBtn && document.querySelector('.app-header--player')
-    ? headerMenuBtn
-    : trigger;
-  navigation.classList.toggle('is-open', effectivelyOpen);
-  navigation.inert = !effectivelyOpen;
-  navigation.setAttribute('aria-hidden', String(!effectivelyOpen));
-  backdrop.classList.toggle('is-open', isOpen && !isPersistent);
-  trigger.setAttribute('aria-expanded', String(effectivelyOpen));
-  if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', String(effectivelyOpen));
-  document.body.classList.toggle('lp-drawer-open', isOpen && !isPersistent);
-  navigation.classList.toggle('is-persistent', isPersistent);
-  if (isOpen && !isPersistent && typeof lpLogin !== 'undefined' && lpLogin.refreshNavLabels) {
-    lpLogin.refreshNavLabels();
-  }
-  if (isOpen && !isPersistent) navigation.querySelector('button, a[href]')?.focus();
-  else if (restoreFocus && !isPersistent) focusTarget.focus();
-}
-
-function showAboutLearnFlow(event) {
-  lpAbout.open(event, {
-    inertElements: [
-      document.getElementById('app'),
-      document.getElementById('unifiedNavigation'),
-      document.getElementById('unifiedNavTrigger'),
-    ],
-    onClose() {
-      setNavigationOpen(false);
-      const navigationTrigger = document.getElementById('unifiedNavTrigger');
-      if (navigationTrigger) navigationTrigger.inert = false;
-    },
-  });
-}
-
-function initUnifiedNavigation() {
-  // Guard against duplicate initialization (Vite HMR re-executes the module)
-  if (document.getElementById('unifiedNavTrigger')) return;
-
-  const trigger = document.createElement('button');
-  trigger.id = 'unifiedNavTrigger';
-  trigger.className = 'lp-icon-btn unified-nav-trigger';
-  trigger.type = 'button';
-  trigger.setAttribute('aria-label', 'Abrir navegación');
-  trigger.setAttribute('aria-controls', 'unifiedNavigation');
-  trigger.setAttribute('aria-expanded', 'false');
-  trigger.innerHTML = navIcon('menu');
-
-  const backdrop = document.createElement('div');
-  backdrop.id = 'unifiedNavBackdrop';
-  backdrop.className = 'lp-drawer-scrim';
-  backdrop.setAttribute('aria-hidden', 'true');
-
-  const navigation = document.createElement('aside');
-  navigation.id = 'unifiedNavigation';
-  navigation.className = 'unified-nav lp-drawer';
-  navigation.setAttribute('aria-label', 'Navegación de LearnFlow');
-  navigation.innerHTML = `
-    <div class="unified-nav-brand">
-      <span class="unified-nav-mark" aria-hidden="true">LF</span>
-      <span><strong>LyricFlow</strong><small>LearnFlow</small></span>
-      <button class="unified-nav-mode-toggle" id="navigationModeToggle" type="button" aria-pressed="false" aria-label="Usar menú flotante" title="Oculta la barra lateral y usa un menú flotante"><span aria-hidden="true">◫</span></button>
-      <button class="unified-nav-close-btn" id="drawerCloseBtn" type="button" aria-label="Cerrar navegación">✕</button>
-    </div>
-    <nav class="unified-nav-menu" aria-label="Navegación principal">
-      <button class="unified-nav-item is-active" id="navigationHome" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Inicio</span>
-      </button>
-      <button class="unified-nav-item" id="navigationSongs" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('music')}</span><span>Canciones</span>
-      </button>
-      <button class="unified-nav-item" id="navigationStats" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('chart')}</span><span>Estadísticas</span>
-      </button>
-
-    </nav>
-    <footer class="unified-nav-footer">
-      <button class="unified-nav-item" id="navigationTheme" type="button">
-        <span class="unified-nav-icon" id="navigationThemeIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeLabel">Modo oscuro</span>
-      </button>
-      <button class="unified-nav-item" id="settingsTrigger" type="button">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('settings')}</span><span>Ajustes</span>
-      </button>
-      <a class="unified-nav-item" id="navigationPortalQuick" data-lp-portal href="${themedAppHref('deskflow')}" aria-label="Volver a LearnFlow" title="Volver a LearnFlow">
-        <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
-      </a>
-    </footer>
-  `;
-
-  const settingsOverlay = document.createElement('div');
-  settingsOverlay.id = 'settingsOverlay';
-  settingsOverlay.className = 'lp-settings-overlay';
-  settingsOverlay.hidden = true;
-  settingsOverlay.innerHTML = `
-    <section class="lp-settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
-      <header class="lp-settings-header">
-        <h2 id="settingsModalTitle">Ajustes</h2>
-        <button class="lp-settings-close" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes">✕</button>
-      </header>
-      <div class="lp-settings-body">
-        <section class="lp-settings-section" aria-labelledby="settingsSectionAccount">
-          <h3 class="lp-settings-section__title" id="settingsSectionAccount">Cuenta</h3>
-          <button class="unified-nav-item" id="navigationLogin" type="button" aria-label="Iniciar sesión">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('user')}</span><span>Iniciar Sesión</span>
-          </button>
-        </section>
-        <section class="lp-settings-section" aria-labelledby="settingsSectionAppearance">
-          <h3 class="lp-settings-section__title" id="settingsSectionAppearance">Apariencia</h3>
-          <button class="unified-nav-item" id="navigationThemeModal" type="button">
-            <span class="unified-nav-icon" id="navigationThemeModalIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeModalLabel">Modo oscuro</span>
-          </button>
-        </section>
-        <section class="lp-settings-section" aria-labelledby="settingsSectionHelp">
-          <h3 class="lp-settings-section__title" id="settingsSectionHelp">Ayuda y acerca de</h3>
-          <button class="unified-nav-item" id="navigationAbout" type="button">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>About LearnFlow</span>
-          </button>
-          <a class="unified-nav-item" id="navigationPortal" data-lp-portal href="${themedAppHref('deskflow')}">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
-          </a>
-          <a class="unified-nav-item" href="privacy.html">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>Privacidad</span>
-          </a>
-        </section>
-        <section class="lp-settings-section" id="settingsSectionDev" aria-labelledby="settingsSectionDevTitle" hidden>
-          <h3 class="lp-settings-section__title" id="settingsSectionDevTitle">Desarrollador</h3>
-          <button class="unified-nav-item" type="button" id="devToolsTrigger" aria-expanded="false" aria-controls="devToolsPanel">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('wrench')}</span><span>Dev</span>
-          </button>
-          <div class="lp-dev-panel" id="devToolsPanel" hidden>
-            <header class="lp-dev-panel__header">
-              <span><span class="unified-nav-icon" aria-hidden="true">${navIcon('wrench')}</span><strong>Herramientas de desarrollo</strong></span>
-              <code id="devBuildStamp"></code>
-            </header>
-            <div class="lp-dev-panel__actions">
-              <button type="button" id="devRecompileBtn"><span class="unified-nav-icon" aria-hidden="true">${navIcon('refresh')}</span>Recargar</button>
-              <button type="button" id="devForceSyncBtn"><span class="unified-nav-icon" aria-hidden="true">${navIcon('refresh')}</span>Forzar sync</button>
-              <button type="button" id="devClearCacheBtn" aria-expanded="false"><span class="unified-nav-icon" aria-hidden="true">${navIcon('trash')}</span>Limpiar caché</button>
-              <button type="button" id="devScreenInfoBtn" aria-expanded="false"><span class="unified-nav-icon" aria-hidden="true">${navIcon('monitor')}</span>Información de Pantalla</button>
-            </div>
-            <p class="lp-dev-panel__status" id="devSyncStatus" hidden></p>
-            <div class="lp-dev-cache-confirm" id="devCacheConfirm" hidden role="alert">
-              <p>Borra caché y datos locales de LearnFlow en este navegador y recarga. Tema, modo y sesión se mantienen.</p>
-              <div>
-                <button type="button" id="devCacheCancelBtn">Cancelar</button>
-                <button type="button" id="devCacheConfirmBtn">Limpiar y recargar</button>
-              </div>
-            </div>
-            <dl class="lp-dev-screen-grid" id="devScreenGrid" hidden></dl>
-          </div>
-        </section>
-      </div>
-    </section>
-  `;
-
-  document.body.append(backdrop, navigation, trigger, settingsOverlay);
-  updateNavigationMode(navigationMode());
-
-  const modeToggle = document.getElementById('navigationModeToggle');
-  const themeButton = document.getElementById('navigationTheme');
-  const themeIcon = document.getElementById('navigationThemeIcon');
-  const themeLabel = document.getElementById('navigationThemeLabel');
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
-  themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-  const themeModalButton = document.getElementById('navigationThemeModal');
-  const themeModalIcon = document.getElementById('navigationThemeModalIcon');
-  const themeModalLabel = document.getElementById('navigationThemeModalLabel');
-  themeModalLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
-  themeModalButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-  themeModalButton.addEventListener('click', () => {
-    toggleTheme(themeModalIcon);
-    const nowDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    [
-      [themeIcon, themeLabel, themeButton],
-      [themeModalIcon, themeModalLabel, themeModalButton],
-    ].forEach(([icon, label, button]) => {
-      icon.innerHTML = currentThemeIcon();
-      label.textContent = nowDark ? 'Modo claro' : 'Modo oscuro';
-      button.setAttribute('aria-label', nowDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-    });
-  });
-  document.getElementById('settingsTrigger').addEventListener('click', (event) => {
-    if (window.lpDevTools) lpDevTools.updateSectionVisibility();
-    lpSettings.open(event, { inertElements: [navigation] });
-  });
-  trigger.addEventListener('click', () => setNavigationOpen(true));
-  backdrop.addEventListener('click', () => setNavigationOpen(false, true));
-  document.getElementById('drawerCloseBtn').addEventListener('click', () => setNavigationOpen(false, true));
-  modeToggle.addEventListener('click', () => {
-    const nextMode = navigationMode() === 'sidebar' ? 'floating' : 'sidebar';
-    updateNavigationMode(nextMode, true);
-  });
-  document.getElementById('navigationHome').addEventListener('click', () => {
-    setNavigationOpen(false, true);
-    showDashboard();
-  });
-  document.getElementById('navigationSongs').addEventListener('click', () => {
-    setNavigationOpen(false, true);
-    showPicker(true);
-  });
-  document.getElementById('navigationStats').addEventListener('click', () => {
-    setNavigationOpen(false, true);
-    showStats();
-  });
-  document.getElementById('navigationAbout').addEventListener('click', aboutEvent => {
-    setNavigationOpen(false);
-    lpSettings.close();
-    showAboutLearnFlow(aboutEvent);
-  });
-  lpLogin?.bindNavButton?.('#navigationLogin', {
-    beforeOpen: () => { setNavigationOpen(false); lpSettings.close(); },
-    labelSelector: 'span:last-child',
-  });
-  themeButton.addEventListener('click', () => {
-    toggleTheme(themeIcon);
-    const nowDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    [
-      [themeIcon, themeLabel, themeButton],
-      [themeModalIcon, themeModalLabel, themeModalButton],
-    ].forEach(([icon, label, button]) => {
-      icon.innerHTML = currentThemeIcon();
-      label.textContent = nowDark ? 'Modo claro' : 'Modo oscuro';
-      button.setAttribute('aria-label', nowDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-    });
-  });
-  bindPortalNavigation(document);
-  window.addEventListener('storage', storageEvent => {
-    if (storageEvent.key !== NAVIGATION_STORAGE_KEY) return;
-    updateNavigationMode(storageEvent.newValue === 'floating' ? 'floating' : 'sidebar');
-  });
-  window.addEventListener('resize', () => syncNavigationLayout());
-  document.addEventListener('keydown', navigationEvent => {
-    if (!navigation.classList.contains('is-open')) return;
-    if (navigationEvent.key === 'Escape') {
-      navigationEvent.preventDefault();
-      setNavigationOpen(false, true);
-      return;
-    }
-    if (navigationEvent.key !== 'Tab') return;
-    const focusable = [...navigation.querySelectorAll('button, a[href]')];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (navigationEvent.shiftKey && document.activeElement === first) {
-      navigationEvent.preventDefault();
-      last.focus();
-    } else if (!navigationEvent.shiftKey && document.activeElement === last) {
-      navigationEvent.preventDefault();
-      first.focus();
-    }
-  });
-}
-
 function bindPlayerEvents(song) {
   const controller = new AbortController();
   const { signal } = controller;
@@ -1463,7 +1158,7 @@ function setPlayButtonState(isPlaying) {
   playBtn.setAttribute('aria-label', isPlaying ? 'Pausar' : 'Reproducir');
 }
 
-function playAudio() {
+export function playAudio() {
   if (!state.audio) return;
   // Block play while difficulty picker is open
   if (document.getElementById('difficultyPicker')) return;
@@ -1511,140 +1206,6 @@ function cycleSpeed() {
   savePrefs({ speed: state.playbackRate });
 }
 
-// ─── A-B Loop ──────────────────────────────────────────────────────────────────
-
-function disableLoopBtn() {
-  const btn = document.getElementById('loopBtn');
-  if (!btn) return;
-  // Reset any active/partial loop
-  state.loopA = null;
-  state.loopB = null;
-  state.loopActive = false;
-  btn.classList.remove('active', 'setting');
-  btn.textContent = '⟳';
-  btn.disabled = true;
-  const indicator = document.getElementById('loopIndicator');
-  if (indicator) indicator.textContent = '';
-  updateLoopRegion();
-}
-
-function enableLoopBtn() {
-  const btn = document.getElementById('loopBtn');
-  if (btn) btn.disabled = false;
-}
-
-function onLoopClick() {
-  const btn = document.getElementById('loopBtn');
-  const indicator = document.getElementById('loopIndicator');
-
-  if (state.loopA === null) {
-    // Set point A
-    state.loopA = state.audio ? state.audio.currentTime : 0;
-    btn.classList.add('setting');
-    btn.textContent = 'A→';
-    indicator.textContent = `A: ${formatTime(state.loopA)}`;
-  } else if (state.loopB === null) {
-    // Attempting to set B
-    const currentTime = state.audio ? state.audio.currentTime : 0;
-    if (currentTime <= state.loopA) {
-      // Cancel: position is at or before A
-      state.loopA = null;
-      btn.classList.remove('setting');
-      btn.textContent = '⟳';
-      indicator.textContent = 'Cancelado';
-      setTimeout(() => { if (!state.loopActive) indicator.textContent = ''; }, 1500);
-      return;
-    }
-    state.loopB = currentTime;
-    state.loopActive = true;
-    btn.classList.remove('setting');
-    btn.classList.add('active');
-    btn.textContent = '⟳';
-    indicator.textContent = `${formatTime(state.loopA)} → ${formatTime(state.loopB)}`;
-    updateLoopRegion();
-    if (state.audio) state.audio.currentTime = state.loopA;
-  } else {
-    // Clear loop
-    state.loopA = null;
-    state.loopB = null;
-    state.loopActive = false;
-    btn.classList.remove('active', 'setting');
-    btn.textContent = '⟳';
-    indicator.textContent = '';
-    updateLoopRegion();
-  }
-}
-
-function updateLoopRegion() {
-  const region = document.getElementById('loopRegion');
-  if (!region) return;
-  if (state.loopActive && state.loopA !== null && state.loopB !== null && state.audio && state.audio.duration) {
-    const leftPct = (state.loopA / state.audio.duration) * 100;
-    const widthPct = ((state.loopB - state.loopA) / state.audio.duration) * 100;
-    region.style.left = `${leftPct}%`;
-    region.style.width = `${widthPct}%`;
-    region.style.display = 'block';
-  } else {
-    region.style.display = 'none';
-  }
-}
-
-// ─── Loop Region Drag ──────────────────────────────────────────────────────────
-
-let loopDragging = false;
-let loopDragStartX = 0;
-let loopDragStartA = 0;
-let loopDragStartB = 0;
-
-function onLoopRegionDown(e) {
-  if (!state.loopActive || !state.audio || !state.audio.duration) return;
-  e.stopPropagation();
-  loopDragging = true;
-  loopDragStartX = e.clientX ?? e.touches[0].clientX;
-  loopDragStartA = state.loopA;
-  loopDragStartB = state.loopB;
-}
-
-function onLoopRegionMove(e) {
-  if (!loopDragging) return;
-  e.preventDefault();
-  const clientX = e.clientX ?? e.touches[0].clientX;
-  const bar = document.getElementById('progressBar');
-  const barWidth = bar.getBoundingClientRect().width;
-  const dx = clientX - loopDragStartX;
-  const dt = (dx / barWidth) * state.audio.duration;
-  const duration = loopDragStartB - loopDragStartA;
-
-  let newA = loopDragStartA + dt;
-  let newB = newA + duration;
-
-  // Clamp to bounds
-  if (newA < 0) { newA = 0; newB = duration; }
-  if (newB > state.audio.duration) { newB = state.audio.duration; newA = newB - duration; }
-
-  state.loopA = newA;
-  state.loopB = newB;
-  updateLoopRegion();
-  document.getElementById('loopIndicator').textContent = `${formatTime(state.loopA)} → ${formatTime(state.loopB)}`;
-  if (state.audio.currentTime < state.loopA || state.audio.currentTime > state.loopB) {
-    state.audio.currentTime = state.loopA;
-  }
-}
-
-function onLoopRegionUp() {
-  loopDragging = false;
-}
-
-function bindLoopRegionDrag(signal) {
-  const region = document.getElementById('loopRegion');
-  if (!region) return;
-  region.addEventListener('mousedown', onLoopRegionDown, { signal });
-  region.addEventListener('touchstart', (e) => { onLoopRegionDown(e); }, { passive: false, signal });
-  window.addEventListener('mousemove', onLoopRegionMove, { signal });
-  window.addEventListener('touchmove', onLoopRegionMove, { passive: false, signal });
-  window.addEventListener('mouseup', onLoopRegionUp, { signal });
-  window.addEventListener('touchend', onLoopRegionUp, { signal });
-}
 
 // ─── Progress ──────────────────────────────────────────────────────────────────
 
@@ -1753,7 +1314,7 @@ function scrollLyricIntoView(target) {
   }
 }
 
-function renderSubtitles(subtitles) {
+export function renderSubtitles(subtitles) {
   const container = document.getElementById('subContainer');
   container.innerHTML = '';
 
@@ -1929,7 +1490,7 @@ function returnToPlayer() {
 
 // ─── Fill-in-the-Blanks ────────────────────────────────────────────────────────
 
-function toggleBlanksMode() {
+export function toggleBlanksMode() {
   // If the picker is already open for this mode, ignore repeated clicks
   const openPicker = document.getElementById('difficultyPicker');
   if (openPicker && openPicker.dataset.mode === 'blanks') {
@@ -1972,7 +1533,7 @@ function toggleBlanksMode() {
 
     state.blanksAnswers = {};
     state.challengeRunId = createRunId('challenge');
-    blanksRevealed = false;
+    state.blanksRevealed = false;
     if (state.showTranslation) toggleTranslation();
 
     state.blanksBlanksMap = buildBlanksMap();
@@ -2193,14 +1754,13 @@ function updateBlanksProgress() {
   el.textContent = `${answered}/${total} palabras`;
 }
 
-let blanksRevealed = false;
 
 function revealBlanks() {
   const btn = document.getElementById('blanksRevealBtn');
 
-  if (blanksRevealed) {
+  if (state.blanksRevealed) {
     // Hide again — restore user answers
-    blanksRevealed = false;
+    state.blanksRevealed = false;
     btn.textContent = '👁 Revelar';
     const inputs = document.querySelectorAll('.blank-input');
     inputs.forEach(input => {
@@ -2219,7 +1779,7 @@ function revealBlanks() {
   }
 
   // Reveal answers
-  blanksRevealed = true;
+  state.blanksRevealed = true;
   btn.textContent = '🙈 Ocultar';
   const inputs = document.querySelectorAll('.blank-input');
   inputs.forEach(input => {
@@ -2475,7 +2035,7 @@ function toggleHighlight() {
 
 // ─── Listening Challenge Mode ──────────────────────────────────────────────────
 
-function toggleListeningMode() {
+export function toggleListeningMode() {
   // If the picker is already open for this mode, ignore repeated clicks
   const openPicker = document.getElementById('difficultyPicker');
   if (openPicker && openPicker.dataset.mode === 'listening') {
@@ -2552,7 +2112,7 @@ function toggleListeningMode() {
   });
 }
 
-function buildListeningBlanks() {
+export function buildListeningBlanks() {
   const vocabWords = new Set();
   if (state.vocabData && state.vocabData.length) {
     state.vocabData.forEach(v => vocabWords.add(v.word.toLowerCase()));
@@ -2602,7 +2162,7 @@ function renderListeningLine(text, lineIndex) {
   }).join('');
 }
 
-function updateListeningToolbar() {
+export function updateListeningToolbar() {
   const existing = document.getElementById('listeningToolbar');
   if (existing) existing.remove();
 
@@ -2763,436 +2323,6 @@ function resumeListeningAfterDelay() {
   state.listeningResumeTimers.push(tid);
 }
 
-// ─── Song End ──────────────────────────────────────────────────────────────────
-
-function showSongEnd() {
-  const container = document.getElementById('subContainer');
-  if (!container) return;
-
-  // Listening mode → show results modal overlay
-  if (state.listeningMode) {
-    showListeningResults();
-    return;
-  }
-
-  // Blanks mode → show results modal overlay
-  if (state.blanksMode) {
-    showBlanksResults();
-    return;
-  }
-
-  // Determine next activity for this song
-  const songProgress = getSongProgress(state.currentSong.id);
-  const nextActivity = getNextPendingActivity(songProgress, 'listen');
-
-  const actions = document.getElementById('songFinActions');
-  if (!actions) return;
-
-  const nextBtn = document.getElementById('finNextBtn');
-  nextBtn.textContent = nextActivity.label;
-
-  // Bind actions (replace to avoid stale closures)
-  const repeatBtn = document.getElementById('finRepeatBtn');
-  const newRepeat = repeatBtn.cloneNode(true);
-  repeatBtn.replaceWith(newRepeat);
-  newRepeat.addEventListener('click', () => {
-    actions.classList.add('hidden');
-    if (state.audio) {
-      state.audio.currentTime = 0;
-      playAudio();
-    }
-  });
-
-  const newNext = nextBtn.cloneNode(true);
-  nextBtn.replaceWith(newNext);
-  newNext.addEventListener('click', () => {
-    actions.classList.add('hidden');
-    nextActivity.action();
-  });
-
-  // Show and scroll to bottom
-  actions.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-  });
-}
-
-// ─── Smart Next Activity + Lesson Complete Modal ─────────────────────────────
-
-/**
- * Determines the next pending activity to suggest after completing one.
- * Follows pedagogical order: listen → dictation → challenge → quiz
- */
-function getNextPendingActivity(songProgress, currentActivity) {
-  const order = ['listen', 'dictation', 'challenge', 'quiz'];
-  const labels = {
-    listen: '🎵 Escuchar',
-    dictation: '🎧 Dictado →',
-    challenge: '✎ Huecos →',
-    quiz: 'Quiz →',
-  };
-  const actions = {
-    listen: () => {
-      // Go back to normal player mode
-      if (state.blanksMode) toggleBlanksMode();
-      if (state.listeningMode) toggleListeningMode();
-    },
-    dictation: () => toggleListeningMode(),
-    challenge: () => toggleBlanksMode(),
-    quiz: () => toggleQuizMode(),
-  };
-
-  // Find next incomplete activity after the current one in pedagogical order
-  const currentIdx = order.indexOf(currentActivity);
-  for (let i = currentIdx + 1; i < order.length; i++) {
-    const activity = order[i];
-    if (!songProgress.activities[activity].completed) {
-      return { label: labels[activity], action: actions[activity] };
-    }
-  }
-  // Wrap around — check before current
-  for (let i = 0; i < currentIdx; i++) {
-    const activity = order[i];
-    if (!songProgress.activities[activity].completed) {
-      return { label: labels[activity], action: actions[activity] };
-    }
-  }
-  // All complete — suggest next song in catalog order
-  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-  const sorted = [...pickerSongs].sort((a, b) => {
-    const la = levelOrder.indexOf((a.level || '').toLowerCase());
-    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
-    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
-  });
-  const curIdx = sorted.findIndex(s => s.folder === state.currentSong?.folder);
-  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
-  if (nextSong) {
-    return { label: 'Siguiente canción →', action: () => loadSong(nextSong) };
-  }
-  return { label: 'Inicio', action: () => showDashboard() };
-}
-
-/**
- * Shows a celebratory modal when all 4 activities for a song are complete.
- */
-export function showLessonCompleteModal(existingModalId, pct, correct, total) {
-  document.getElementById(existingModalId)?.remove();
-
-  const song = state.currentSong;
-  const levelOrder = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-  const sorted = [...pickerSongs].sort((a, b) => {
-    const la = levelOrder.indexOf((a.level || '').toLowerCase());
-    const lb = levelOrder.indexOf((b.level || '').toLowerCase());
-    return (la === -1 ? 99 : la) - (lb === -1 ? 99 : lb) || a.title.localeCompare(b.title);
-  });
-  const curIdx = sorted.findIndex(s => s.folder === song?.folder);
-  const nextSong = curIdx >= 0 && curIdx < sorted.length - 1 ? sorted[curIdx + 1] : null;
-
-  const overlay = document.createElement('div');
-  overlay.id = 'lessonCompleteModal';
-  overlay.className = 'lr-overlay';
-  overlay.innerHTML = `
-    <div class="lr-modal lr-modal--complete" role="dialog" aria-labelledby="lcTitle" aria-modal="true">
-      <button class="lr-close-btn" id="lcCloseBtn" aria-label="Cerrar">✕</button>
-      <div class="lr-emoji lr-emoji--big">🎓</div>
-      <h3 class="lr-title" id="lcTitle">Lección completada</h3>
-      <p class="lr-message">Completaste todas las actividades de <strong>${song.title}</strong></p>
-      <div class="lr-complete-checklist">
-        <span class="lr-check-item is-done">✓ Escucha</span>
-        <span class="lr-check-item is-done">✓ Dictado</span>
-        <span class="lr-check-item is-done">✓ Completar huecos</span>
-        <span class="lr-check-item is-done">✓ Quiz</span>
-      </div>
-      <div class="lr-actions">
-        <button class="lr-btn lr-btn--ghost" id="lcCatalogBtn">← Catálogo</button>
-        ${nextSong ? `<button class="lr-btn lr-btn--primary" id="lcNextSongBtn">Siguiente canción →</button>` : `<button class="lr-btn lr-btn--primary" id="lcDashBtn">Inicio</button>`}
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const closeBtn = overlay.querySelector('#lcCloseBtn');
-  const catalogBtn = overlay.querySelector('#lcCatalogBtn');
-  const nextSongBtn = overlay.querySelector('#lcNextSongBtn');
-  const dashBtn = overlay.querySelector('#lcDashBtn');
-
-  setTimeout(() => (nextSongBtn || dashBtn).focus(), 100);
-
-  catalogBtn.addEventListener('click', () => { overlay.remove(); showPicker(true); });
-  if (nextSongBtn) {
-    nextSongBtn.addEventListener('click', () => { overlay.remove(); loadSong(nextSong); });
-  }
-  if (dashBtn) {
-    dashBtn.addEventListener('click', () => { overlay.remove(); showDashboard(); });
-  }
-  closeBtn.addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-
-  const onEsc = (e) => {
-    if (e.key === 'Escape' && document.getElementById('lessonCompleteModal')) {
-      overlay.remove();
-      document.removeEventListener('keydown', onEsc);
-    }
-  };
-  document.addEventListener('keydown', onEsc);
-}
-
-function showBlanksResults() {
-  // Remove existing modal if any
-  document.getElementById('blanksResultsModal')?.remove();
-
-  // Calculate score from all blanks
-  const inputs = document.querySelectorAll('.blank-input');
-  let correct = 0;
-  const total = inputs.length;
-
-  inputs.forEach(input => {
-    const answer = normalizeForCompare(input.dataset.answer);
-    const value = normalizeForCompare(input.value);
-    if (value && value === answer) correct++;
-  });
-
-  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-  // Record progress (mirrors showListeningResults pattern)
-  recordActivityResult({
-    contentId: state.currentSong.id,
-    title: state.currentSong.title,
-    activity: 'challenge',
-    scorePct: pct,
-    correct,
-    total,
-    runId: state.challengeRunId,
-  });
-  state.challengeRunId = createRunId('challenge');
-  updateSongProgressUi(state.currentSong.id);
-
-  // Check if this completed the entire song
-  const songProgress = getSongProgress(state.currentSong.id);
-  if (songProgress.completed) {
-    showLessonCompleteModal('blanksResultsModal', pct, correct, total);
-    return;
-  }
-
-  let emoji, grade, message;
-  if (pct >= 90) {
-    emoji = '🏆'; grade = 'Excelente'; message = 'Dominio sólido del vocabulario';
-  } else if (pct >= 70) {
-    emoji = '🎉'; grade = 'Muy bien'; message = 'Buen manejo de las palabras clave';
-  } else if (pct >= 50) {
-    emoji = '💪'; grade = 'No está mal'; message = 'Revisa el vocabulario y reintenta';
-  } else {
-    emoji = '📖'; grade = 'Necesitas práctica'; message = 'Usa el modo vocabulario para repasar';
-  }
-
-  const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
-  const diffLabel = diffLabels[state.blanksDifficulty] || 'Normal';
-
-  // Determine next action based on pending activities
-  const nextActivity = getNextPendingActivity(songProgress, 'challenge');
-
-  const overlay = document.createElement('div');
-  overlay.id = 'blanksResultsModal';
-  overlay.className = 'lr-overlay';
-  overlay.innerHTML = `
-    <div class="lr-modal" role="dialog" aria-labelledby="brTitle" aria-modal="true">
-      <button class="lr-close-btn" id="brCloseBtn" aria-label="Cerrar">✕</button>
-      <div class="lr-emoji">${emoji}</div>
-      <h3 class="lr-title" id="brTitle">${grade}</h3>
-      <p class="lr-message">${message}</p>
-      <div class="lr-stats">
-        <div class="lr-stat lr-stat--correct">
-          <span class="lr-stat-value">${correct}</span>
-          <span class="lr-stat-label">Correctas</span>
-        </div>
-        <div class="lr-stat lr-stat--total">
-          <span class="lr-stat-value">${pct}%</span>
-          <span class="lr-stat-label">Precisión</span>
-        </div>
-        <div class="lr-stat lr-stat--wrong">
-          <span class="lr-stat-value">${total - correct}</span>
-          <span class="lr-stat-label">Errores</span>
-        </div>
-      </div>
-      <p class="lr-meta">✎ Completar huecos · ${diffLabel}</p>
-      <div class="lr-actions">
-        <button class="lr-btn lr-btn--ghost" id="brRetryBtn">↻ Reintentar</button>
-        <button class="lr-btn lr-btn--primary" id="brNextBtn">${nextActivity.label}</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const retryBtn = overlay.querySelector('#brRetryBtn');
-  const nextBtn = overlay.querySelector('#brNextBtn');
-  const closeBtn = overlay.querySelector('#brCloseBtn');
-  setTimeout(() => nextBtn.focus(), 100);
-
-  retryBtn.addEventListener('click', () => {
-    overlay.remove();
-    // Reset blanks and re-render as a new attempt
-    state.blanksAnswers = {};
-    state.challengeRunId = createRunId('challenge');
-    blanksRevealed = false;
-    renderSubtitles(state.currentSong.subtitles);
-    const scoreEl = document.getElementById('blanksScore');
-    if (scoreEl) scoreEl.textContent = '';
-    if (state.audio) {
-      state.audio.currentTime = 0;
-      playAudio();
-    }
-  });
-
-  nextBtn.addEventListener('click', () => {
-    overlay.remove();
-    nextActivity.action();
-  });
-
-  closeBtn.addEventListener('click', () => {
-    overlay.remove();
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  const onEsc = (e) => {
-    if (e.key === 'Escape' && document.getElementById('blanksResultsModal')) {
-      overlay.remove();
-      document.removeEventListener('keydown', onEsc);
-    }
-  };
-  document.addEventListener('keydown', onEsc);
-}
-
-function showListeningResults() {
-  // Remove existing modal if any
-  document.getElementById('listeningResultsModal')?.remove();
-
-  const { correct, wrong } = state.listeningScore;
-  const total = correct + wrong;
-  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-  recordActivityResult({
-    contentId: state.currentSong.id,
-    title: state.currentSong.title,
-    activity: 'dictation',
-    scorePct: pct,
-    correct,
-    total,
-    runId: state.dictationRunId,
-  });
-  updateSongProgressUi(state.currentSong.id);
-
-  // Check if this completed the entire song
-  const songProgress = getSongProgress(state.currentSong.id);
-  if (songProgress.completed) {
-    showLessonCompleteModal('listeningResultsModal', pct, correct, total);
-    return;
-  }
-
-  // Determine grade/feedback
-  let emoji, grade, message;
-  if (pct >= 90) {
-    emoji = '🏆'; grade = 'Excelente'; message = 'Oído impecable';
-  } else if (pct >= 70) {
-    emoji = '🎉'; grade = 'Muy bien'; message = 'Buen dominio auditivo';
-  } else if (pct >= 50) {
-    emoji = '💪'; grade = 'No está mal'; message = 'Sigue practicando';
-  } else {
-    emoji = '🎧'; grade = 'Necesitas práctica'; message = 'Intenta a menor velocidad';
-  }
-
-  const diffLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Desafío' };
-  const diffLabel = diffLabels[state.listeningDifficulty] || 'Normal';
-
-  // Determine next action based on pending activities
-  const nextActivity = getNextPendingActivity(songProgress, 'dictation');
-
-  const overlay = document.createElement('div');
-  overlay.id = 'listeningResultsModal';
-  overlay.className = 'lr-overlay';
-  overlay.innerHTML = `
-    <div class="lr-modal" role="dialog" aria-labelledby="lrTitle" aria-modal="true">
-      <button class="lr-close-btn" id="lrCloseBtn" aria-label="Cerrar">✕</button>
-      <div class="lr-emoji">${emoji}</div>
-      <h3 class="lr-title" id="lrTitle">${grade}</h3>
-      <p class="lr-message">${message}</p>
-      <div class="lr-stats">
-        <div class="lr-stat lr-stat--correct">
-          <span class="lr-stat-value">${correct}</span>
-          <span class="lr-stat-label">Correctas</span>
-        </div>
-        <div class="lr-stat lr-stat--total">
-          <span class="lr-stat-value">${pct}%</span>
-          <span class="lr-stat-label">Precisión</span>
-        </div>
-        <div class="lr-stat lr-stat--wrong">
-          <span class="lr-stat-value">${wrong}</span>
-          <span class="lr-stat-label">Errores</span>
-        </div>
-      </div>
-      <p class="lr-meta">🎧 Dictado · ${diffLabel}</p>
-      <div class="lr-actions">
-        <button class="lr-btn lr-btn--ghost" id="lrRetryBtn">↻ Reintentar</button>
-        <button class="lr-btn lr-btn--primary" id="lrNextBtn">${nextActivity.label}</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  // Focus trap — focus next-challenge button (positive action)
-  const retryBtn = overlay.querySelector('#lrRetryBtn');
-  const nextBtn = overlay.querySelector('#lrNextBtn');
-  const closeBtn = overlay.querySelector('#lrCloseBtn');
-  setTimeout(() => nextBtn.focus(), 100);
-
-  retryBtn.addEventListener('click', () => {
-    overlay.remove();
-    // Reset score and restart song in listening mode as a new attempt
-    state.listeningScore = { correct: 0, wrong: 0 };
-    state.dictationRunId = createRunId('dictation');
-    state.listeningBlanksMap = buildListeningBlanks();
-    state.currentSubIndex = -1;
-    state.listeningWaiting = false;
-    state.listeningCurrentBlank = null;
-    state.listeningPauseAt = null;
-    state.listeningRepeatCount = 0;
-    state.listeningLineStart = null;
-    renderSubtitles(state.currentSong.subtitles);
-    updateListeningToolbar();
-    if (state.audio) {
-      state.audio.currentTime = 0;
-      playAudio();
-    }
-  });
-
-  nextBtn.addEventListener('click', () => {
-    overlay.remove();
-    nextActivity.action();
-  });
-
-  closeBtn.addEventListener('click', () => {
-    overlay.remove();
-  });
-
-  // Close on overlay click (outside modal)
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  // Close on Escape
-  const onEsc = (e) => {
-    if (e.key === 'Escape' && document.getElementById('listeningResultsModal')) {
-      overlay.remove();
-      document.removeEventListener('keydown', onEsc);
-    }
-  };
-  document.addEventListener('keydown', onEsc);
-}
 
 // ─── Volume ────────────────────────────────────────────────────────────────────
 

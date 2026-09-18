@@ -6,7 +6,8 @@
 // vuelve al player vía loadSong.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState, updateSongProgressUi, showLessonCompleteModal } from './player.js';
+import { state, app, loadSong, stopUpdateLoop, updateToolbarActiveState, updateSongProgressUi } from './player.js';
+import { showLessonCompleteModal } from './results.js';
 import { createRunId, recordActivityResult, getSongProgress } from './progress.js';
 
 const TARGET_QUESTIONS = 5;
