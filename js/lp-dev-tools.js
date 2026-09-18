@@ -4,9 +4,9 @@
  * writes to the `settings-storage` localStorage key (see
  * lp-fluentflow-settings.js in FluentFlow) — same origin in prod and local
  * dev, so toggling it once in FluentFlow reveals this section here too.
- * The #settingsSectionDev markup is built by player.js alongside the rest
- * of the #settingsOverlay template; this module only wires up the toggles
- * and actions once that markup exists in the DOM.
+ * Es compartido por las apps vanilla: el markup de #settingsSectionDev lo
+ * aporta cada app (index.html estático o plantilla del player); este módulo
+ * solo cablea los toggles y las acciones cuando ese markup existe en el DOM.
  *
  *   lpDevTools.updateSectionVisibility()
  */
