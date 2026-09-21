@@ -25,7 +25,13 @@
 .lp-settings-close:hover { background: color-mix(in srgb, var(--lp-ink) 6%, transparent); color: var(--lp-ink); }
 .lp-settings-close:active { transform: scale(0.97); }
 .lp-settings-close:focus-visible { outline: 2px solid var(--lp-accent); outline-offset: 2px; }
-.lp-settings-body { padding: 8px 10px 10px; overflow-y: auto; flex: 1; min-height: 0; display: grid; gap: 8px; background: var(--lp-bg-paper, var(--lp-surface)); }
+.lp-settings-body {
+  /* El padding derecho es mayor que el izquierdo para que un scrollbar (que en macOS
+     con "mostrar siempre" o al hacer hover mide ~12px y se dibuja encima) no roce
+     los controles del borde — antes cortaba la pestaña activa y su anillo de foco. */
+  padding: 8px 16px 10px 10px; overflow-y: auto; scrollbar-gutter: stable; scrollbar-width: thin;
+  flex: 1; min-height: 0; display: grid; gap: 8px; background: var(--lp-bg-paper, var(--lp-surface));
+}
 .lp-settings-section {
   display: grid; gap: 0; padding: 3px;
   border: 1px solid var(--lp-border); border-radius: var(--lp-radius-md);
