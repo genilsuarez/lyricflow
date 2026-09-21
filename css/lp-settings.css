@@ -44,3 +44,25 @@
 @keyframes settingsFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes settingsSlideUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .lp-settings-overlay, .lp-settings-modal { animation: none; } }
+
+/* Diálogo enfocado al abrir (ver lp-settings.js): sin anillo, no es un control. */
+.lp-settings-modal:focus { outline: none; }
+
+/* Filas que abren otra ventana: chevron a la derecha (opt-in con .nav-item--modal). */
+.lp-settings-section .nav-item--modal::after {
+  content: "\203A"; margin-left: auto; padding-left: 8px; color: var(--lp-muted);
+  font-size: 1.15rem; line-height: 1; flex: 0 0 auto;
+}
+
+/* Fila con interruptor (tema): muestra el estado, no solo la acción (opt-in con .lp-switch). */
+.lp-switch {
+  margin-left: auto; flex: 0 0 auto; width: 34px; height: 20px; border-radius: 999px;
+  background: var(--lp-border-strong, var(--lp-border)); position: relative; transition: background 0.15s ease;
+}
+.lp-switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25); transition: transform 0.15s ease;
+}
+[aria-checked="true"] > .lp-switch { background: var(--lp-accent); }
+[aria-checked="true"] > .lp-switch::after { transform: translateX(14px); }
+@media (prefers-reduced-motion: reduce) { .lp-switch, .lp-switch::after { transition: none; } }

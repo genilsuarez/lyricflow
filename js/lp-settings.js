@@ -42,9 +42,16 @@ var lpSettings = (function () {
 
     overlay.hidden = false;
 
-    var focusable = Array.prototype.slice.call(
-      overlay.querySelectorAll('button:not([hidden]), a[href]')
-    );
+    var dialog = overlay.querySelector('.lp-settings-modal');
+
+    // Se recalcula en cada Tab: las secciones ocultas (`hidden`, p. ej. las de admin)
+    // contienen botones que siguen en el DOM pero no se ven, y con la lista fija del
+    // apertura el "último" foco era uno invisible y el Tab se escapaba del diálogo.
+    function getFocusable() {
+      return Array.prototype.slice
+        .call(overlay.querySelectorAll('button, a[href]'))
+        .filter(function (el) { return !el.disabled && el.getClientRects().length > 0; });
+    }
 
     function close() {
       overlay.hidden = true;
@@ -63,10 +70,12 @@ var lpSettings = (function () {
         close();
         return;
       }
-      if (keyEvent.key !== 'Tab' || focusable.length === 0) return;
+      if (keyEvent.key !== 'Tab') return;
+      var focusable = getFocusable();
+      if (focusable.length === 0) return;
       var first = focusable[0];
       var last = focusable[focusable.length - 1];
-      if (keyEvent.shiftKey && document.activeElement === first) {
+      if (keyEvent.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
         keyEvent.preventDefault();
         last.focus();
       } else if (!keyEvent.shiftKey && document.activeElement === last) {
@@ -83,7 +92,14 @@ var lpSettings = (function () {
     closeBtn.addEventListener('click', close);
     overlay.addEventListener('click', onBackdropClick);
     document.addEventListener('keydown', onKeydown);
-    closeBtn.focus();
+    // El foco inicial va al diálogo, no a la ×: enfocar el botón cerrar le dibujaba
+    // el anillo de foco aunque se abriera con ratón y parecía una selección rara.
+    if (dialog) {
+      dialog.setAttribute('tabindex', '-1');
+      dialog.focus({ preventScroll: true });
+    } else {
+      closeBtn.focus();
+    }
   }
 
   function close() {
