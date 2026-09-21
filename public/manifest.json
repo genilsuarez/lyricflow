@@ -4,8 +4,8 @@
   "description": "LyricFlow — aprende idiomas cantando, con letras sincronizadas y ejercicios de completar.",
   "start_url": "/lyricflow/",
   "display": "standalone",
-  "background_color": "#fcfbf9",
-  "theme_color": "#fcfbf9",
+  "background_color": "#fafbff",
+  "theme_color": "#fafbff",
   "icons": [
     {
       "src": "./icon-192.png",
