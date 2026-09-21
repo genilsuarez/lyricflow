@@ -109,11 +109,47 @@ var lpDevTools = (function () {
   }
 
   function scrollIntoViewWhenReady(el) {
-    requestAnimationFrame(function () {
+    var run = function () {
       el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    });
+    };
+    if (el._anim) el._anim.finished.then(run, function () {});
+    else requestAnimationFrame(run);
   }
 
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function isShown(el) {
+    return el.dataset.shown ? el.dataset.shown === 'true' : !el.hidden;
+  }
+  // Expand/collapse a [hidden] region by animating its height (display:none can't transition).
+  function setShown(el, show) {
+    if (isShown(el) === show && !el._anim) return;
+    if (el._anim) el._anim.cancel();
+    el.dataset.shown = show ? 'true' : 'false';
+    if (reduceMotion || !el.animate) {
+      el.hidden = !show;
+      return;
+    }
+    el.hidden = false;
+    var from = show ? 0 : el.offsetHeight;
+    var to = show ? el.scrollHeight : 0;
+    el.style.overflow = 'hidden';
+    el.style.boxSizing = 'border-box';
+    var anim = el.animate(
+      [{ height: from + 'px' }, { height: to + 'px' }],
+      { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
+    );
+    el._anim = anim;
+    function done() {
+      el._anim = null;
+      el.style.overflow = '';
+      el.style.boxSizing = '';
+    }
+    anim.onfinish = function () {
+      done();
+      el.hidden = !show;
+    };
+    anim.oncancel = done;
+  }
   function init() {
     var trigger = document.getElementById('devToolsTrigger');
     var panel = document.getElementById('devToolsPanel');
@@ -130,8 +166,8 @@ var lpDevTools = (function () {
     if (!trigger || !panel) return;
 
     trigger.addEventListener('click', function () {
-      var next = panel.hidden;
-      panel.hidden = !next;
+      var next = !isShown(panel);
+      setShown(panel, next);
       trigger.setAttribute('aria-expanded', String(next));
       if (next) buildStampEl.textContent = 'B: ' + buildStamp();
     });
@@ -178,18 +214,18 @@ var lpDevTools = (function () {
     }
 
     clearCacheBtn.addEventListener('click', function () {
-      var next = cacheConfirm.hidden;
-      cacheConfirm.hidden = !next;
+      var next = !isShown(cacheConfirm);
+      setShown(cacheConfirm, next);
       clearCacheBtn.setAttribute('aria-expanded', String(next));
       if (next) {
-        screenGrid.hidden = true;
+        setShown(screenGrid, false);
         screenInfoBtn.setAttribute('aria-expanded', 'false');
         scrollIntoViewWhenReady(cacheConfirm);
       }
     });
 
     cacheCancelBtn.addEventListener('click', function () {
-      cacheConfirm.hidden = true;
+      setShown(cacheConfirm, false);
       clearCacheBtn.setAttribute('aria-expanded', 'false');
     });
 
@@ -201,11 +237,11 @@ var lpDevTools = (function () {
     });
 
     screenInfoBtn.addEventListener('click', function () {
-      var next = screenGrid.hidden;
-      screenGrid.hidden = !next;
+      var next = !isShown(screenGrid);
+      setShown(screenGrid, next);
       screenInfoBtn.setAttribute('aria-expanded', String(next));
       if (next) {
-        cacheConfirm.hidden = true;
+        setShown(cacheConfirm, false);
         clearCacheBtn.setAttribute('aria-expanded', 'false');
         screenGrid.innerHTML = renderScreenGrid(getScreenInfo());
         scrollIntoViewWhenReady(screenGrid);
