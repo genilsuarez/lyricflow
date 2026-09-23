@@ -483,12 +483,12 @@ export function renderDashboard(onSongClick, onShowSongs, onShowStats) {
         </button>
       </div>
 
-      <!-- M4 — banner cuando el placement test B2+ quedó pendiente en DeskFlow.
+      <!-- M4 — banner cuando el examen de nivel (B1+) quedó pendiente en DeskFlow.
            No porta el examen, solo enlaza. js/lp-placement-banner.js -->
       <div class="level-status-banner" id="placementTestBanner" hidden>
         <span class="level-status-banner__icon" aria-hidden="true">🎯</span>
-        <span class="level-status-banner__text">Confirmaste nivel B2+ · Toma el examen en DeskFlow para desbloquear contenido avanzado.</span>
-        <a class="level-status-banner__btn" href="#" target="_blank" rel="noopener">Ir a DeskFlow →</a>
+        <span class="level-status-banner__text">Confirma tu nivel · Un examen corto en DeskFlow lo confirma.</span>
+        <a class="level-status-banner__btn" href="#" target="_blank" rel="noopener">Hacer el examen →</a>
       </div>
 
       <!-- Recent activity -->
