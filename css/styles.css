@@ -5880,6 +5880,13 @@ body:has(.app-header--player) .unified-nav-trigger {
 .dash-recent--revealed .dash-recent__list {
   max-height: 320px;
   opacity: 1;
+  /* Ya revelada, lo que no cabe se desplaza. overflow: hidden (base) solo
+     hace falta durante la animación de max-height; mantenerlo dejaba las
+     filas de abajo cortadas y sin scroll cuando la lista se ajusta al alto
+     de la ventana (escritorio) o supera los 320px (móvil). */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .dash-recent--revealed .dash-recent__head {
