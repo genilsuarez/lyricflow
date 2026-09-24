@@ -12,6 +12,10 @@ var lpPlacementBanner = (function () {
 
   var REQUEST_KEY = 'lp-placement-request';
   var SNAPSHOT_KEY = 'lp-placement-progress';
+  // Recordatorio descartado: guarda qué aviso exacto se cerró (tipo + nivel),
+  // no un "no mostrar más" global — si después pide otro nivel o deja un
+  // examen a medias, el aviso nuevo sí aparece.
+  var DISMISS_KEY = 'lp-placement-banner-dismissed';
 
   // Mismo plazo que DeskFlow (SNAPSHOT_MAX_AGE_MS en lp-placement-test.js):
   // pasado ese tiempo el intento ya no se ofrece retomar allá, así que acá
@@ -40,6 +44,26 @@ var lpPlacementBanner = (function () {
     if (resumable) return { kind: 'resume', level: snap.requestedLevel };
     if (request) return { kind: 'request', level: request };
     return null;
+  }
+
+  function stateId(state) {
+    return state.kind + ':' + state.level;
+  }
+
+  function isDismissed(state) {
+    try {
+      return localStorage.getItem(DISMISS_KEY) === stateId(state);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function dismiss(state) {
+    try {
+      localStorage.setItem(DISMISS_KEY, stateId(state));
+    } catch (e) {
+      /* sin persistencia vuelve a salir en la próxima carga */
+    }
   }
 
   function currentLevel() {
@@ -81,7 +105,7 @@ var lpPlacementBanner = (function () {
     var el = document.getElementById(elementId);
     if (!el) return;
     var state = pendingState();
-    if (!state) {
+    if (!state || isDismissed(state)) {
       el.hidden = true;
       return;
     }
@@ -97,6 +121,22 @@ var lpPlacementBanner = (function () {
       link.href = portalHref();
       link.textContent = copy.button;
     }
+    // Botón de cerrar: el aviso no puede ser permanente. Se crea acá para que
+    // cada app no tenga que repetirlo en su markup.
+    var close = el.querySelector('.level-status-banner__close');
+    if (!close) {
+      close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'level-status-banner__close';
+      close.setAttribute('aria-label', 'Ocultar este recordatorio');
+      close.title = 'Ocultar';
+      close.textContent = '✕';
+      el.appendChild(close);
+    }
+    close.onclick = function () {
+      dismiss(state);
+      el.hidden = true;
+    };
     el.hidden = false;
   }
 
