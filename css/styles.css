@@ -7243,6 +7243,62 @@ body:has(.app-header--player) .unified-nav-trigger {
   width: 28px;
 }
 
+/* ─── Stats en escritorio: legibilidad ───
+   El layout comprimía todo para caber en la ventana: títulos de tarjeta a
+   ~9px, actividad reciente a ~8px, y "Por nivel" / "Canciones" con scroll
+   interno sin barra visible que escondía las últimas filas (FR, 5ª
+   canción). Misma disposición; fuentes a tamaños legibles y las tarjetas
+   con su alto natural — si no cabe, desplaza la vista entera
+   (.stats-view ya tiene overflow-y: auto). */
+@media (min-width: 720px) {
+  .stats-view { gap: 12px; }
+
+  .sv-mid,
+  .sv-songs { flex: none; }
+  .sv-mid > .sv-card { height: auto; }
+  .sv-levels,
+  .sv-recent,
+  .sv-songs-grid { overflow: visible; flex: none; }
+
+  .sv-card h3,
+  .sv-card:has(#svLevelsTitle) h3,
+  .sv-card:has(#svRecentTitle) h3,
+  .sv-songs h3 { font-size: 0.7rem; margin-bottom: 8px; }
+
+  .sv-card:has(#svLevelsTitle),
+  .sv-card:has(#svRecentTitle),
+  .sv-songs { padding: 10px 14px 12px; }
+
+  .sv-stat span { font-size: 0.7rem; }
+
+  /* Actividades (tarjetas compartidas con el inicio; solo aquí se agrandan) */
+  .stats-view .dash-act-label { font-size: 0.68rem; }
+  .stats-view .dash-act-count { font-size: 0.78rem; }
+
+  /* Por nivel */
+  .sv-levels { gap: 6px; }
+  .sv-level-row { grid-template-columns: 38px 1fr 32px; gap: 8px; }
+  .sv-levels .level-badge { font-size: 0.62rem; }
+  .sv-level-count { font-size: 0.74rem; }
+
+  /* Actividad reciente */
+  .sv-recent { gap: 6px; }
+  .sv-recent-row { grid-template-columns: 18px 1fr auto 48px 58px; gap: 8px; }
+  .sv-recent-icon { font-size: 0.85rem; }
+  .sv-recent-title { font-size: 0.8rem; }
+  .sv-recent-artist { font-size: 0.68rem; line-height: 1.25; }
+  .sv-recent-activity,
+  .sv-recent-time { font-size: 0.7rem; }
+  .sv-recent-score { font-size: 0.74rem; }
+
+  /* Canciones */
+  .sv-song-row { gap: 8px; padding: 4px 0; }
+  .sv-song-icon { font-size: 0.9rem; width: 18px; }
+  .sv-song-name,
+  .sv-song-artist { font-size: 0.8rem; }
+  .sv-song-pct { font-size: 0.72rem; width: 34px; }
+}
+
 /* ─── Stats Responsive ─── */
 
 @media (max-width: 580px) {
