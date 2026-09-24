@@ -7299,6 +7299,15 @@ body:has(.app-header--player) .unified-nav-trigger {
   .sv-song-pct { font-size: 0.72rem; width: 34px; }
 }
 
+/* Banner superior de Estadísticas un ~15% más bajo en escritorio (94 → 80px):
+   menos padding vertical, anillo de 54px y menos aire entre título y cifras.
+   Va después del bloque de 768px que lo convierte en grid para ganarle. */
+@media (min-width: 768px) {
+  .sv-top { padding-block: 10px; row-gap: 5px; }
+  .sv-top__ring .stats-ring { width: 54px; height: 54px; }
+  .sv-stat { padding-block: 0; }
+}
+
 /* ─── Stats Responsive ─── */
 
 @media (max-width: 580px) {
