@@ -163,26 +163,26 @@ export function initUnifiedNavigation() {
       <div class="lp-settings-body">
         <section class="lp-settings-section" aria-labelledby="settingsSectionAccount">
           <h3 class="lp-settings-section__title" id="settingsSectionAccount">Cuenta</h3>
-          <button class="unified-nav-item" id="navigationLogin" type="button" aria-label="Iniciar sesión">
+          <button class="unified-nav-item nav-item--modal" id="navigationLogin" type="button" aria-label="Iniciar sesión">
             <span class="unified-nav-icon" aria-hidden="true">${navIcon('user')}</span><span>Iniciar Sesión</span>
           </button>
         </section>
         <section class="lp-settings-section" aria-labelledby="settingsSectionAppearance">
           <h3 class="lp-settings-section__title" id="settingsSectionAppearance">Apariencia</h3>
-          <button class="unified-nav-item" id="navigationThemeModal" type="button">
-            <span class="unified-nav-icon" id="navigationThemeModalIcon" aria-hidden="true">${currentThemeIcon()}</span><span id="navigationThemeModalLabel">Modo oscuro</span>
+          <button class="unified-nav-item" id="navigationThemeModal" type="button" role="switch" aria-checked="false" aria-label="Modo oscuro">
+            <span class="unified-nav-icon" id="navigationThemeModalIcon" aria-hidden="true">${navIcon('moon')}</span><span>Modo oscuro</span><span class="lp-switch" aria-hidden="true"></span>
           </button>
         </section>
         <section class="lp-settings-section" aria-labelledby="settingsSectionHelp">
           <h3 class="lp-settings-section__title" id="settingsSectionHelp">Ayuda y acerca de</h3>
-          <button class="unified-nav-item" id="navigationAbout" type="button">
+          <button class="unified-nav-item nav-item--modal" id="navigationAbout" type="button">
             <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>About LearnFlow</span>
           </button>
           <a class="unified-nav-item" id="navigationPortal" data-lp-portal href="${themedAppHref('deskflow')}">
             <span class="unified-nav-icon" aria-hidden="true">${navIcon('home')}</span><span>Portal</span>
           </a>
           <a class="unified-nav-item" href="privacy.html">
-            <span class="unified-nav-icon" aria-hidden="true">${navIcon('info')}</span><span>Privacidad</span>
+            <span class="unified-nav-icon" aria-hidden="true">${navIcon('shield')}</span><span>Privacidad</span>
           </a>
         </section>
         <section class="lp-settings-section" id="settingsSectionDev" aria-labelledby="settingsSectionDevTitle" hidden>
@@ -226,22 +226,17 @@ export function initUnifiedNavigation() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   themeButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  // Fila de Ajustes: interruptor "Modo oscuro" con estado visible; etiqueta
+  // e icono fijos (mismo patrón que DeskFlow). El botón del menú sí alterna.
   const themeModalButton = document.getElementById('navigationThemeModal');
-  const themeModalIcon = document.getElementById('navigationThemeModalIcon');
-  const themeModalLabel = document.getElementById('navigationThemeModalLabel');
-  themeModalLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
-  themeModalButton.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  themeModalButton.setAttribute('aria-checked', String(isDark));
   themeModalButton.addEventListener('click', () => {
-    toggleTheme(themeModalIcon);
+    toggleTheme(null);
     const nowDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    [
-      [themeIcon, themeLabel, themeButton],
-      [themeModalIcon, themeModalLabel, themeModalButton],
-    ].forEach(([icon, label, button]) => {
-      icon.innerHTML = currentThemeIcon();
-      label.textContent = nowDark ? 'Modo claro' : 'Modo oscuro';
-      button.setAttribute('aria-label', nowDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
-    });
+    themeModalButton.setAttribute('aria-checked', String(nowDark));
+    themeIcon.innerHTML = currentThemeIcon();
+    themeLabel.textContent = nowDark ? 'Modo claro' : 'Modo oscuro';
+    themeButton.setAttribute('aria-label', nowDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   });
   document.getElementById('settingsTrigger').addEventListener('click', (event) => {
     if (window.lpDevTools) lpDevTools.updateSectionVisibility();
